@@ -47,8 +47,11 @@ widths:
   "Sat":         8
   "Sun":         8
   "Week":        8
+  "Weeks":       8
   "Wk":          8
   "Round":       8
+  "Total":      10
+  "When":       14
   "Date":       14
   "Time":       12
   "Duration":   12
@@ -75,9 +78,11 @@ widths:
   "Data":       14
   "Option":     18
   "Amount":     18
+  "Area":       18
   "Step":       10
   "Calories":   12
   "Context":    24
+  "Criteria":   24
   "Where":      22
 
   # ── Wide: prose columns, take whatever's left after the rest ─────────
@@ -91,6 +96,7 @@ widths:
   "Why":                 40
   "Why it works":        40
   "Why protect":         40
+  "When to Use":         32
   "Adjustment":          40
   "Focus":               40
   "Focus areas":         40
