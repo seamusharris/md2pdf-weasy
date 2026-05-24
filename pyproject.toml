@@ -17,4 +17,4 @@ md2pdf = "pdf.render:main"
 pdf = "."
 
 [tool.setuptools.package-data]
-pdf = ["fonts/*.ttf", "styles/*.css"]
+pdf = ["fonts/*.ttf", "styles/*.css", "default_widths.yml"]

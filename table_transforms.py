@@ -4,7 +4,47 @@ Alignment, highlighting, layout, coloring, section-row detection, and TOC
 generation. All transforms operate on HTML strings using regex.
 """
 
+import os
 import re
+
+import yaml
+
+
+# =============================================================================
+# DEFAULT COLUMN WIDTHS
+# =============================================================================
+#
+# Layouts in tables.yml or document front matter can declare columns without
+# explicit widths. When that happens, the column header is looked up here.
+# Widths are unitless relative weights — normalised to 100% in PDF colgroups,
+# usable directly as character widths in XLSX exports.
+
+_DEFAULT_WIDTHS_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'default_widths.yml'
+)
+
+
+def _load_default_widths():
+    if not os.path.exists(_DEFAULT_WIDTHS_PATH):
+        return {'fallback': 10, 'widths': {}}
+    with open(_DEFAULT_WIDTHS_PATH, 'r', encoding='utf-8') as f:
+        loaded = yaml.safe_load(f) or {}
+    return {
+        'fallback': loaded.get('fallback', 10),
+        # Lowercased keys for case-insensitive lookup
+        'widths': {k.lower(): v for k, v in (loaded.get('widths') or {}).items()},
+    }
+
+
+_DEFAULT_WIDTHS = _load_default_widths()
+
+
+def _column_width(col):
+    """Resolve a column's width: explicit width first, then defaults by name."""
+    if 'width' in col:
+        return col['width']
+    name = col.get('name', '').lower()
+    return _DEFAULT_WIDTHS['widths'].get(name, _DEFAULT_WIDTHS['fallback'])
 
 
 # =============================================================================
@@ -391,12 +431,17 @@ def _match_layout(header_texts, table_layouts):
 def _build_colgroup(columns):
     """Generate <colgroup> HTML from column definitions with normalised widths.
 
+    Columns without an explicit ``width`` get their default from
+    default_widths.yml based on header name. Final values are normalised
+    so the colgroup widths sum to 100%.
+
     Includes CSS class names on <col> elements for per-column CSS targeting.
     """
-    total = sum(c.get('width', 10) for c in columns)
+    widths = [_column_width(c) for c in columns]
+    total = sum(widths) or 1
     parts = ['<colgroup>']
-    for c in columns:
-        pct = round(c.get('width', 10) / total * 100, 1)
+    for c, w in zip(columns, widths):
+        pct = round(w / total * 100, 1)
         cls = f'col-{c["name"].lower().replace(" ", "-")}'
         style = f'width:{pct}%'
         align = c.get('align', '')

@@ -1,0 +1,106 @@
+# Default column widths by header name.
+#
+# When a layout in tables.yml (or document front matter) declares columns
+# without explicit widths, the pipeline looks up the header name here.
+# Widths are unitless relative weights — PDF normalises to 100% of table
+# width, XLSX uses them directly as character widths.
+#
+# Lookup is case-insensitive on the header text. Columns whose headers
+# aren't in this file get the fallback width below.
+#
+# Tune the numbers by editing this file. Per-project tables.yml can
+# always override these defaults by setting `width:` explicitly on a
+# column.
+
+fallback: 15   # unknown header → medium-width default
+
+
+# ── Very narrow: single-letter / 1-2 digit numeric columns ─────────────
+# (Sport stats, ranks, levels, IDs)
+widths:
+  "#":           6
+  "No.":         6
+  "ID":          6
+  "Level":       6
+  "Rank":        6
+  "Pos":         6
+  "Pos.":        6
+  "RPE":         6
+  "P":           6
+  "W":           6
+  "L":           6
+  "D":           6
+  "%":           6
+  "GF":          7
+  "GA":          7
+  "Pts":         6
+  "Score":      10
+  "Margin":      8
+
+  # ── Narrow: short labels, time/date, weekly identifiers ──────────────
+  "Day":        10
+  "Mon":         8
+  "Tue":         8
+  "Wed":         8
+  "Thu":         8
+  "Fri":         8
+  "Sat":         8
+  "Sun":         8
+  "Week":        8
+  "Wk":          8
+  "Round":       8
+  "Date":       14
+  "Time":       12
+  "Duration":   12
+  "Court":       8
+  "Reps":       10
+  "Sets":       10
+  "TSS":         8
+  "Status":     12
+  "GA%":        10
+
+  # ── Medium: phase/team/section labels and short prose ────────────────
+  "Phase":      22
+  "Section":    14
+  "Division":   14
+  "Team":       22
+  "Home":       22
+  "Away":       22
+  "Period":     14
+  "Component":  22
+  "Exercise":   22
+  "Target":     20
+  "Category":   18
+  "Source":     18
+  "Data":       14
+  "Option":     18
+  "Amount":     18
+  "Step":       10
+  "Calories":   12
+  "Context":    24
+  "Where":      22
+
+  # ── Wide: prose columns, take whatever's left after the rest ─────────
+  "Notes":               48
+  "Description":         48
+  "Detail":              48
+  "Details":             48
+  "Comments":            48
+  "Action":              40
+  "Reason":              40
+  "Why":                 40
+  "Why it works":        40
+  "Why protect":         40
+  "Adjustment":          40
+  "Focus":               40
+  "Focus areas":         40
+  "Session":             50
+  "Sunday Session":      40
+  "Starting Level":      28
+  "Starting Point":      28
+  "Progression":         32
+  "Structure":           40
+  "What to expect":      40
+  "Practices":           32
+  "Syncs to":            16
+  "Sets × Time":         18
