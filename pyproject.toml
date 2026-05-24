@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 dependencies = [
     "weasyprint",
     "markdown>=3.4",
+    "pymdown-extensions>=10.0",
     "pyyaml>=6.0",
 ]
 

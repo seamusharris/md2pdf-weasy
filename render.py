@@ -169,7 +169,14 @@ def md_to_html(md_content: str, metadata: dict) -> str:
             "tables", "fenced_code", "smarty",
             "sane_lists", "def_list", "footnotes",
             "attr_list", "abbr", "md_in_html",
+            "pymdownx.tasklist", "pymdownx.tilde", "pymdownx.mark",
         ],
+        extension_configs={
+            "pymdownx.tasklist": {
+                "custom_checkbox": False,
+                "clickable_checkbox": False,
+            },
+        },
         output_format="html5",
     )
 
