@@ -1,0 +1,603 @@
+/* ============================================================================
+   style.css -- Base stylesheet for all netball documents
+
+   Spacing system
+   ──────────────
+   All vertical spacing derives from --space-unit. Override any variable
+   in an overlay stylesheet to scale everything proportionally.
+
+     --space-xs:  0.5×  -- tightest (within metadata blocks, p→p)
+     --space-sm:  1×    -- heading to its content (h→p, h→table)
+     --space-md:  1.5×  -- between content sections (table→h4)
+     --space-lg:  2×    -- major section gaps (h2→content)
+     --space-xl:  3×    -- title / h1 spacing
+
+   Hierarchy principle: headings bind downward (small margin-bottom) and
+   repel upward (larger margin-top). Higher heading = more space above.
+   When headings are hierarchically adjacent (h2+h3, h3+h4),
+   the child's top margin collapses so they read as one unit.
+
+   Heading scale: h1=22pt (title, once), h2=17pt, h3=14pt, h4=12pt, body=10pt.
+   Line-height: 1.2 + 0.05 per level down from h1 (body 1.45).
+
+   Colour palette
+   ──────────────
+   All colours are defined as CSS variables in :root. Override any
+   variable in an overlay stylesheet to theme the entire document.
+
+   Font: AntSerif (Anthropic Serif) with Georgia fallback.
+   ============================================================================ */
+
+
+/* ── Bundled fonts ────────────────────────────────────────────────────────
+   AntSerif is loaded directly from the bundled TTF files via @font-face
+   so the pipeline works without requiring system-installed fonts.
+   Paths are relative to this CSS file (pdf/styles/style.css), so
+   ../fonts/ resolves to pdf/fonts/. WeasyPrint handles relative URLs.
+   ─────────────────────────────────────────────────────────────────────── */
+
+@font-face {
+    font-family: "AntSerif";
+    src: url("../fonts/AntSerif-Regular.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: "AntSerif";
+    src: url("../fonts/AntSerif-Bold.ttf") format("truetype");
+    font-weight: bold;
+    font-style: normal;
+}
+@font-face {
+    font-family: "AntSerif";
+    src: url("../fonts/AntSerif-Italic.ttf") format("truetype");
+    font-weight: normal;
+    font-style: italic;
+}
+@font-face {
+    font-family: "AntSerif";
+    src: url("../fonts/AntSerif-BoldItalic.ttf") format("truetype");
+    font-weight: bold;
+    font-style: italic;
+}
+
+
+/* ── Variables ────────────────────────────────────────────────────────── */
+
+:root {
+    /* Spacing */
+    --space-unit: 3mm;
+    --space-xs:   1.5mm;   /* 0.5× */
+    --space-sm:   3mm;     /* 1×   */
+    --space-md:   4.5mm;   /* 1.5× */
+    --space-lg:   6mm;     /* 2×   */
+    --space-xl:   9mm;     /* 3×   */
+
+    /* Core palette */
+    --color-text:         #333;
+    --color-heading:      #000;
+    --color-link:         #2c5282;  /* muted navy */
+
+    /* Blockquote callouts (cool-to-warm progression) */
+    --color-default:        #666;     /* grey — default blockquote border */
+    --color-default-tint:   #f5f5f5;  /* light grey bg */
+    --color-accent:         #1e3a5f;  /* navy — info tier */
+    --color-accent-tint:    #edf1f7;  /* light navy bg */
+    --color-tip:            #1a7a6d;  /* teal */
+    --color-tip-tint:       #e8f6f3;  /* light teal bg */
+    --color-important:      #6b3fa0;  /* purple */
+    --color-important-tint: #f0e8f5;  /* light purple bg */
+    --color-caution:        #946b00;  /* amber */
+    --color-caution-tint:   #fef9e7;  /* light amber bg */
+    --color-warn:           #d94040;  /* red */
+    --color-warn-tint:      #fdf0f0;  /* light pink bg */
+
+    /* Table chrome */
+    --color-border:       #555;     /* cell borders */
+    --color-border-heavy: #444;     /* header bottom border */
+    --color-border-light: #bbb;     /* section divider borders */
+    --color-header-bg:    #e8e8e8;  /* th background */
+    --color-section-bg:   #f2f2f2;  /* section divider row bg */
+    --color-code-bg:      #f4f4f4;  /* code / pre background */
+
+    /* Risk cell mid-tier */
+    --color-risk-med:     #fff3e0;  /* medium risk amber */
+
+    /* Muted UI */
+    --color-muted:        #999;     /* page numbers, light text */
+    --color-rule:         #ddd;     /* horizontal rules */
+
+    /* Row highlights -- tracked team */
+    --color-highlight:    #d8e1ee;  /* tracked team row (L89%) */
+
+    /* Row highlights -- regrading */
+    --color-up:           #a8dda8;  /* strong move-up */
+    --color-down:         #ddb0a8;  /* strong move-down */
+    --color-mod-up:       #cce8cc;  /* moderate move-up */
+    --color-mod-down:     #e8ccc6;  /* moderate move-down */
+    --color-watch-up:     #e0f0e0;  /* watch-list move-up */
+    --color-watch-down:   #f0dedb;  /* watch-list move-down (H10° S42% L90%) */
+
+    /* Row highlights -- retrospective verdicts */
+    --color-verdict-ok:   #e0f0e0;  /* success green (H120°) */
+    --color-verdict-warn: #fff3cd;  /* warning amber */
+    --color-verdict-fail: #f0dedb;  /* failure pink (H~10°) */
+}
+
+
+/* ── Page layout ──────────────────────────────────────────────────────── */
+
+@page {
+    size: A4;
+    margin: 22mm 18mm 25mm 18mm;
+    @bottom-right {
+        content: "Page " counter(page) "/" counter(pages);
+        font-family: "AntSerif", "Georgia", "Times New Roman", serif;
+        font-size: 8pt;
+        color: var(--color-muted);
+    }
+}
+
+@page :first {
+    margin-top: 18mm;
+}
+
+
+/* ── Reset ────────────────────────────────────────────────────────────── */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+/* ── Body ─────────────────────────────────────────────────────────────── */
+
+body {
+    font-family: "AntSerif", "Georgia", "Times New Roman", serif;
+    font-size: 10pt;
+    line-height: 1.45;
+    color: var(--color-text);
+    orphans: 3;
+    widows: 3;
+}
+
+
+/* ── Subtitle ─────────────────────────────────────────────────────────── */
+
+.doc-subtitle {
+    font-size: 11pt;
+    font-weight: 400;
+    line-height: 1.4;
+    margin-bottom: var(--space-md);
+    text-align: center;
+    color: var(--color-text);
+}
+
+
+/* ── Table of contents ────────────────────────────────────────────────── */
+
+.toc {
+    margin-bottom: var(--space-lg);
+    break-inside: avoid;
+}
+
+.toc-title {
+    font-size: 11pt;
+    font-weight: 700;
+    margin-bottom: var(--space-xs);
+    color: var(--color-heading);
+}
+
+.toc ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+    font-size: 9pt;
+    line-height: 1.6;
+}
+
+.toc ul ul {
+    padding-left: 5mm;
+}
+
+.toc a {
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+
+/* ── Headings ─────────────────────────────────────────────────────────── */
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    color: var(--color-heading);
+    break-after: avoid;
+    break-inside: avoid;
+}
+
+h1 {
+    font-size: 22pt;
+    line-height: 1.2;
+    margin-top: 0;
+    margin-bottom: var(--space-sm);
+    text-align: center;
+}
+
+h2 {
+    font-size: 17pt;
+    line-height: 1.25;
+    margin-top: var(--space-lg);
+    margin-bottom: var(--space-xs);
+}
+
+/* h2 page breaks are opt-in via overlay stylesheets */
+
+h3 {
+    font-size: 14pt;
+    line-height: 1.3;
+    margin-top: var(--space-lg);
+    margin-bottom: var(--space-xs);
+}
+
+h4 {
+    font-size: 12pt;
+    line-height: 1.35;
+    margin-top: var(--space-sm);
+    margin-bottom: var(--space-xs);
+}
+
+/* Consecutive heading collapse: floor is --space-xs (1.5mm) */
+h1 + h2 {
+    margin-top: 3mm;
+}
+
+h2 + h3 {
+    margin-top: 2.2mm;
+}
+
+h3 + h4 {
+    margin-top: var(--space-sm);    /* 3mm -- same as h4 normal margin-top */
+}
+
+h4 + h5 {
+    margin-top: var(--space-xs);    /* 1.5mm */
+}
+
+
+/* ── Paragraphs ───────────────────────────────────────────────────────── */
+
+p {
+    margin-top: 0;
+    margin-bottom: var(--space-sm);
+    text-align: left;
+}
+
+/* ── Heading + content binding (prevent orphaned headings) ────────────── */
+
+h2 + p, h3 + p, h2 + div, h3 + div, h2 + svg, h3 + svg {
+    break-before: avoid;
+}
+
+h2 + p, h3 + p {
+    break-after: avoid;
+}
+
+h3 + p + p {
+    break-after: avoid;
+}
+
+h2 + table, h3 + table, h4 + table {
+    break-before: avoid;
+    margin-top: var(--space-sm);    /* tighten: heading already provides gap */
+}
+
+.heading-group {
+    break-inside: avoid;
+}
+
+
+/* ── Lists ────────────────────────────────────────────────────────────── */
+
+ul, ol {
+    font-size: 9pt;
+    line-height: 1.45;
+    margin-top: var(--space-xs);
+    margin-bottom: var(--space-sm);
+    padding-left: 8mm;
+    break-inside: avoid;
+}
+
+li {
+    margin-bottom: var(--space-xs);
+    padding-left: 1mm;
+}
+
+
+/* ── Definition lists ─────────────────────────────────────────────────── */
+
+dl {
+    font-size: 9pt;
+    line-height: 1.45;
+    margin-top: var(--space-xs);
+    margin-bottom: var(--space-sm);
+}
+
+dt {
+    font-weight: 700;
+    color: var(--color-heading);
+    margin-top: var(--space-sm);
+}
+
+dt:first-child { margin-top: 0; }
+
+dd {
+    margin-left: 8mm;
+    margin-bottom: var(--space-xs);
+}
+
+/* ── Footnotes ────────────────────────────────────────────────────────── */
+
+.footnote {
+    font-size: 7.5pt;
+    color: var(--color-light);
+    border-top: 0.5pt solid var(--color-rule);
+    margin-top: var(--space-lg);
+    padding-top: var(--space-sm);
+}
+
+.footnote ol { font-size: 7.5pt; }
+.footnote li { margin-bottom: 1mm; }
+.footnote a { color: var(--color-light); }
+
+sup { font-size: 0.7em; }
+
+/* ── Abbreviations ────────────────────────────────────────────────────── */
+
+abbr {
+    text-decoration: underline dotted var(--color-rule);
+    text-underline-offset: 1.5pt;
+    cursor: help;
+}
+
+/* ── Tables ───────────────────────────────────────────────────────────── */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: var(--space-md);
+    margin-bottom: var(--space-md);
+    font-size: 8.5pt;
+    line-height: 1.4;
+    break-inside: avoid;
+}
+
+/* Fixed layout when colgroup widths are declared via front matter */
+table:has(colgroup) {
+    table-layout: fixed;
+}
+
+th, td {
+    border: 0.5pt solid var(--color-border);
+    padding: 3.5pt 5pt;
+    text-align: left;
+    vertical-align: top;
+}
+
+tr {
+    break-inside: avoid;
+}
+
+th {
+    background: var(--color-header-bg);
+    font-weight: 700;
+    font-size: 9pt;
+    text-align: center;
+    border-bottom: 1pt solid var(--color-border-heavy);
+}
+
+/* Column alignment classes -- used by charts/tables.py and postprocessor */
+th.left { text-align: left; }
+td.num, th.num  { text-align: right; }
+td.ctr  { text-align: center; }
+
+
+/* ── Row highlights ───────────────────────────────────────────────────── */
+
+/* Generic highlight -- tracked team in club reports */
+tr.highlight td {
+    background: var(--color-highlight);
+    font-weight: 700;
+}
+
+/* Strong move-up candidate -- saturated green */
+tr.highlight-up td {
+    background: var(--color-up);
+    font-weight: 700;
+}
+
+/* Strong move-down candidate -- saturated pink */
+tr.highlight-down td {
+    background: var(--color-down);
+    font-weight: 700;
+}
+
+/* Moderate move-up -- mid green */
+tr.highlight-mod-up td {
+    background: var(--color-mod-up);
+    font-weight: 700;
+}
+
+/* Moderate move-down -- mid pink */
+tr.highlight-mod-down td {
+    background: var(--color-mod-down);
+    font-weight: 700;
+}
+
+/* Verdict rows (retrospective reports) */
+tr.verdict-success td { background: var(--color-verdict-ok); }
+tr.verdict-warning td { background: var(--color-verdict-warn); }
+tr.verdict-failure td { background: var(--color-verdict-fail); }
+
+
+/* ── Result text colours (darkened chart hues, WCAG AA on white) ──────── */
+
+.result-win  { color: #32854f; font-weight: 700; }
+.result-loss { color: #c43c3c; font-weight: 700; }
+.result-draw { color: #767676; font-weight: 700; }
+
+
+/* ── Section divider rows ─────────────────────────────────────────────── */
+
+tr.table-section td {
+    background: var(--color-section-bg);
+    font-weight: 700;
+    font-size: 9.5pt;
+    border-top: 1pt solid var(--color-border-light);
+    border-bottom: 1pt solid var(--color-border-light);
+}
+
+/* Footer rows (totals) */
+tr.table-footer td {
+    background: var(--color-header-bg);
+    font-weight: 700;
+    border-top: 1pt solid var(--color-border-light);
+    border-bottom: 1pt solid var(--color-border-light);
+}
+
+
+/* ── Blockquotes ──────────────────────────────────────────────────────── */
+
+blockquote {
+    border-left: 3pt solid var(--color-default);
+    background: var(--color-default-tint);
+    padding: 3mm 4mm;
+    border-radius: 0 3pt 3pt 0;
+    margin-top: var(--space-sm);
+    margin-bottom: var(--space-sm);
+    font-size: 10pt;
+    line-height: 1.45;
+    break-inside: avoid;
+}
+
+blockquote + blockquote {
+    margin-top: var(--space-md);
+}
+
+blockquote p {
+    margin-bottom: var(--space-xs);
+}
+
+blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+/* Info callout -- navy border + light navy background */
+blockquote.info, blockquote.note {
+    border-left-color: var(--color-accent);
+    background: var(--color-accent-tint);
+}
+
+/* Tip callout -- teal border + light teal background */
+blockquote.tip {
+    border-left-color: var(--color-tip);
+    background: var(--color-tip-tint);
+}
+
+/* Important callout -- purple border + light purple background */
+blockquote.important {
+    border-left-color: var(--color-important);
+    background: var(--color-important-tint);
+}
+
+/* Caution callout -- amber border + light amber background */
+blockquote.caution {
+    border-left-color: var(--color-caution);
+    background: var(--color-caution-tint);
+}
+
+/* Warning callout -- red border + light pink background */
+blockquote.warning {
+    border-left-color: var(--color-warn);
+    background: var(--color-warn-tint);
+}
+
+
+/* ── Code ─────────────────────────────────────────────────────────────── */
+
+code {
+    font-family: "SF Mono", "Liberation Mono", "Courier New", monospace;
+    font-size: 9pt;
+    background: var(--color-code-bg);
+    padding: 1pt 3pt;
+    border-radius: 2pt;
+}
+
+pre {
+    background: var(--color-code-bg);
+    padding: var(--space-sm);
+    margin: var(--space-xs) 0 var(--space-sm) 0;
+    font-family: "SF Mono", "Liberation Mono", "Courier New", monospace;
+    font-size: 8.5pt;
+    line-height: 1.4;
+    border-radius: 3pt;
+    white-space: pre-wrap;
+    break-inside: avoid;
+}
+
+
+/* ── Images ───────────────────────────────────────────────────────────── */
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+
+/* ── Inline / misc ────────────────────────────────────────────────────── */
+
+strong { font-weight: 700; }
+em { font-style: italic; }
+a { color: var(--color-link); text-decoration: none; }
+hr { border: none; border-top: 0.5pt solid var(--color-rule); margin: var(--space-md) 0; }
+
+.keep-with-next { break-after: avoid; }
+.keep-together { break-inside: avoid; }
+
+/* SVG charts: centre on page */
+svg {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: var(--space-sm);
+    margin-bottom: var(--space-sm);
+    break-inside: avoid;
+}
+
+svg.chart-full-width {
+    width: 100%;
+    height: auto;
+}
+
+svg.chart-half-width {
+    width: 49%;
+    height: auto;
+}
+
+svg.chart-third-width {
+    width: 32%;
+    height: auto;
+}
+
+.chart-row {
+    display: flex;
+    gap: 4px;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.chart-cell {
+    flex: 1 1 0;
+    min-width: 0;
+}
