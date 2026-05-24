@@ -30,12 +30,82 @@
 
 
 /* ── Bundled fonts ────────────────────────────────────────────────────────
-   AntSerif is loaded directly from the bundled TTF files via @font-face
-   so the pipeline works without requiring system-installed fonts.
-   Paths are relative to this CSS file (pdf/styles/style.css), so
-   ../fonts/ resolves to pdf/fonts/. WeasyPrint handles relative URLs.
+   All fonts ship with the package via @font-face from the bundled files
+   in pdf/fonts/. Paths are relative to this CSS file so ../fonts/ resolves
+   to pdf/fonts/. WeasyPrint handles relative URLs.
+
+   Primary system (Adobe, personal-use licensed — see pdf/README):
+     Minion Pro      — body serif, 4 optical sizes (Caption / Regular /
+                       Subhead / Display), each declared as its own
+                       font-family name so CSS can pick the right cut
+                       at the right size.
+     Myriad Pro      — sans companion for headings, table headers, labels.
+                       Standard, Condensed, and SemiCondensed widths.
+
+   OFL fallback:
+     AntSerif        — Anthropic Serif, used as a last-resort fallback in
+                       font stacks and available for projects that prefer
+                       a freely-redistributable font.
    ─────────────────────────────────────────────────────────────────────── */
 
+/* ── Minion Caption (6-8pt optical — table cells, small/dense text) ── */
+@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-Capt.otf")          format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-ItCapt.otf")        format("opentype"); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-MediumCapt.otf")    format("opentype"); font-weight: 500;    font-style: normal; }
+@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-SemiboldCapt.otf")  format("opentype"); font-weight: 600;    font-style: normal; }
+@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-BoldCapt.otf")      format("opentype"); font-weight: bold;   font-style: normal; }
+@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-BoldItCapt.otf")    format("opentype"); font-weight: bold;   font-style: italic; }
+
+/* ── Minion Pro (9-13pt optical — body text) ───────────────────────── */
+@font-face { font-family: "Minion Pro"; src: url("../fonts/MinionPro-Regular.otf")      format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Minion Pro"; src: url("../fonts/MinionPro-It.otf")           format("opentype"); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Minion Pro"; src: url("../fonts/MinionPro-Medium.otf")       format("opentype"); font-weight: 500;    font-style: normal; }
+@font-face { font-family: "Minion Pro"; src: url("../fonts/MinionPro-MediumIt.otf")     format("opentype"); font-weight: 500;    font-style: italic; }
+@font-face { font-family: "Minion Pro"; src: url("../fonts/MinionPro-Semibold.otf")     format("opentype"); font-weight: 600;    font-style: normal; }
+@font-face { font-family: "Minion Pro"; src: url("../fonts/MinionPro-SemiboldIt.otf")   format("opentype"); font-weight: 600;    font-style: italic; }
+@font-face { font-family: "Minion Pro"; src: url("../fonts/MinionPro-Bold.otf")         format("opentype"); font-weight: bold;   font-style: normal; }
+@font-face { font-family: "Minion Pro"; src: url("../fonts/MinionPro-BoldIt.otf")       format("opentype"); font-weight: bold;   font-style: italic; }
+
+/* ── Minion Subhead (14-24pt optical — section headers if serif) ───── */
+@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-Subh.otf")         format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-ItSubh.otf")       format("opentype"); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-MediumSubh.otf")   format("opentype"); font-weight: 500;    font-style: normal; }
+@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-BoldSubh.otf")     format("opentype"); font-weight: bold;   font-style: normal; }
+@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-BoldItSubh.otf")   format("opentype"); font-weight: bold;   font-style: italic; }
+
+/* ── Minion Display (25pt+ optical — document titles) ──────────────── */
+@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-Disp.otf")         format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-ItDisp.otf")       format("opentype"); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-BoldDisp.otf")     format("opentype"); font-weight: bold;   font-style: normal; }
+@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-BoldItDisp.otf")   format("opentype"); font-weight: bold;   font-style: italic; }
+
+/* ── Myriad Pro (sans companion for headings, labels) ──────────────── */
+@font-face { font-family: "Myriad Pro"; src: url("../fonts/MyriadPro-Light.otf")        format("opentype"); font-weight: 300;    font-style: normal; }
+@font-face { font-family: "Myriad Pro"; src: url("../fonts/MyriadPro-LightIt.otf")      format("opentype"); font-weight: 300;    font-style: italic; }
+@font-face { font-family: "Myriad Pro"; src: url("../fonts/MyriadPro-Regular.otf")      format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Myriad Pro"; src: url("../fonts/MyriadPro-It.otf")           format("opentype"); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Myriad Pro"; src: url("../fonts/MyriadPro-Semibold.otf")     format("opentype"); font-weight: 600;    font-style: normal; }
+@font-face { font-family: "Myriad Pro"; src: url("../fonts/MyriadPro-SemiboldIt.otf")   format("opentype"); font-weight: 600;    font-style: italic; }
+@font-face { font-family: "Myriad Pro"; src: url("../fonts/MyriadPro-Bold.otf")         format("opentype"); font-weight: bold;   font-style: normal; }
+@font-face { font-family: "Myriad Pro"; src: url("../fonts/MyriadPro-BoldIt.otf")       format("opentype"); font-weight: bold;   font-style: italic; }
+@font-face { font-family: "Myriad Pro"; src: url("../fonts/MyriadPro-Black.otf")        format("opentype"); font-weight: 900;    font-style: normal; }
+@font-face { font-family: "Myriad Pro"; src: url("../fonts/MyriadPro-BlackIt.otf")      format("opentype"); font-weight: 900;    font-style: italic; }
+
+/* ── Myriad SemiCondensed (tight-but-readable) ─────────────────────── */
+@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-SemiCn.otf")        format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-SemiCnIt.otf")      format("opentype"); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-BoldSemiCn.otf")    format("opentype"); font-weight: bold;   font-style: normal; }
+@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-BoldSemiCnIt.otf")  format("opentype"); font-weight: bold;   font-style: italic; }
+
+/* ── Myriad Condensed (tight columns / table headers) ──────────────── */
+@font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-Cond.otf")              format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-CondIt.otf")            format("opentype"); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-SemiboldCond.otf")      format("opentype"); font-weight: 600;    font-style: normal; }
+@font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-SemiboldCondIt.otf")    format("opentype"); font-weight: 600;    font-style: italic; }
+@font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-BoldCond.otf")          format("opentype"); font-weight: bold;   font-style: normal; }
+@font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-BoldCondIt.otf")        format("opentype"); font-weight: bold;   font-style: italic; }
+
+/* ── AntSerif (OFL fallback) ───────────────────────────────────────── */
 @font-face {
     font-family: "AntSerif";
     src: url("../fonts/AntSerif-Regular.ttf") format("truetype");
@@ -132,8 +202,8 @@
     margin: 22mm 18mm 25mm 18mm;
     @bottom-right {
         content: "Page " counter(page) "/" counter(pages);
-        font-family: "AntSerif", "Georgia", "Times New Roman", serif;
-        font-size: 8pt;
+        font-family: "Myriad Pro", "Helvetica Neue", "Helvetica", sans-serif;
+        font-size: 7.5pt;
         color: var(--color-muted);
     }
 }
@@ -155,10 +225,11 @@
 /* ── Body ─────────────────────────────────────────────────────────────── */
 
 body {
-    font-family: "AntSerif", "Georgia", "Times New Roman", serif;
+    font-family: "Minion Pro", "AntSerif", "Georgia", "Times New Roman", serif;
     font-size: 10pt;
     line-height: 1.45;
     color: var(--color-text);
+    font-feature-settings: "kern", "liga", "onum";   /* old-style figures in body */
     orphans: 3;
     widows: 3;
 }
@@ -167,12 +238,14 @@ body {
 /* ── Subtitle ─────────────────────────────────────────────────────────── */
 
 .doc-subtitle {
+    font-family: "Myriad Pro", "Helvetica Neue", "Helvetica", sans-serif;
     font-size: 11pt;
-    font-weight: 400;
+    font-weight: 300;
+    font-style: italic;
     line-height: 1.4;
     margin-bottom: var(--space-md);
     text-align: center;
-    color: var(--color-text);
+    color: var(--color-muted);
 }
 
 
@@ -211,7 +284,9 @@ body {
 /* ── Headings ─────────────────────────────────────────────────────────── */
 
 h1, h2, h3, h4, h5, h6 {
+    font-family: "Myriad Pro", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
     font-weight: 700;
+    letter-spacing: 0.005em;
     color: var(--color-heading);
     break-after: avoid;
     break-inside: avoid;
@@ -368,8 +443,10 @@ table {
     border-collapse: collapse;
     margin-top: var(--space-md);
     margin-bottom: var(--space-md);
-    font-size: 8.5pt;
+    font-family: "Minion Caption", "Minion Pro", "AntSerif", "Georgia", serif;
+    font-size: 9pt;
     line-height: 1.4;
+    font-feature-settings: "kern", "liga", "tnum";   /* tabular figures align columns */
     break-inside: avoid;
 }
 
@@ -391,9 +468,12 @@ tr {
 
 th {
     background: var(--color-header-bg);
-    font-weight: 700;
-    font-size: 9pt;
-    text-align: center;
+    font-family: "Myriad Pro", "Helvetica Neue", sans-serif;
+    font-weight: 600;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: left;
     border-bottom: 1pt solid var(--color-border-heavy);
 }
 
@@ -476,6 +556,7 @@ blockquote {
     border-radius: 0 3pt 3pt 0;
     margin-top: var(--space-sm);
     margin-bottom: var(--space-sm);
+    font-family: "Minion Pro", "AntSerif", "Georgia", serif;
     font-size: 10pt;
     line-height: 1.45;
     break-inside: avoid;
@@ -600,4 +681,40 @@ svg.chart-third-width {
 .chart-cell {
     flex: 1 1 0;
     min-width: 0;
+}
+
+
+/* ── Task lists ( - [ ] / - [x] via pymdownx.tasklist ) ───────────────── */
+
+ul.task-list {
+    list-style: none;
+    padding-left: 4mm;
+}
+
+ul.task-list li.task-list-item {
+    position: relative;
+    padding-left: 6mm;
+    margin-bottom: 1.5mm;
+}
+
+ul.task-list li.task-list-item > p {
+    margin: 0;
+}
+
+ul.task-list input[type="checkbox"] {
+    position: absolute;
+    left: 0;
+    top: 0.3em;
+    width: 3.5mm;
+    height: 3.5mm;
+    margin: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 0.5pt solid var(--color-text);
+    border-radius: 0.5pt;
+    background: white;
+}
+
+ul.task-list input[type="checkbox"]:checked {
+    background: var(--color-text);
 }
