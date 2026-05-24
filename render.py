@@ -86,6 +86,7 @@ _FRONT_MATTER_SCHEMA = {
     'title': str,
     'subtitle': str,
     'tables': dict,
+    'tables_include': str,
     'tracked_teams': list,
     'direction_markers': bool,
     'risk_tables': list,
@@ -144,6 +145,52 @@ def parse_front_matter(content: str) -> tuple[dict, str]:
                 log.warning("%s", warning)
             return meta, content[end + 3:].strip()
     return {}, content
+
+
+def resolve_tables_include(metadata: dict, md_path: str | None = None) -> dict:
+    """Merge a shared tables-layout file into metadata if `tables_include` is set.
+
+    Resolution order for the include path:
+      1. As given — absolute or cwd-relative.
+      2. Relative to the markdown file's directory (when ``md_path`` is supplied).
+
+    Per-document ``tables:`` entries override shared layouts on key conflict, so
+    a document can pull in the shared file and still tweak one specific table.
+
+    Args:
+        metadata: Parsed front matter dict (mutated and returned).
+        md_path: Path to the source markdown file, used to resolve the include
+            relative to the document when the cwd-relative path doesn't exist.
+
+    Returns:
+        The metadata dict with ``tables`` populated from the merge.
+    """
+    include = metadata.get('tables_include')
+    if not include:
+        return metadata
+
+    resolved = include if os.path.exists(include) else None
+    if resolved is None and md_path:
+        candidate = os.path.join(os.path.dirname(os.path.abspath(md_path)), include)
+        if os.path.exists(candidate):
+            resolved = candidate
+
+    if resolved is None:
+        log.warning("tables_include file not found: %r", include)
+        return metadata
+
+    with open(resolved, "r", encoding="utf-8") as f:
+        shared = yaml.safe_load(f) or {}
+
+    if not isinstance(shared, dict):
+        log.warning("tables_include %r did not parse to a dict (got %s); skipping",
+                    resolved, type(shared).__name__)
+        return metadata
+
+    # Per-doc tables override shared by key
+    merged = {**shared, **metadata.get('tables', {})}
+    metadata['tables'] = merged
+    return metadata
 
 
 # =============================================================================
@@ -256,6 +303,7 @@ def build_pdf(md_path: str, output_path: str | None = None, style_path: str | No
         content = f.read()
 
     metadata, body = parse_front_matter(content)
+    metadata = resolve_tables_include(metadata, md_path)
 
     # Read CSS (base + overlay + theme + front-matter-driven rules)
     css_parts = []
@@ -326,6 +374,7 @@ def build_html(md_path: str, output_path: str | None = None,
         content = f.read()
 
     metadata, body = parse_front_matter(content)
+    metadata = resolve_tables_include(metadata, md_path)
 
     # Read CSS
     css_parts = []
