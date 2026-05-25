@@ -160,15 +160,19 @@ def postprocess(html, metadata=None):
     if metadata and metadata.get('tables'):
         html = apply_table_layouts(html, metadata)
 
-    # Tracked-team highlighting (when tables: is absent, e.g. schedule
-    # passing only tracked_teams without table layout declarations)
-    if metadata and metadata.get('tracked_teams') and not metadata.get('tables'):
-        html = re.sub(
-            r'<table[^>]*>.*?</table>',
-            lambda m: _highlight_tracked_rows(m.group(0), metadata['tracked_teams']),
-            html,
-            flags=re.DOTALL,
-        )
+    # Tracked-row highlighting (when tables: is absent, e.g. schedule
+    # passing only tracked_rows without table layout declarations).
+    # Accepts the deprecated `tracked_teams` alias via _tracked_rows().
+    if metadata and not metadata.get('tables'):
+        from .render import _tracked_rows
+        rows = _tracked_rows(metadata)
+        if rows:
+            html = re.sub(
+                r'<table[^>]*>.*?</table>',
+                lambda m: _highlight_tracked_rows(m.group(0), rows),
+                html,
+                flags=re.DOTALL,
+            )
 
     # Auto-align: on by default, disable with auto_align_columns: false
     if not metadata or metadata.get('auto_align_columns', True) is not False:

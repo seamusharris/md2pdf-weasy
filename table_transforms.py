@@ -218,18 +218,18 @@ def highlight_table_rows(html):
     return re.sub(r"<tr>.*?</tr>", process_row, html, flags=re.DOTALL)
 
 
-def _highlight_tracked_rows(table_html, tracked_teams):
-    """Add class="highlight" to rows containing any tracked team name.
+def _highlight_tracked_rows(table_html, tracked_rows):
+    """Add class="highlight" to rows containing any tracked string.
 
     Matches against both the raw name and common typographic variants
     (e.g. hyphen vs en dash) since typography conversion may have
-    transformed team names in the HTML.
+    transformed text in the HTML.
     """
-    if not tracked_teams:
+    if not tracked_rows:
         return table_html
 
     tracked_variants = []
-    for t in tracked_teams:
+    for t in tracked_rows:
         variants = {t.lower()}
         if '-' in t:
             variants.add(t.replace('-', '\u2013').lower())
@@ -500,15 +500,16 @@ def apply_table_layouts(html, metadata):
     3. Apply column alignment
     4. Add css_class to <table> tag if declared
     5. Apply highlight mode (controlled per-table via 'highlight' key):
-       - 'row'       — full row highlight for tracked teams (default when
-                        tracked_teams present; green/blue depending on CSS)
-       - 'bold-only' — keep bold team names, no row-level class
-       - 'none'      — no highlighting at all, strip bold from team names
-       Omitting 'highlight' uses 'row' if tracked_teams exists, else skips.
+       - 'row'       — full row highlight for tracked rows (default when
+                        tracked_rows present; green/blue depending on CSS)
+       - 'bold-only' — keep bold cell content, no row-level class
+       - 'none'      — no highlighting at all, strip bold from matched cells
+       Omitting 'highlight' uses 'row' if tracked_rows exists, else skips.
     6. Scan for {up}/{down}/{mod} direction markers (when direction_markers set)
     """
+    from .render import _tracked_rows
     table_layouts = metadata.get('tables', {})
-    tracked_teams = metadata.get('tracked_teams', [])
+    tracked_rows = _tracked_rows(metadata)
 
     def process_table(match):
         table_html = match.group(0)
@@ -551,9 +552,9 @@ def apply_table_layouts(html, metadata):
         elif highlight_mode == 'bold-only':
             # Keep bold as-is, don't add row-level highlight classes
             pass
-        elif tracked_teams:
-            # Default: row-level highlighting when tracked_teams present
-            table_html = _highlight_tracked_rows(table_html, tracked_teams)
+        elif tracked_rows:
+            # Default: row-level highlighting when tracked_rows present
+            table_html = _highlight_tracked_rows(table_html, tracked_rows)
 
         return table_html
 

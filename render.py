@@ -87,7 +87,8 @@ _FRONT_MATTER_SCHEMA = {
     'subtitle': str,
     'tables': dict,
     'tables_include': str,
-    'tracked_teams': list,
+    'tracked_rows': list,
+    'tracked_teams': list,   # deprecated alias for tracked_rows
     'direction_markers': bool,
     'risk_tables': list,
     'extra_callout_keywords': dict,
@@ -98,6 +99,23 @@ _FRONT_MATTER_SCHEMA = {
     'h2_page_break': bool,
     'theme': str,
 }
+
+
+def _tracked_rows(metadata: dict) -> list:
+    """Read tracked_rows from front matter, falling back to the deprecated
+    tracked_teams alias. Returns an empty list if neither is set.
+
+    Logs a deprecation warning the first time tracked_teams is used in a
+    document so consumers know to migrate.
+    """
+    if 'tracked_rows' in metadata:
+        return metadata['tracked_rows']
+    if 'tracked_teams' in metadata:
+        log.warning(
+            "front matter 'tracked_teams' is deprecated; rename to 'tracked_rows'"
+        )
+        return metadata['tracked_teams']
+    return []
 
 
 def validate_front_matter(metadata: dict) -> list[str]:
@@ -287,13 +305,14 @@ def build_pdf(md_path: str, output_path: str | None = None, style_path: str | No
     Args:
         md_path: Path to input markdown file.
         output_path: Path for output PDF. Defaults to input with .pdf extension.
-        style_path: Path to CSS stylesheet. Defaults to style.css in styles dir.
-        base_style_path: Path to base CSS to load before style_path.
+        base_style_path: Path to base CSS. Defaults to the bundled style.css
+            (DEFAULT_STYLE) so consumers don't need to know the install path.
+        style_path: Optional CSS overlay loaded after the base style.
     """
     from weasyprint import HTML, CSS
 
-    if style_path is None:
-        style_path = DEFAULT_STYLE
+    if base_style_path is None:
+        base_style_path = DEFAULT_STYLE
 
     if output_path is None:
         output_path = os.path.splitext(md_path)[0] + ".pdf"
@@ -305,13 +324,13 @@ def build_pdf(md_path: str, output_path: str | None = None, style_path: str | No
     metadata, body = parse_front_matter(content)
     metadata = resolve_tables_include(metadata, md_path)
 
-    # Read CSS (base + overlay + theme + front-matter-driven rules)
+    # Read CSS (base + optional overlay + theme + front-matter-driven rules)
     css_parts = []
-    if base_style_path:
-        with open(base_style_path, "r", encoding="utf-8") as f:
-            css_parts.append(f.read())
-    with open(style_path, "r", encoding="utf-8") as f:
+    with open(base_style_path, "r", encoding="utf-8") as f:
         css_parts.append(f.read())
+    if style_path:
+        with open(style_path, "r", encoding="utf-8") as f:
+            css_parts.append(f.read())
 
     # Theme overlay from front matter (e.g. theme: compact)
     theme = metadata.get('theme')
@@ -361,11 +380,11 @@ def build_html(md_path: str, output_path: str | None = None,
     Args:
         md_path: Path to input markdown file.
         output_path: Path for output HTML. Defaults to input with .html extension.
-        style_path: Path to CSS stylesheet. Defaults to style.css in styles dir.
-        base_style_path: Path to base CSS to load before style_path.
+        base_style_path: Path to base CSS. Defaults to the bundled style.css.
+        style_path: Optional CSS overlay loaded after the base style.
     """
-    if style_path is None:
-        style_path = DEFAULT_STYLE
+    if base_style_path is None:
+        base_style_path = DEFAULT_STYLE
 
     if output_path is None:
         output_path = os.path.splitext(md_path)[0] + ".html"
@@ -378,11 +397,11 @@ def build_html(md_path: str, output_path: str | None = None,
 
     # Read CSS
     css_parts = []
-    if base_style_path:
-        with open(base_style_path, "r", encoding="utf-8") as f:
-            css_parts.append(f.read())
-    with open(style_path, "r", encoding="utf-8") as f:
+    with open(base_style_path, "r", encoding="utf-8") as f:
         css_parts.append(f.read())
+    if style_path:
+        with open(style_path, "r", encoding="utf-8") as f:
+            css_parts.append(f.read())
 
     theme = metadata.get('theme')
     if theme:
@@ -439,11 +458,11 @@ def main():
     )
     parser.add_argument(
         "--style", "-s", default=None,
-        help=f"CSS stylesheet (default: {os.path.basename(DEFAULT_STYLE)})"
+        help="Optional CSS overlay loaded after the base style"
     )
     parser.add_argument(
         "--base-style", "-b", default=None,
-        help="Base CSS stylesheet loaded before --style"
+        help=f"Base CSS stylesheet (default: bundled {os.path.basename(DEFAULT_STYLE)})"
     )
 
     args = parser.parse_args()
