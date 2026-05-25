@@ -1,0 +1,157 @@
+/* ============================================================================
+   wnc.css — Warrandyte Netball Club brand theme
+
+   Sports-club aesthetic from wnc-gutenberg's design system. Bold brand red
+   (#DC0032) anchor with navy links and a sans-serif type stack. Quiet
+   headings distinguished by weight and size rather than colour. Position
+   and age palettes available for team identification.
+
+   Selected via `theme: wnc` in document front matter.
+
+   Fonts: Montserrat (headings) + Open Sans (body), both OFL, bundled in
+   pdf/fonts/.
+   ============================================================================ */
+
+
+/* ── Bundled OFL variable fonts ─────────────────────────────────────── */
+/* Montserrat ships as a single variable TTF per style with the full weight
+   range (100-900). Same for Open Sans (with width as a second axis). */
+
+@font-face {
+    font-family: "Montserrat";
+    src: url("../fonts/Montserrat%5Bwght%5D.ttf") format("truetype-variations");
+    font-weight: 100 900;
+    font-style: normal;
+}
+@font-face {
+    font-family: "Montserrat";
+    src: url("../fonts/Montserrat-Italic%5Bwght%5D.ttf") format("truetype-variations");
+    font-weight: 100 900;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: "Open Sans";
+    src: url("../fonts/OpenSans%5Bwdth%2Cwght%5D.ttf") format("truetype-variations");
+    font-weight: 300 800;
+    font-stretch: 75% 100%;
+    font-style: normal;
+}
+@font-face {
+    font-family: "Open Sans";
+    src: url("../fonts/OpenSans-Italic%5Bwdth%2Cwght%5D.ttf") format("truetype-variations");
+    font-weight: 300 800;
+    font-stretch: 75% 100%;
+    font-style: italic;
+}
+
+
+/* ── Palette ──────────────────────────────────────────────────────────── */
+
+:root {
+    /* Brand */
+    --color-brand:        #DC0032;   /* THE WNC red */
+    --color-brand-dark:   #c50e3a;   /* button hover, dark variant */
+
+    /* Text — slightly muted vs the bundled #333 */
+    --color-text:         #555;
+    --color-text-dark:    #333;      /* emphasis text */
+    --color-muted:        #666;
+    --color-text-muted:   #A9A9A9;   /* disabled, placeholder */
+
+    /* Backgrounds & borders */
+    --color-border:       #D6D6D6;
+    --color-border-light: #e0e0e0;
+    --color-header-bg:    var(--color-brand);   /* table headers wear brand */
+
+    /* Links */
+    --color-link:         #14376b;   /* navy — quiet by default */
+    --color-link-hover:   var(--color-brand);
+
+    /* Semantic */
+    --color-positive:     #3a9a5b;   /* wins, gains */
+    --color-negative:     #d94040;   /* losses, errors */
+    --color-neutral:      #888888;
+    --color-warn:         #d94040;   /* match negative */
+
+    /* Netball positions — attack → defence, warm → cool */
+    --color-position-gs:  #DC0032;   /* Goal Shooter (= brand) */
+    --color-position-ga:  #E8683F;   /* Goal Attack */
+    --color-position-wa:  #F5A623;   /* Wing Attack */
+    --color-position-c:   #4A8C3F;   /* Centre */
+    --color-position-wd:  #6B3FA0;   /* Wing Defence */
+    --color-position-gd:  #1A7A6D;   /* Goal Defence */
+    --color-position-gk:  #1E3A5F;   /* Goal Keeper (= --color-accent) */
+
+    /* Age groups — cool → warm hue ramp */
+    --color-age-nsg:      #4a82c4;
+    --color-age-9u:       #2a9aad;
+    --color-age-11u:      #45a845;
+    --color-age-13u:      #8a9a2a;
+    --color-age-15u:      #c4a52b;
+    --color-age-17u:      #cd7e3e;
+    --color-age-21u:      #c94444;
+    --color-age-open:     #8560aa;
+
+    /* Programme categories (broader than per-age) */
+    --color-programme-netsetgo:  #4CAF50;
+    --color-programme-junior:    #4A8C3F;
+    --color-programme-midjunior: #1a7a6d;
+    --color-programme-senior:    #1e3a5f;
+    --color-programme-social:    #6b3fa0;
+    --color-programme-bronze:    #A0714F;
+    --color-programme-silver:    #888888;
+    --color-programme-gold:      #C8960C;
+}
+
+
+/* ── Type stack ───────────────────────────────────────────────────────── */
+
+body {
+    font-family: "Open Sans", "Helvetica Neue", "Arial", sans-serif;
+    /* Keep bundled size/leading; just swap the family */
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Montserrat", "Helvetica Neue", "Arial", sans-serif;
+    font-weight: 600;
+    color: var(--color-text);   /* quiet headings — colour comes from text */
+}
+
+/* Section title (h2): brand-red underline accent — the recognisable WNC mark */
+h2 {
+    position: relative;
+    padding-bottom: 3mm;
+    margin-bottom: 4mm;
+}
+h2::after {
+    content: '';
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 20mm;
+    height: 1.2mm;
+    background: var(--color-brand);
+}
+
+a {
+    color: var(--color-link);
+    text-decoration: underline dotted;
+}
+
+
+/* ── Tables: brand-red header band ────────────────────────────────────── */
+
+th {
+    background: var(--color-brand);
+    color: white;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+/* Subtle row striping */
+tr:nth-child(even) td {
+    background: #f9f9f9;
+}

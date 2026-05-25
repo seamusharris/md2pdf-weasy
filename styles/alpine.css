@@ -1,0 +1,61 @@
+/* ============================================================================
+   alpine.css — Theme overlay for the alpine training program
+
+   Outdoor / training-manual aesthetic. Muted palette anchored to a single
+   warning red. Session-type colours (recovery / strength / aerobic /
+   long-hike) and traffic-light status colours for daily-monitoring cards.
+
+   Selected via `theme: alpine` in document front matter.
+   ============================================================================ */
+
+
+/* ── Palette ──────────────────────────────────────────────────────────── */
+
+:root {
+    /* Alpine-specific overrides (other palette vars inherit from style.css) */
+    --color-link:         #14376b;   /* WNC's "interactive navy" — quieter
+                                        than the web-blue default, doesn't
+                                        fight the otherwise muted palette */
+    --color-warn:         #c0392b;   /* slightly more orange-leaning than
+                                        the bundled #d94040 — matches the
+                                        muted aesthetic */
+    --color-warn-tint:    #fdecea;   /* paired tint for the alpine warn red */
+
+    --color-border:       #ccc;      /* lighter borders than bundled #555 */
+    --color-border-heavy: #888;
+    --color-header-bg:    #f5f5f5;   /* lighter table-header bg */
+
+    /* Session-type palette — used on day cards in the daily reference and
+       wherever a session is categorised by what kind of work it is. Kept
+       dark enough that white header text stays legible. All four colours
+       sit around L=27-41% with saturations 15-34% (recovery/aerobic/long-
+       hike) and 29% (strength) — coherent muted-tier family. */
+    --color-session-recovery:  #5a7872;   /* wet-stone teal */
+    --color-session-strength:  #875E4A;   /* terracotta (saturation matched
+                                            to aerobic, S=29% L=41%) */
+    --color-session-aerobic:   #4a6a87;   /* slate sky */
+    --color-session-long-hike: #2d5c3e;   /* deep evergreen */
+
+    /* Traffic-light palette — applies wherever GREEN / AMBER / RED status
+       is shown (daily reference dots, prep & recovery status table). */
+    --color-tl-green: #2d7a4a;
+    --color-tl-amber: #b87333;
+    --color-tl-red:   #c0392b;   /* intentionally same as --color-warn */
+
+    /* Light tints for row backgrounds in status tables */
+    --color-tl-green-tint: #e8f3eb;
+    --color-tl-amber-tint: #fdf2e3;
+    --color-tl-red-tint:   #fbe9e7;
+}
+
+
+/* ── Traffic-light rows in status tables ─────────────────────────────── */
+
+/* Applied via inline class on <tr> in markdown source (md_in_html). */
+tr.tl-green td:first-child { color: var(--color-tl-green); font-weight: 700; }
+tr.tl-amber td:first-child { color: var(--color-tl-amber); font-weight: 700; }
+tr.tl-red   td:first-child { color: var(--color-tl-red);   font-weight: 700; }
+
+tr.tl-green td { background: var(--color-tl-green-tint); }
+tr.tl-amber td { background: var(--color-tl-amber-tint); }
+tr.tl-red   td { background: var(--color-tl-red-tint); }

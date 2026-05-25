@@ -1,0 +1,20 @@
+/* ============================================================================
+   neutral.css — "Just a document" theme
+
+   Minimal overlay on the bundled base style. Intended for projects that
+   haven't picked a brand and just want a clean, readable document with
+   the standard callout palette (info / tip / important / caution /
+   warning) but no domain-specific accents.
+
+   Selected via `theme: neutral` in document front matter.
+
+   This file is intentionally near-empty — the bundle's defaults are what
+   neutral represents. If you find yourself adding more than a few rules
+   here, you probably want a different theme.
+   ============================================================================ */
+
+
+/* No palette overrides — inherit everything from style.css. */
+/* No font overrides — inherit Minion Pro / Myriad Pro bundled defaults. */
+/* No heading-style overrides. */
+/* No table overrides. */

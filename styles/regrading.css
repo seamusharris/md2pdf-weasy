@@ -1,0 +1,54 @@
+/* ============================================================================
+   regrading.css — Data-heavy analysis / regrading reports theme
+
+   Captures the visual conventions of netball regrading reports: dense
+   tables, status-coded rows (promotion/demotion via direction_markers in
+   front matter, verdict-coded rows for retrospective validation), tracked-
+   row highlighting for the team or club being followed.
+
+   The CSS classes used here (tr.highlight, tr.highlight-up/down/mod-up/
+   mod-down, tr.verdict-success/warning/failure) and their colour variables
+   live in bundled style.css and are always available. This theme:
+
+     - Reaffirms the styling so it reads as "this is a regrading doc"
+     - Tightens table density for multi-table-per-page reports
+     - Adds a slightly bolder header treatment
+
+   Selected via `theme: regrading` in document front matter. Activated
+   features (tracked_rows / direction_markers / risk_tables) are still
+   opt-in via the corresponding front-matter keys.
+   ============================================================================ */
+
+
+/* ── Tighter tables for dense reports ──────────────────────────────────── */
+
+table {
+    font-size: 8.5pt;
+    line-height: 1.35;
+    margin-top: var(--space-sm);
+    margin-bottom: var(--space-sm);
+}
+
+th, td {
+    padding: 2.5pt 4pt;
+}
+
+th {
+    font-size: 8.5pt;
+}
+
+
+/* ── Highlight + verdict styling ──────────────────────────────────────── */
+/* These selectors also exist in bundled style.css; restating here makes
+   the intent explicit at the theme level and lets future regrading-only
+   tweaks live in one place. */
+
+tr.highlight td       { background: var(--color-highlight); font-weight: 700; }
+tr.highlight-up td    { background: var(--color-up); font-weight: 700; }
+tr.highlight-down td  { background: var(--color-down); font-weight: 700; }
+tr.highlight-mod-up td   { background: var(--color-mod-up); font-weight: 700; }
+tr.highlight-mod-down td { background: var(--color-mod-down); font-weight: 700; }
+
+tr.verdict-success td { background: var(--color-verdict-ok); }
+tr.verdict-warning td { background: var(--color-verdict-warn); }
+tr.verdict-failure td { background: var(--color-verdict-fail); }
