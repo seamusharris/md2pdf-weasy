@@ -10,11 +10,18 @@ dependencies = [
     "pyyaml>=6.0",
 ]
 
+[project.optional-dependencies]
+test = ["pytest"]
+
 [project.scripts]
 md2pdf = "pdf.render:main"
 
-[tool.setuptools.package-dir]
-pdf = "."
+[tool.setuptools.packages.find]
+include = ["pdf*"]
+exclude = ["tests*", "docs*"]
 
 [tool.setuptools.package-data]
-pdf = ["fonts/*.ttf", "styles/*.css", "default_widths.yml"]
+pdf = ["fonts/*.ttf", "fonts/*.otf", "styles/*.css", "default_widths.yml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
