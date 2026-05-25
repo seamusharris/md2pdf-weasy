@@ -323,6 +323,11 @@ h4 {
     margin-bottom: var(--space-xs);
 }
 
+/* Soften the sub-heading tier — h1/h2 stay heavy 700 (set above), but
+   h3/h4 drop to 600 for a two-tier hierarchy that reads less blocky
+   than all-700 across four levels. */
+h3, h4 { font-weight: 600; }
+
 /* Consecutive heading collapse: floor is --space-xs (1.5mm) */
 h1 + h2 {
     margin-top: 3mm;
