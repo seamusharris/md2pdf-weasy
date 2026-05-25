@@ -170,11 +170,16 @@
     --color-section-bg:   #f2f2f2;  /* section divider row bg */
     --color-code-bg:      #f4f4f4;  /* code / pre background */
 
-    /* Risk cell mid-tier */
-    --color-risk-med:     #fff3e0;  /* medium risk amber */
+    /* Risk cell tiers (used by colour_risk_cells via td.risk-* classes) */
+    --color-risk-high:    #f0dedb;  /* >=50% — light pink */
+    --color-risk-med:     #fff3e0;  /* 25-49% — light amber */
+    --color-risk-low:     #e0f0e0;  /* <25% — light green */
 
-    /* Muted UI */
-    --color-muted:        #999;     /* page numbers, light text */
+    /* Muted UI — three text tiers below body:
+         --color-muted (#999) for secondary text, subtitles, page numbers
+         --color-light (#b0b0b0) for tertiary text — footnotes, captions */
+    --color-muted:        #999;
+    --color-light:        #b0b0b0;
     --color-rule:         #ddd;     /* horizontal rules */
 
     /* Row highlights -- tracked team */
@@ -529,10 +534,29 @@ tr.highlight-mod-down td {
     font-weight: 700;
 }
 
+/* Watch-tier move-up -- very light green, no bold (subtle "monitor next
+   cycle" indication for borderline candidates) */
+tr.highlight-watch-up td {
+    background: var(--color-watch-up);
+}
+
+/* Watch-tier move-down -- very light pink */
+tr.highlight-watch-down td {
+    background: var(--color-watch-down);
+}
+
 /* Verdict rows (retrospective reports) */
 tr.verdict-success td { background: var(--color-verdict-ok); }
 tr.verdict-warning td { background: var(--color-verdict-warn); }
 tr.verdict-failure td { background: var(--color-verdict-fail); }
+
+/* Risk cells — applied per-cell by colour_risk_cells based on the last
+   column's percentage in tables listed in front-matter `risk_tables:`.
+   Cell-level background overrides any row-level highlight (e.g. when a
+   tracked row also has a risk-coded last cell). */
+td.risk-high { background: var(--color-risk-high); }
+td.risk-med  { background: var(--color-risk-med); }
+td.risk-low  { background: var(--color-risk-low); }
 
 
 /* ── Result text colours (darkened chart hues, WCAG AA on white) ──────── */

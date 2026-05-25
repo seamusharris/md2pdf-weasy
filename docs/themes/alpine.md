@@ -28,11 +28,11 @@ h1/h2), giving a two-tier hierarchy that reads less blocky than all-bold.
 
 <table style="border: none">
 <tr>
-<td style="background: #14376b; color: white; width: 90px; padding: 8mm 3mm; text-align: center; border-radius: 2pt"><strong>link</strong></td>
+<td style="background: var(--color-link); color: white; width: 90px; padding: 8mm 3mm; text-align: center; border-radius: 2pt"><strong>link</strong></td>
 <td style="padding-left: 4mm">muted navy<br><code>#14376b</code></td>
-<td style="background: #c0392b; color: white; width: 90px; padding: 8mm 3mm; text-align: center; border-radius: 2pt"><strong>warn</strong></td>
+<td style="background: var(--color-warn); color: white; width: 90px; padding: 8mm 3mm; text-align: center; border-radius: 2pt"><strong>warn</strong></td>
 <td style="padding-left: 4mm">alpine red<br><code>#c0392b</code></td>
-<td style="background: #1e3a5f; color: white; width: 90px; padding: 8mm 3mm; text-align: center; border-radius: 2pt"><strong>accent</strong></td>
+<td style="background: var(--color-accent); color: white; width: 90px; padding: 8mm 3mm; text-align: center; border-radius: 2pt"><strong>accent</strong></td>
 <td style="padding-left: 4mm">info navy<br><code>#1e3a5f</code></td>
 </tr>
 </table>
@@ -45,15 +45,15 @@ roughly L=27-41% with saturations 15-34% — coherent muted family.
 
 <table style="border: none">
 <tr>
-<td style="background: #5a7872; color: white; width: 120px; padding: 8mm 3mm; text-align: center; border-radius: 2pt"><strong>recovery</strong></td>
+<td style="background: var(--color-session-recovery); color: white; width: 120px; padding: 8mm 3mm; text-align: center; border-radius: 2pt"><strong>recovery</strong></td>
 <td style="padding-left: 4mm; padding-right: 8mm">wet-stone teal<br><code>#5a7872</code></td>
-<td style="background: #875E4A; color: white; width: 120px; padding: 8mm 3mm; text-align: center; border-radius: 2pt"><strong>strength</strong></td>
+<td style="background: var(--color-session-strength); color: white; width: 120px; padding: 8mm 3mm; text-align: center; border-radius: 2pt"><strong>strength</strong></td>
 <td style="padding-left: 4mm">muted terracotta<br><code>#875E4A</code></td>
 </tr>
 <tr>
-<td style="background: #4a6a87; color: white; width: 120px; padding: 8mm 3mm; text-align: center; border-radius: 2pt"><strong>aerobic</strong></td>
+<td style="background: var(--color-session-aerobic); color: white; width: 120px; padding: 8mm 3mm; text-align: center; border-radius: 2pt"><strong>aerobic</strong></td>
 <td style="padding-left: 4mm; padding-right: 8mm">slate sky<br><code>#4a6a87</code></td>
-<td style="background: #2d5c3e; color: white; width: 120px; padding: 8mm 3mm; text-align: center; border-radius: 2pt"><strong>long-hike</strong></td>
+<td style="background: var(--color-session-long-hike); color: white; width: 120px; padding: 8mm 3mm; text-align: center; border-radius: 2pt"><strong>long-hike</strong></td>
 <td style="padding-left: 4mm">deep evergreen<br><code>#2d5c3e</code></td>
 </tr>
 </table>
@@ -65,18 +65,18 @@ light tints for backgrounds.
 
 <table style="border: none">
 <tr>
-<td style="background: #2d7a4a; color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>tl-green</strong></td>
-<td style="background: #e8f3eb; padding: 6mm 3mm; text-align: center">tl-green-tint</td>
+<td style="background: var(--color-tl-green); color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>tl-green</strong></td>
+<td style="background: var(--color-tl-green-tint); padding: 6mm 3mm; text-align: center">tl-green-tint</td>
 <td style="padding-left: 4mm"><code>#2d7a4a</code> / <code>#e8f3eb</code></td>
 </tr>
 <tr>
-<td style="background: #b87333; color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>tl-amber</strong></td>
-<td style="background: #fdf2e3; padding: 6mm 3mm; text-align: center">tl-amber-tint</td>
+<td style="background: var(--color-tl-amber); color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>tl-amber</strong></td>
+<td style="background: var(--color-tl-amber-tint); padding: 6mm 3mm; text-align: center">tl-amber-tint</td>
 <td style="padding-left: 4mm"><code>#b87333</code> / <code>#fdf2e3</code></td>
 </tr>
 <tr>
-<td style="background: #c0392b; color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>tl-red</strong></td>
-<td style="background: #fbe9e7; padding: 6mm 3mm; text-align: center">tl-red-tint</td>
+<td style="background: var(--color-tl-red); color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>tl-red</strong></td>
+<td style="background: var(--color-tl-red-tint); padding: 6mm 3mm; text-align: center">tl-red-tint</td>
 <td style="padding-left: 4mm"><code>#c0392b</code> / <code>#fbe9e7</code></td>
 </tr>
 </table>

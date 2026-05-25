@@ -23,9 +23,9 @@ carries first.
 
 <table style="border: none">
 <tr>
-<td style="background: #DC0032; color: white; width: 130px; padding: 10mm 3mm; text-align: center; border-radius: 2pt"><strong>brand</strong></td>
+<td style="background: var(--color-brand); color: white; width: 130px; padding: 10mm 3mm; text-align: center; border-radius: 2pt"><strong>brand</strong></td>
 <td style="padding-left: 4mm; padding-right: 8mm">WNC red<br><code>#DC0032</code></td>
-<td style="background: #c50e3a; color: white; width: 130px; padding: 10mm 3mm; text-align: center; border-radius: 2pt"><strong>brand-dark</strong></td>
+<td style="background: var(--color-brand-dark); color: white; width: 130px; padding: 10mm 3mm; text-align: center; border-radius: 2pt"><strong>brand-dark</strong></td>
 <td style="padding-left: 4mm">hover variant<br><code>#c50e3a</code></td>
 </tr>
 </table>
@@ -38,13 +38,13 @@ Shooter position shares the brand colour — intentional.
 
 <table style="border: none">
 <tr>
-<td style="background: #DC0032; color: white; width: 60px; padding: 8mm 3mm; text-align: center; font-weight: bold">GS</td>
-<td style="background: #E8683F; color: white; width: 60px; padding: 8mm 3mm; text-align: center; font-weight: bold">GA</td>
-<td style="background: #F5A623; color: white; width: 60px; padding: 8mm 3mm; text-align: center; font-weight: bold">WA</td>
-<td style="background: #4A8C3F; color: white; width: 60px; padding: 8mm 3mm; text-align: center; font-weight: bold">C</td>
-<td style="background: #6B3FA0; color: white; width: 60px; padding: 8mm 3mm; text-align: center; font-weight: bold">WD</td>
-<td style="background: #1A7A6D; color: white; width: 60px; padding: 8mm 3mm; text-align: center; font-weight: bold">GD</td>
-<td style="background: #1E3A5F; color: white; width: 60px; padding: 8mm 3mm; text-align: center; font-weight: bold">GK</td>
+<td style="background: var(--color-position-gs); color: white; width: 60px; padding: 8mm 3mm; text-align: center; font-weight: bold">GS</td>
+<td style="background: var(--color-position-ga); color: white; width: 60px; padding: 8mm 3mm; text-align: center; font-weight: bold">GA</td>
+<td style="background: var(--color-position-wa); color: white; width: 60px; padding: 8mm 3mm; text-align: center; font-weight: bold">WA</td>
+<td style="background: var(--color-position-c); color: white; width: 60px; padding: 8mm 3mm; text-align: center; font-weight: bold">C</td>
+<td style="background: var(--color-position-wd); color: white; width: 60px; padding: 8mm 3mm; text-align: center; font-weight: bold">WD</td>
+<td style="background: var(--color-position-gd); color: white; width: 60px; padding: 8mm 3mm; text-align: center; font-weight: bold">GD</td>
+<td style="background: var(--color-position-gk); color: white; width: 60px; padding: 8mm 3mm; text-align: center; font-weight: bold">GK</td>
 </tr>
 </table>
 
@@ -57,14 +57,14 @@ Eight age groups, cool → warm hue ramp.
 
 <table style="border: none">
 <tr>
-<td style="background: #4a82c4; color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">NSG</td>
-<td style="background: #2a9aad; color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">9U</td>
-<td style="background: #45a845; color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">11U</td>
-<td style="background: #8a9a2a; color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">13U</td>
-<td style="background: #c4a52b; color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">15U</td>
-<td style="background: #cd7e3e; color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">17U</td>
-<td style="background: #c94444; color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">21U</td>
-<td style="background: #8560aa; color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">Open</td>
+<td style="background: var(--color-age-nsg); color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">NSG</td>
+<td style="background: var(--color-age-9u); color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">9U</td>
+<td style="background: var(--color-age-11u); color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">11U</td>
+<td style="background: var(--color-age-13u); color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">13U</td>
+<td style="background: var(--color-age-15u); color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">15U</td>
+<td style="background: var(--color-age-17u); color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">17U</td>
+<td style="background: var(--color-age-21u); color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">21U</td>
+<td style="background: var(--color-age-open); color: white; width: 55px; padding: 8mm 3mm; text-align: center; font-weight: bold; font-size: 8pt">Open</td>
 </tr>
 </table>
 
@@ -75,16 +75,16 @@ Coarser groupings for content classification (fee tables, pathway pages).
 
 <table style="border: none">
 <tr>
-<td style="background: #4CAF50; color: white; padding: 6mm 3mm; text-align: center; width: 90px">netsetgo</td>
-<td style="background: #4A8C3F; color: white; padding: 6mm 3mm; text-align: center; width: 90px">junior</td>
-<td style="background: #1a7a6d; color: white; padding: 6mm 3mm; text-align: center; width: 90px">midJunior</td>
-<td style="background: #1e3a5f; color: white; padding: 6mm 3mm; text-align: center; width: 90px">senior</td>
-<td style="background: #6b3fa0; color: white; padding: 6mm 3mm; text-align: center; width: 90px">social</td>
+<td style="background: var(--color-programme-netsetgo); color: white; padding: 6mm 3mm; text-align: center; width: 90px">netsetgo</td>
+<td style="background: var(--color-programme-junior); color: white; padding: 6mm 3mm; text-align: center; width: 90px">junior</td>
+<td style="background: var(--color-programme-midjunior); color: white; padding: 6mm 3mm; text-align: center; width: 90px">midJunior</td>
+<td style="background: var(--color-programme-senior); color: white; padding: 6mm 3mm; text-align: center; width: 90px">senior</td>
+<td style="background: var(--color-programme-social); color: white; padding: 6mm 3mm; text-align: center; width: 90px">social</td>
 </tr>
 <tr>
-<td style="background: #A0714F; color: white; padding: 6mm 3mm; text-align: center; width: 90px">bronze</td>
-<td style="background: #888888; color: white; padding: 6mm 3mm; text-align: center; width: 90px">silver</td>
-<td style="background: #C8960C; color: white; padding: 6mm 3mm; text-align: center; width: 90px">gold</td>
+<td style="background: var(--color-programme-bronze); color: white; padding: 6mm 3mm; text-align: center; width: 90px">bronze</td>
+<td style="background: var(--color-programme-silver); color: white; padding: 6mm 3mm; text-align: center; width: 90px">silver</td>
+<td style="background: var(--color-programme-gold); color: white; padding: 6mm 3mm; text-align: center; width: 90px">gold</td>
 </tr>
 </table>
 

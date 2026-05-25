@@ -31,28 +31,28 @@ keep them; the alpine theme overrides only the warn red.
 
 <table style="border: none">
 <tr>
-<td style="background: #1e3a5f; color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>info</strong></td>
-<td style="background: #edf1f7; padding: 6mm 3mm; text-align: center; width: 100px">info-tint</td>
+<td style="background: var(--color-accent); color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>info</strong></td>
+<td style="background: var(--color-accent-tint); padding: 6mm 3mm; text-align: center; width: 100px">info-tint</td>
 <td style="padding-left: 4mm"><code>#1e3a5f</code> / <code>#edf1f7</code></td>
 </tr>
 <tr>
-<td style="background: #1a7a6d; color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>tip</strong></td>
-<td style="background: #e8f6f3; padding: 6mm 3mm; text-align: center; width: 100px">tip-tint</td>
+<td style="background: var(--color-tip); color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>tip</strong></td>
+<td style="background: var(--color-tip-tint); padding: 6mm 3mm; text-align: center; width: 100px">tip-tint</td>
 <td style="padding-left: 4mm"><code>#1a7a6d</code> / <code>#e8f6f3</code></td>
 </tr>
 <tr>
-<td style="background: #6b3fa0; color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>important</strong></td>
-<td style="background: #f0e8f5; padding: 6mm 3mm; text-align: center; width: 100px">important-tint</td>
+<td style="background: var(--color-important); color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>important</strong></td>
+<td style="background: var(--color-important-tint); padding: 6mm 3mm; text-align: center; width: 100px">important-tint</td>
 <td style="padding-left: 4mm"><code>#6b3fa0</code> / <code>#f0e8f5</code></td>
 </tr>
 <tr>
-<td style="background: #946b00; color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>caution</strong></td>
-<td style="background: #fef9e7; padding: 6mm 3mm; text-align: center; width: 100px">caution-tint</td>
+<td style="background: var(--color-caution); color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>caution</strong></td>
+<td style="background: var(--color-caution-tint); padding: 6mm 3mm; text-align: center; width: 100px">caution-tint</td>
 <td style="padding-left: 4mm"><code>#946b00</code> / <code>#fef9e7</code></td>
 </tr>
 <tr>
-<td style="background: #d94040; color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>warning</strong></td>
-<td style="background: #fdf0f0; padding: 6mm 3mm; text-align: center; width: 100px">warning-tint</td>
+<td style="background: var(--color-warn); color: white; width: 100px; padding: 6mm 3mm; text-align: center"><strong>warning</strong></td>
+<td style="background: var(--color-warn-tint); padding: 6mm 3mm; text-align: center; width: 100px">warning-tint</td>
 <td style="padding-left: 4mm"><code>#d94040</code> / <code>#fdf0f0</code></td>
 </tr>
 </table>

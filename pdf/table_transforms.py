@@ -256,16 +256,20 @@ def _highlight_tracked_rows(table_html, tracked_rows):
 
 
 def _highlight_direction_rows(table_html):
-    """Detect bold-wrapped cells with {up}/{down}/{mod} direction markers.
+    """Detect bold-wrapped cells with direction markers and apply row classes.
 
-    The markdown generator uses **{up}▲ Team** or **{down}▼ Team** for
-    flagged candidates, with optional {mod} for moderate confidence.
-    Converts these into directional CSS classes:
-      highlight-up, highlight-down, highlight-mod-up, highlight-mod-down
+    Three tiers per direction, stackable from a base direction marker:
 
-    Only rows with explicit direction markers are highlighted. Plain bold
-    cells (e.g. **Chisholm**) are left unchanged — use the per-table
-    'highlight' option in front matter to control team highlighting.
+      **{up}Team**         strong move-up      → tr.highlight-up
+      **{up}{mod}Team**    moderate move-up    → tr.highlight-mod-up
+      **{up}{watch}Team**  watch-tier move-up  → tr.highlight-watch-up
+      **{down}Team**       strong move-down    → tr.highlight-down
+      **{down}{mod}Team**  moderate move-down  → tr.highlight-mod-down
+      **{down}{watch}Team** watch move-down    → tr.highlight-watch-down
+
+    `{mod}` and `{watch}` always follow a direction marker; on their own
+    they're not recognised. Only rows with a direction marker are
+    highlighted; plain bold cells are left unchanged.
     """
     def process_row(match):
         row = match.group(0)
@@ -278,7 +282,7 @@ def _highlight_direction_rows(table_html):
             inner = m.group(1)
 
             direction = None
-            moderate = False
+            tier = None   # None (strong), 'mod', or 'watch'
             clean = inner
             if clean.startswith('{up}'):
                 direction = 'up'
@@ -287,16 +291,19 @@ def _highlight_direction_rows(table_html):
                 direction = 'down'
                 clean = clean[6:]
             if clean.startswith('{mod}'):
-                moderate = True
+                tier = 'mod'
                 clean = clean[5:]
+            elif clean.startswith('{watch}'):
+                tier = 'watch'
+                clean = clean[7:]
 
             # Only highlight if there's an actual direction marker
             if not direction:
                 continue
 
-            if direction and moderate:
-                css_class = f'highlight-mod-{direction}'
-            elif direction:
+            if tier:
+                css_class = f'highlight-{tier}-{direction}'
+            else:
                 css_class = f'highlight-{direction}'
 
             # Replace or add class on <tr>

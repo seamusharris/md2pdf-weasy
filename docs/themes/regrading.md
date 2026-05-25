@@ -36,24 +36,27 @@ Three opt-in features from the package are typically active:
 
 ## Movement palette
 
-The bundled palette has three saturation tiers for the up/down direction,
-plus light "watch" tints. The regrading theme just consumes these.
+Three tiers per direction — strong, moderate, watch. Three saturation
+levels from a saturated pastel down to a very light tint.
 
 <table style="border: none">
 <tr>
-<td style="background: #a8dda8; padding: 6mm 3mm; text-align: center; width: 110px; font-weight: bold">up</td>
-<td style="background: #cce8cc; padding: 6mm 3mm; text-align: center; width: 110px">mod-up</td>
-<td style="background: #e0f0e0; padding: 6mm 3mm; text-align: center; width: 110px">watch-up</td>
+<td style="background: var(--color-up); padding: 6mm 3mm; text-align: center; width: 110px; font-weight: bold">up</td>
+<td style="background: var(--color-mod-up); padding: 6mm 3mm; text-align: center; width: 110px; font-weight: bold">mod-up</td>
+<td style="background: var(--color-watch-up); padding: 6mm 3mm; text-align: center; width: 110px">watch-up</td>
 </tr>
 <tr>
-<td style="background: #ddb0a8; padding: 6mm 3mm; text-align: center; width: 110px; font-weight: bold">down</td>
-<td style="background: #e8ccc6; padding: 6mm 3mm; text-align: center; width: 110px">mod-down</td>
-<td style="background: #f0dedb; padding: 6mm 3mm; text-align: center; width: 110px">watch-down</td>
+<td style="background: var(--color-down); padding: 6mm 3mm; text-align: center; width: 110px; font-weight: bold">down</td>
+<td style="background: var(--color-mod-down); padding: 6mm 3mm; text-align: center; width: 110px; font-weight: bold">mod-down</td>
+<td style="background: var(--color-watch-down); padding: 6mm 3mm; text-align: center; width: 110px">watch-down</td>
 </tr>
 </table>
 
 `up #a8dda8` · `mod-up #cce8cc` · `watch-up #e0f0e0`
 `down #ddb0a8` · `mod-down #e8ccc6` · `watch-down #f0dedb`
+
+Strong and moderate tiers also bold the row text; watch tier doesn't
+(it's deliberately subtle).
 
 
 ## Verdict palette
@@ -62,9 +65,9 @@ For retrospective validation tables.
 
 <table style="border: none">
 <tr>
-<td style="background: #e0f0e0; padding: 8mm 3mm; text-align: center; width: 140px"><strong>verdict-success</strong></td>
-<td style="background: #fff3cd; padding: 8mm 3mm; text-align: center; width: 140px"><strong>verdict-warning</strong></td>
-<td style="background: #f0dedb; padding: 8mm 3mm; text-align: center; width: 140px"><strong>verdict-failure</strong></td>
+<td style="background: var(--color-verdict-ok); padding: 8mm 3mm; text-align: center; width: 140px"><strong>verdict-success</strong></td>
+<td style="background: var(--color-verdict-warn); padding: 8mm 3mm; text-align: center; width: 140px"><strong>verdict-warning</strong></td>
+<td style="background: var(--color-verdict-fail); padding: 8mm 3mm; text-align: center; width: 140px"><strong>verdict-failure</strong></td>
 </tr>
 </table>
 
@@ -78,7 +81,7 @@ strings gets the highlight.
 
 <table style="border: none">
 <tr>
-<td style="background: #d8e1ee; padding: 8mm 3mm; text-align: center; width: 180px"><strong>tracked-row highlight</strong></td>
+<td style="background: var(--color-highlight); padding: 8mm 3mm; text-align: center; width: 180px"><strong>tracked-row highlight</strong></td>
 <td style="padding-left: 4mm">light navy<br><code>#d8e1ee</code></td>
 </tr>
 </table>
@@ -86,18 +89,19 @@ strings gets the highlight.
 
 ## Promotion / demotion table
 
-Direction markers in bold cells become row colours. `{up}` / `{down}` /
-`{mod}` markers are stripped from the visible text and applied as
-`tr.highlight-up` etc. classes.
+Direction markers in bold cells become row colours. Six valid
+combinations: `{up}` / `{up}{mod}` / `{up}{watch}` and the matching
+down variants. `{mod}` and `{watch}` always follow a direction;
+they're not recognised on their own.
 
 | Team             | Risk  | Recommendation |
 |------------------|------:|----------------|
-| **{up}▲ Kangaroos** | 18%   | Promote — strong record, 11W-1L |
-| **{up}▲ Wallabies** | 22%   | Promote — winning record |
-| **{mod}Possums**    | 31%   | Watch — borderline; tracked-row highlight applies |
-| **{mod}Bilbies**    | 35%   | Watch — borderline; tracked-row highlight applies |
-| **{down}▼ Echidnas**| 58%   | Demote — losing record |
-| **{down}▼ Quokkas** | 73%   | Demote — struggling, 1W-11L |
+| **{up}▲ Kangaroos**       | 18% | Promote — strong record, 11W-1L |
+| **{up}{mod}▲ Wallabies**  | 28% | Promote — moderate confidence |
+| **{up}{watch}Possums**    | 31% | Watch — leaning up, monitor next cycle |
+| **{down}{watch}Bilbies**  | 45% | Watch — leaning down, monitor next cycle |
+| **{down}{mod}▼ Echidnas** | 58% | Demote — moderate confidence |
+| **{down}▼ Quokkas**       | 73% | Demote — struggling, 1W-11L |
 
 
 ## Risk-coded cells

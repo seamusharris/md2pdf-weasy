@@ -40,25 +40,43 @@ direction_markers: true
 ```
 
 ```markdown
-| Team             | Risk | Recommendation |
-|------------------|------|----------------|
-| **{up}▲ Possums** | 12%  | Promote        |
-| **{down}▼ Bilbies** | 67%  | Demote        |
-| **{mod}Wallabies** | 31%  | Watch          |
+| Team                       | Risk | Recommendation |
+|----------------------------|------|----------------|
+| **{up}▲ Possums**          | 12%  | Promote — strong    |
+| **{up}{mod}▲ Wallabies**   | 28%  | Promote — moderate  |
+| **{up}{watch}Kookaburras** | 35%  | Lean promote — watch next cycle |
+| **{down}{watch}Echidnas**  | 45%  | Lean demote — watch next cycle  |
+| **{down}{mod}▼ Hawks**     | 58%  | Demote — moderate   |
+| **{down}▼ Bilbies**        | 67%  | Demote — strong     |
+| Unmarked team              | 31%  | No recommendation   |
 ```
 
-Markers in bold cells are stripped from the visible text and applied as
-row classes:
+Markers must be inside `<strong>` cells (markdown `**...**`). Direction
+markers come first, optionally followed by a tier marker:
 
 | Marker | Class | Default colour |
 |---|---|---|
 | `{up}` | `tr.highlight-up` | strong green |
+| `{up}{mod}` | `tr.highlight-mod-up` | medium green |
+| `{up}{watch}` | `tr.highlight-watch-up` | very light green |
 | `{down}` | `tr.highlight-down` | strong pink |
-| `{mod-up}` or `{mod}` (in an up context) | `tr.highlight-mod-up` | medium green |
-| `{mod-down}` or `{mod}` (in a down context) | `tr.highlight-mod-down` | medium pink |
+| `{down}{mod}` | `tr.highlight-mod-down` | medium pink |
+| `{down}{watch}` | `tr.highlight-watch-down` | very light pink |
 
-Colours come from the bundled `--color-up` / `--color-down` /
-`--color-mod-up` / `--color-mod-down` variables.
+Three confidence tiers per direction: **strong** (saturated, bold text),
+**moderate** (medium tint, bold text), **watch** (very light tint, no
+bold — subtle "monitor next cycle" indication).
+
+`{mod}` and `{watch}` always follow a direction marker; on their own
+they're not recognised and the marker text will appear literally in
+the cell.
+
+Cells without a direction marker (whether plain text or just `**bold**`)
+are left unchanged.
+
+Colours come from the bundled `--color-up`, `--color-mod-up`,
+`--color-watch-up`, `--color-down`, `--color-mod-down`,
+`--color-watch-down` variables.
 
 ## `risk_tables`
 
