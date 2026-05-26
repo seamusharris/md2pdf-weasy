@@ -13,14 +13,14 @@ The `COLOURS` array in `charts/theme.py` provides eight colours for line, bar, a
 
 | Index | Name | Hex | Swatch | Notes |
 |-------|------|-----|--------|-------|
-| 0 | Blue | `#4a7fb5` | <span style="display:inline-block;width:40px;height:14px;background:#4a7fb5;border-radius:2px;vertical-align:middle;"></span> | Stable anchor |
-| 1 | Amber | `#e8a838` | <span style="display:inline-block;width:40px;height:14px;background:#e8a838;border-radius:2px;vertical-align:middle;"></span> | Stable anchor |
-| 2 | Green | `#5a9e6f` | <span style="display:inline-block;width:40px;height:14px;background:#5a9e6f;border-radius:2px;vertical-align:middle;"></span> | |
-| 3 | Red | `#d96464` | <span style="display:inline-block;width:40px;height:14px;background:#d96464;border-radius:2px;vertical-align:middle;"></span> | |
-| 4 | Purple | `#8b6bb5` | <span style="display:inline-block;width:40px;height:14px;background:#8b6bb5;border-radius:2px;vertical-align:middle;"></span> | |
-| 5 | Teal | `#3aadad` | <span style="display:inline-block;width:40px;height:14px;background:#3aadad;border-radius:2px;vertical-align:middle;"></span> | |
-| 6 | Brown | `#c97b3d` | <span style="display:inline-block;width:40px;height:14px;background:#c97b3d;border-radius:2px;vertical-align:middle;"></span> | |
-| 7 | Sea | `#4a9e87` | <span style="display:inline-block;width:40px;height:14px;background:#4a9e87;border-radius:2px;vertical-align:middle;"></span> | |
+| 0 | Blue | `#4a7fb5` | <span class="swatch" style="background:#4a7fb5"></span> | Stable anchor |
+| 1 | Amber | `#e8a838` | <span class="swatch" style="background:#e8a838"></span> | Stable anchor |
+| 2 | Green | `#5a9e6f` | <span class="swatch" style="background:#5a9e6f"></span> | |
+| 3 | Red | `#d96464` | <span class="swatch" style="background:#d96464"></span> | |
+| 4 | Purple | `#8b6bb5` | <span class="swatch" style="background:#8b6bb5"></span> | |
+| 5 | Teal | `#3aadad` | <span class="swatch" style="background:#3aadad"></span> | |
+| 6 | Brown | `#c97b3d` | <span class="swatch" style="background:#c97b3d"></span> | |
+| 7 | Sea | `#4a9e87` | <span class="swatch" style="background:#4a9e87"></span> | |
 
 Positions 0 (blue) and 1 (amber) are stable anchors -- they keep their meaning across chart types. The remaining six rotate freely for additional series.
 
@@ -33,17 +33,17 @@ Two tiers in `charts/theme.py`: fill-tier colours for SVG elements and text-tier
 
 | Constant | Hex | Swatch | Usage |
 |----------|-----|--------|-------|
-| `COLOUR_POSITIVE` | `#3a9a5b` | <span style="display:inline-block;width:40px;height:14px;background:#3a9a5b;border-radius:2px;vertical-align:middle;"></span> | Positive change, gains, new players |
-| `COLOUR_NEGATIVE` | `#d94040` | <span style="display:inline-block;width:40px;height:14px;background:#d94040;border-radius:2px;vertical-align:middle;"></span> | Negative change, losses, players left |
-| `COLOUR_NEUTRAL` | `#888` | <span style="display:inline-block;width:40px;height:14px;background:#888;border-radius:2px;vertical-align:middle;"></span> | Baseline, unchanged, previous values |
+| `COLOUR_POSITIVE` | `#3a9a5b` | <span class="swatch" style="background:#3a9a5b"></span> | Positive change, gains, new players |
+| `COLOUR_NEGATIVE` | `#d94040` | <span class="swatch" style="background:#d94040"></span> | Negative change, losses, players left |
+| `COLOUR_NEUTRAL` | `#888` | <span class="swatch" style="background:#888"></span> | Baseline, unchanged, previous values |
 
 ### Text tier (WCAG AA)
 
 | Constant | Hex | Swatch | Contrast | Usage |
 |----------|-----|--------|----------|-------|
-| `COLOUR_POSITIVE_TEXT` | `#32854f` | <span style="display:inline-block;width:40px;height:14px;background:#32854f;border-radius:2px;vertical-align:middle;"></span> | 4.6:1 | Result text, delta arrows, inline text |
-| `COLOUR_NEGATIVE_TEXT` | `#c43c3c` | <span style="display:inline-block;width:40px;height:14px;background:#c43c3c;border-radius:2px;vertical-align:middle;"></span> | 4.6:1 | Result text, delta arrows, inline text |
-| `COLOUR_NEUTRAL_TEXT` | `#767676` | <span style="display:inline-block;width:40px;height:14px;background:#767676;border-radius:2px;vertical-align:middle;"></span> | 4.5:1 | Draw results, neutral deltas |
+| `COLOUR_POSITIVE_TEXT` | `#32854f` | <span class="swatch" style="background:#32854f"></span> | 4.6:1 | Result text, delta arrows, inline text |
+| `COLOUR_NEGATIVE_TEXT` | `#c43c3c` | <span class="swatch" style="background:#c43c3c"></span> | 4.6:1 | Result text, delta arrows, inline text |
+| `COLOUR_NEUTRAL_TEXT` | `#767676` | <span class="swatch" style="background:#767676"></span> | 4.5:1 | Draw results, neutral deltas |
 
 
 ## Grey Hierarchy
@@ -52,12 +52,12 @@ Six greys from dark to light in `charts/theme.py`. Each has a specific role -- d
 
 | Constant | Hex | Swatch | Usage |
 |----------|-----|--------|-------|
-| `GREY_TEXT` | `#555` | <span style="display:inline-block;width:40px;height:14px;background:#555;border-radius:2px;vertical-align:middle;"></span> | Value labels, legend text, bold annotations |
-| `GREY_LABEL` | `#888` | <span style="display:inline-block;width:40px;height:14px;background:#888;border-radius:2px;vertical-align:middle;"></span> | Axis labels, secondary text, tick labels |
-| `GREY_MUTED` | `#aaa` | <span style="display:inline-block;width:40px;height:14px;background:#aaa;border-radius:2px;vertical-align:middle;"></span> | Small-multiples y-labels, gap band text, null cell text |
-| `GREY_AXIS` | `#ccc` | <span style="display:inline-block;width:40px;height:14px;background:#ccc;border-radius:2px;vertical-align:middle;"></span> | Axis lines, tick marks, connector lines |
-| `GREY_GRID` | `#e0e0e0` | <span style="display:inline-block;width:40px;height:14px;background:#e0e0e0;border-radius:2px;vertical-align:middle;"></span> | Grid lines, row separators, header underlines |
-| `GREY_NULL` | `#f5f5f5` | <span style="display:inline-block;width:40px;height:14px;background:#f5f5f5;border-radius:2px;vertical-align:middle;border:1px solid #ddd;"></span> | Null/empty cell backgrounds in heatmaps |
+| `GREY_TEXT` | `#555` | <span class="swatch" style="background:#555"></span> | Value labels, legend text, bold annotations |
+| `GREY_LABEL` | `#888` | <span class="swatch" style="background:#888"></span> | Axis labels, secondary text, tick labels |
+| `GREY_MUTED` | `#aaa` | <span class="swatch" style="background:#aaa"></span> | Small-multiples y-labels, gap band text, null cell text |
+| `GREY_AXIS` | `#ccc` | <span class="swatch" style="background:#ccc"></span> | Axis lines, tick marks, connector lines |
+| `GREY_GRID` | `#e0e0e0` | <span class="swatch" style="background:#e0e0e0"></span> | Grid lines, row separators, header underlines |
+| `GREY_NULL` | `#f5f5f5` | <span class="swatch" style="background:#f5f5f5; border:1px solid #ddd"></span> | Null/empty cell backgrounds in heatmaps |
 
 
 ## Age Group Colours
@@ -66,13 +66,13 @@ Seven colours for 9U--Open age groups in `reporting/theme.py`. The 15U position 
 
 | Age | Hex | Swatch |
 |-----|-----|--------|
-| 9U | `#6db8d0` | <span style="display:inline-block;width:40px;height:14px;background:#6db8d0;border-radius:2px;vertical-align:middle;"></span> |
-| 11U | `#5ab89e` | <span style="display:inline-block;width:40px;height:14px;background:#5ab89e;border-radius:2px;vertical-align:middle;"></span> |
-| 13U | `#6aaa4c` | <span style="display:inline-block;width:40px;height:14px;background:#6aaa4c;border-radius:2px;vertical-align:middle;"></span> |
-| 15U | `#d4b34a` | <span style="display:inline-block;width:40px;height:14px;background:#d4b34a;border-radius:2px;vertical-align:middle;"></span> |
-| 17U | `#e0923a` | <span style="display:inline-block;width:40px;height:14px;background:#e0923a;border-radius:2px;vertical-align:middle;"></span> |
-| 21U | `#d06060` | <span style="display:inline-block;width:40px;height:14px;background:#d06060;border-radius:2px;vertical-align:middle;"></span> |
-| Open | `#9670b8` | <span style="display:inline-block;width:40px;height:14px;background:#9670b8;border-radius:2px;vertical-align:middle;"></span> |
+| 9U | `#6db8d0` | <span class="swatch" style="background:#6db8d0"></span> |
+| 11U | `#5ab89e` | <span class="swatch" style="background:#5ab89e"></span> |
+| 13U | `#6aaa4c` | <span class="swatch" style="background:#6aaa4c"></span> |
+| 15U | `#d4b34a` | <span class="swatch" style="background:#d4b34a"></span> |
+| 17U | `#e0923a` | <span class="swatch" style="background:#e0923a"></span> |
+| 21U | `#d06060` | <span class="swatch" style="background:#d06060"></span> |
+| Open | `#9670b8` | <span class="swatch" style="background:#9670b8"></span> |
 
 
 ## Club Colours
@@ -81,17 +81,17 @@ Club-specific colours in `reporting/theme.py` for cross-club comparison charts.
 
 | Club | Abbrev | Hex | Swatch |
 |------|--------|-----|--------|
-| Warrandyte | WDT | `#cc2222` | <span style="display:inline-block;width:40px;height:14px;background:#cc2222;border-radius:2px;vertical-align:middle;"></span> |
-| Deep Creek | DC | `#2266aa` | <span style="display:inline-block;width:40px;height:14px;background:#2266aa;border-radius:2px;vertical-align:middle;"></span> |
-| Doncaster | DNC | `#228833` | <span style="display:inline-block;width:40px;height:14px;background:#228833;border-radius:2px;vertical-align:middle;"></span> |
-| Donvale | DON | `#8833aa` | <span style="display:inline-block;width:40px;height:14px;background:#8833aa;border-radius:2px;vertical-align:middle;"></span> |
-| East Doncaster | EDNC | `#ee8800` | <span style="display:inline-block;width:40px;height:14px;background:#ee8800;border-radius:2px;vertical-align:middle;"></span> |
-| Eltham Panthers | EP | `#333333` | <span style="display:inline-block;width:40px;height:14px;background:#333333;border-radius:2px;vertical-align:middle;"></span> |
-| Manningham | MNA | `#0088aa` | <span style="display:inline-block;width:40px;height:14px;background:#0088aa;border-radius:2px;vertical-align:middle;"></span> |
-| Eastern United | EUN | `#cc4400` | <span style="display:inline-block;width:40px;height:14px;background:#cc4400;border-radius:2px;vertical-align:middle;"></span> |
-| Melbourne East | MENA | `#2255bb` | <span style="display:inline-block;width:40px;height:14px;background:#2255bb;border-radius:2px;vertical-align:middle;"></span> |
-| Gippsland Storm | GIPP | `#006633` | <span style="display:inline-block;width:40px;height:14px;background:#006633;border-radius:2px;vertical-align:middle;"></span> |
-| Casey NA | CASY | `#8b0000` | <span style="display:inline-block;width:40px;height:14px;background:#8b0000;border-radius:2px;vertical-align:middle;"></span> |
+| Warrandyte | WDT | `#cc2222` | <span class="swatch" style="background:#cc2222"></span> |
+| Deep Creek | DC | `#2266aa` | <span class="swatch" style="background:#2266aa"></span> |
+| Doncaster | DNC | `#228833` | <span class="swatch" style="background:#228833"></span> |
+| Donvale | DON | `#8833aa` | <span class="swatch" style="background:#8833aa"></span> |
+| East Doncaster | EDNC | `#ee8800` | <span class="swatch" style="background:#ee8800"></span> |
+| Eltham Panthers | EP | `#333333` | <span class="swatch" style="background:#333333"></span> |
+| Manningham | MNA | `#0088aa` | <span class="swatch" style="background:#0088aa"></span> |
+| Eastern United | EUN | `#cc4400` | <span class="swatch" style="background:#cc4400"></span> |
+| Melbourne East | MENA | `#2255bb` | <span class="swatch" style="background:#2255bb"></span> |
+| Gippsland Storm | GIPP | `#006633` | <span class="swatch" style="background:#006633"></span> |
+| Casey NA | CASY | `#8b0000` | <span class="swatch" style="background:#8b0000"></span> |
 
 
 ## Specialised Palettes
@@ -102,10 +102,10 @@ Colours for player movement waterfall charts in `reporting/theme.py`.
 
 | Key | Hex | Swatch | Usage |
 |-----|-----|--------|-------|
-| `base` | `#888` | <span style="display:inline-block;width:40px;height:14px;background:#888;border-radius:2px;vertical-align:middle;"></span> | Previous season total |
-| `left` | `#d94040` | <span style="display:inline-block;width:40px;height:14px;background:#d94040;border-radius:2px;vertical-align:middle;"></span> | Players who left |
-| `new` | `#3a9a5b` | <span style="display:inline-block;width:40px;height:14px;background:#3a9a5b;border-radius:2px;vertical-align:middle;"></span> | New players |
-| `current` | `#cc2222` | <span style="display:inline-block;width:40px;height:14px;background:#cc2222;border-radius:2px;vertical-align:middle;"></span> | Current season total (club colour) |
+| `base` | `#888` | <span class="swatch" style="background:#888"></span> | Previous season total |
+| `left` | `#d94040` | <span class="swatch" style="background:#d94040"></span> | Players who left |
+| `new` | `#3a9a5b` | <span class="swatch" style="background:#3a9a5b"></span> | New players |
+| `current` | `#cc2222` | <span class="swatch" style="background:#cc2222"></span> | Current season total (club colour) |
 
 ### Heatmap gradient
 
@@ -113,9 +113,9 @@ Three-stop gradient for win-rate heatmaps.
 
 | Stop | Hex | Swatch |
 |------|-----|--------|
-| Low | `#d06060` | <span style="display:inline-block;width:40px;height:14px;background:#d06060;border-radius:2px;vertical-align:middle;"></span> |
-| Mid | `#ecd05c` | <span style="display:inline-block;width:40px;height:14px;background:#ecd05c;border-radius:2px;vertical-align:middle;"></span> |
-| High | `#3a9a5b` | <span style="display:inline-block;width:40px;height:14px;background:#3a9a5b;border-radius:2px;vertical-align:middle;"></span> |
+| Low | `#d06060` | <span class="swatch" style="background:#d06060"></span> |
+| Mid | `#ecd05c` | <span class="swatch" style="background:#ecd05c"></span> |
+| High | `#3a9a5b` | <span class="swatch" style="background:#3a9a5b"></span> |
 
 ### Finals progression
 
@@ -123,19 +123,19 @@ Background badges for finals grid (`_trends_finals.py`).
 
 | Tier | Background | Swatch | Text |
 |------|-----------|--------|------|
-| Missed | `#E0E0E0` | <span style="display:inline-block;width:40px;height:14px;background:#E0E0E0;border-radius:2px;vertical-align:middle;"></span> | `#999` (intentionally muted) |
-| Lost SF | `#e8a8a8` | <span style="display:inline-block;width:40px;height:14px;background:#e8a8a8;border-radius:2px;vertical-align:middle;"></span> | `#6a2020` |
-| Lost GF | `#d87070` | <span style="display:inline-block;width:40px;height:14px;background:#d87070;border-radius:2px;vertical-align:middle;"></span> | `#fff` |
+| Missed | `#E0E0E0` | <span class="swatch" style="background:#E0E0E0"></span> | `#999` (intentionally muted) |
+| Lost SF | `#e8a8a8` | <span class="swatch" style="background:#e8a8a8"></span> | `#6a2020` |
+| Lost GF | `#d87070` | <span class="swatch" style="background:#d87070"></span> | `#fff` |
 | Premiership | Club colour | | `#fff` |
 
 Section tier gradient (green to blue, L36% to L79%):
 
 | Section | Hex | Swatch |
 |---------|-----|--------|
-| Section 1 | `#2d8a4e` | <span style="display:inline-block;width:40px;height:14px;background:#2d8a4e;border-radius:2px;vertical-align:middle;"></span> |
-| Section 2 | `#4a9f6e` | <span style="display:inline-block;width:40px;height:14px;background:#4a9f6e;border-radius:2px;vertical-align:middle;"></span> |
-| Section 3 | `#78c2ad` | <span style="display:inline-block;width:40px;height:14px;background:#78c2ad;border-radius:2px;vertical-align:middle;"></span> |
-| Section 4 | `#a8d8ea` | <span style="display:inline-block;width:40px;height:14px;background:#a8d8ea;border-radius:2px;vertical-align:middle;"></span> |
+| Section 1 | `#2d8a4e` | <span class="swatch" style="background:#2d8a4e"></span> |
+| Section 2 | `#4a9f6e` | <span class="swatch" style="background:#4a9f6e"></span> |
+| Section 3 | `#78c2ad` | <span class="swatch" style="background:#78c2ad"></span> |
+| Section 4 | `#a8d8ea` | <span class="swatch" style="background:#a8d8ea"></span> |
 
 ### Tenure bands
 
@@ -143,16 +143,16 @@ Section tier gradient (green to blue, L36% to L79%):
 
 | Band | Hex | Swatch |
 |------|-----|--------|
-| 1 yr | `#d4e8f0` | <span style="display:inline-block;width:40px;height:14px;background:#d4e8f0;border-radius:2px;vertical-align:middle;"></span> |
-| 2 yr | `#a8d8ea` | <span style="display:inline-block;width:40px;height:14px;background:#a8d8ea;border-radius:2px;vertical-align:middle;"></span> |
-| 3 yr | `#78c2ad` | <span style="display:inline-block;width:40px;height:14px;background:#78c2ad;border-radius:2px;vertical-align:middle;"></span> |
-| 4 yr | `#4a9f6e` | <span style="display:inline-block;width:40px;height:14px;background:#4a9f6e;border-radius:2px;vertical-align:middle;"></span> |
-| 5 yr | `#4a7fb5` | <span style="display:inline-block;width:40px;height:14px;background:#4a7fb5;border-radius:2px;vertical-align:middle;"></span> |
-| 6 yr | `#3a6a9f` | <span style="display:inline-block;width:40px;height:14px;background:#3a6a9f;border-radius:2px;vertical-align:middle;"></span> |
-| 7 yr | `#2d5f8a` | <span style="display:inline-block;width:40px;height:14px;background:#2d5f8a;border-radius:2px;vertical-align:middle;"></span> |
-| 8 yr | `#1f4e7a` | <span style="display:inline-block;width:40px;height:14px;background:#1f4e7a;border-radius:2px;vertical-align:middle;"></span> |
-| 9 yr | `#1a3a5f` | <span style="display:inline-block;width:40px;height:14px;background:#1a3a5f;border-radius:2px;vertical-align:middle;"></span> |
-| 10+ yr | `#0f2440` | <span style="display:inline-block;width:40px;height:14px;background:#0f2440;border-radius:2px;vertical-align:middle;"></span> |
+| 1 yr | `#d4e8f0` | <span class="swatch" style="background:#d4e8f0"></span> |
+| 2 yr | `#a8d8ea` | <span class="swatch" style="background:#a8d8ea"></span> |
+| 3 yr | `#78c2ad` | <span class="swatch" style="background:#78c2ad"></span> |
+| 4 yr | `#4a9f6e` | <span class="swatch" style="background:#4a9f6e"></span> |
+| 5 yr | `#4a7fb5` | <span class="swatch" style="background:#4a7fb5"></span> |
+| 6 yr | `#3a6a9f` | <span class="swatch" style="background:#3a6a9f"></span> |
+| 7 yr | `#2d5f8a` | <span class="swatch" style="background:#2d5f8a"></span> |
+| 8 yr | `#1f4e7a` | <span class="swatch" style="background:#1f4e7a"></span> |
+| 9 yr | `#1a3a5f` | <span class="swatch" style="background:#1a3a5f"></span> |
+| 10+ yr | `#0f2440` | <span class="swatch" style="background:#0f2440"></span> |
 
 Bands 3--4 share the section tier teal/green colours. Band 5 reuses `COLOURS[0]` blue.
 
@@ -165,48 +165,48 @@ CSS variables defined in `:root` of `pdf/styles/style.css`. Override any variabl
 
 | Variable | Hex | Swatch | Usage |
 |----------|-----|--------|-------|
-| `--color-text` | `#333` | <span style="display:inline-block;width:40px;height:14px;background:#333;border-radius:2px;vertical-align:middle;"></span> | Body text |
-| `--color-heading` | `#000` | <span style="display:inline-block;width:40px;height:14px;background:#000;border-radius:2px;vertical-align:middle;"></span> | Heading text |
-| `--color-link` | `#2c5282` | <span style="display:inline-block;width:40px;height:14px;background:#2c5282;border-radius:2px;vertical-align:middle;"></span> | Hyperlinks (muted navy) |
+| `--color-text` | `#333` | <span class="swatch" style="background:#333"></span> | Body text |
+| `--color-heading` | `#000` | <span class="swatch" style="background:#000"></span> | Heading text |
+| `--color-link` | `#2c5282` | <span class="swatch" style="background:#2c5282"></span> | Hyperlinks (muted navy) |
 
 ### Table chrome
 
 | Variable | Hex | Swatch | Usage |
 |----------|-----|--------|-------|
-| `--color-border` | `#555` | <span style="display:inline-block;width:40px;height:14px;background:#555;border-radius:2px;vertical-align:middle;"></span> | Cell borders |
-| `--color-border-heavy` | `#444` | <span style="display:inline-block;width:40px;height:14px;background:#444;border-radius:2px;vertical-align:middle;"></span> | Header bottom border |
-| `--color-border-light` | `#bbb` | <span style="display:inline-block;width:40px;height:14px;background:#bbb;border-radius:2px;vertical-align:middle;"></span> | Section divider borders |
-| `--color-header-bg` | `#e8e8e8` | <span style="display:inline-block;width:40px;height:14px;background:#e8e8e8;border-radius:2px;vertical-align:middle;"></span> | `<th>` background |
-| `--color-section-bg` | `#f2f2f2` | <span style="display:inline-block;width:40px;height:14px;background:#f2f2f2;border-radius:2px;vertical-align:middle;border:1px solid #ddd;"></span> | Section divider row background |
+| `--color-border` | `#555` | <span class="swatch" style="background:#555"></span> | Cell borders |
+| `--color-border-heavy` | `#444` | <span class="swatch" style="background:#444"></span> | Header bottom border |
+| `--color-border-light` | `#bbb` | <span class="swatch" style="background:#bbb"></span> | Section divider borders |
+| `--color-header-bg` | `#e8e8e8` | <span class="swatch" style="background:#e8e8e8"></span> | `<th>` background |
+| `--color-section-bg` | `#f2f2f2` | <span class="swatch" style="background:#f2f2f2; border:1px solid #ddd"></span> | Section divider row background |
 
-<table style="width:70%; font-size:8.5pt; line-height:1.4; border-collapse:collapse;">
+<table>
 <tr>
-<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:left;">Team</th>
-<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">P</th>
-<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">W</th>
-<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">L</th>
-<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">Pts</th>
+<th>Team</th>
+<th class="ctr">P</th>
+<th class="ctr">W</th>
+<th class="ctr">L</th>
+<th class="ctr">Pts</th>
 </tr>
-<tr style="background:#d8e1ee; font-weight:700;">
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt;">Warrandyte 1</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">14</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">10</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">3</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">42</td>
-</tr>
-<tr>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt;">Eltham 1</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">14</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">8</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">5</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">34</td>
+<tr class="highlight">
+<td>Warrandyte 1</td>
+<td class="ctr">14</td>
+<td class="ctr">10</td>
+<td class="ctr">3</td>
+<td class="ctr">42</td>
 </tr>
 <tr>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt;">Donvale 1</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">14</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">5</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">8</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">22</td>
+<td>Eltham 1</td>
+<td class="ctr">14</td>
+<td class="ctr">8</td>
+<td class="ctr">5</td>
+<td class="ctr">34</td>
+</tr>
+<tr>
+<td>Donvale 1</td>
+<td class="ctr">14</td>
+<td class="ctr">5</td>
+<td class="ctr">8</td>
+<td class="ctr">22</td>
 </tr>
 </table>
 
@@ -218,31 +218,31 @@ Three-tier system with green/pink symmetry. Pink is intentionally over-saturated
 
 | Tier | Up | Swatch | Variable | Down | Swatch | Variable | Symmetry |
 |------|----|--------|----------|------|--------|----------|----------|
-| Strong | `#a8dda8` | <span style="display:inline-block;width:40px;height:14px;background:#a8dda8;border-radius:2px;vertical-align:middle;"></span> | `--color-up` | `#ddb0a8` | <span style="display:inline-block;width:40px;height:14px;background:#ddb0a8;border-radius:2px;vertical-align:middle;"></span> | `--color-down` | S44% L76% -- perfect |
-| Moderate | `#cce8cc` | <span style="display:inline-block;width:40px;height:14px;background:#cce8cc;border-radius:2px;vertical-align:middle;"></span> | `--color-mod-up` | `#e8ccc6` | <span style="display:inline-block;width:40px;height:14px;background:#e8ccc6;border-radius:2px;vertical-align:middle;"></span> | `--color-mod-down` | L85% -- 5pp pink bias |
-| Watch | `#e0f0e0` | <span style="display:inline-block;width:40px;height:14px;background:#e0f0e0;border-radius:2px;vertical-align:middle;"></span> | `--color-watch-up` | `#f0dedb` | <span style="display:inline-block;width:40px;height:14px;background:#f0dedb;border-radius:2px;vertical-align:middle;"></span> | `--color-watch-down` | L90% -- 7pp pink bias |
+| Strong | `#a8dda8` | <span class="swatch" style="background:#a8dda8"></span> | `--color-up` | `#ddb0a8` | <span class="swatch" style="background:#ddb0a8"></span> | `--color-down` | S44% L76% -- perfect |
+| Moderate | `#cce8cc` | <span class="swatch" style="background:#cce8cc"></span> | `--color-mod-up` | `#e8ccc6` | <span class="swatch" style="background:#e8ccc6"></span> | `--color-mod-down` | L85% -- 5pp pink bias |
+| Watch | `#e0f0e0` | <span class="swatch" style="background:#e0f0e0"></span> | `--color-watch-up` | `#f0dedb` | <span class="swatch" style="background:#f0dedb"></span> | `--color-watch-down` | L90% -- 7pp pink bias |
 
 ### Row highlights -- tracked team
 
 | Variable | Hex | Swatch | Usage |
 |----------|-----|--------|-------|
-| `--color-highlight` | `#d8e1ee` | <span style="display:inline-block;width:40px;height:14px;background:#d8e1ee;border-radius:2px;vertical-align:middle;"></span> | Tracked team row (light blue) |
+| `--color-highlight` | `#d8e1ee` | <span class="swatch" style="background:#d8e1ee"></span> | Tracked team row (light blue) |
 
 ### Row highlights -- verdict
 
 | Verdict | Variable | Hex | Swatch | Reuses |
 |---------|----------|-----|--------|--------|
-| Success | `--color-verdict-ok` | `#e0f0e0` | <span style="display:inline-block;width:40px;height:14px;background:#e0f0e0;border-radius:2px;vertical-align:middle;"></span> | = `--color-watch-up` |
-| Warning | `--color-verdict-warn` | `#fff3cd` | <span style="display:inline-block;width:40px;height:14px;background:#fff3cd;border-radius:2px;vertical-align:middle;"></span> | Unique -- warm amber |
-| Failure | `--color-verdict-fail` | `#f0dedb` | <span style="display:inline-block;width:40px;height:14px;background:#f0dedb;border-radius:2px;vertical-align:middle;"></span> | = `--color-watch-down` |
+| Success | `--color-verdict-ok` | `#e0f0e0` | <span class="swatch" style="background:#e0f0e0"></span> | = `--color-watch-up` |
+| Warning | `--color-verdict-warn` | `#fff3cd` | <span class="swatch" style="background:#fff3cd"></span> | Unique -- warm amber |
+| Failure | `--color-verdict-fail` | `#f0dedb` | <span class="swatch" style="background:#f0dedb"></span> | = `--color-watch-down` |
 
 ### Risk cells
 
 | Level | Variable | Hex | Swatch | Reuses |
 |-------|----------|-----|--------|--------|
-| Low (<25%) | `--color-up` | `#a8dda8` | <span style="display:inline-block;width:40px;height:14px;background:#a8dda8;border-radius:2px;vertical-align:middle;"></span> | = strong move-up |
-| Medium (25--49%) | `--color-risk-med` | `#fff3e0` | <span style="display:inline-block;width:40px;height:14px;background:#fff3e0;border-radius:2px;vertical-align:middle;border:1px solid #ddd;"></span> | Unique -- light amber |
-| High (>=50%) | `--color-down` | `#ddb0a8` | <span style="display:inline-block;width:40px;height:14px;background:#ddb0a8;border-radius:2px;vertical-align:middle;"></span> | = strong move-down |
+| Low (<25%) | `--color-up` | `#a8dda8` | <span class="swatch" style="background:#a8dda8"></span> | = strong move-up |
+| Medium (25--49%) | `--color-risk-med` | `#fff3e0` | <span class="swatch" style="background:#fff3e0; border:1px solid #ddd"></span> | Unique -- light amber |
+| High (>=50%) | `--color-down` | `#ddb0a8` | <span class="swatch" style="background:#ddb0a8"></span> | = strong move-down |
 
 ### Blockquote callouts
 
@@ -250,12 +250,12 @@ Six-tier cool-to-warm progression. Border colours are dark (L25--55%); tints are
 
 | Tier | Border | Swatch | Variable | Background | Swatch | Variable |
 |------|--------|--------|----------|------------|--------|----------|
-| Default | `#666` | <span style="display:inline-block;width:40px;height:14px;background:#666;border-radius:2px;vertical-align:middle;"></span> | `--color-default` | `#f5f5f5` | <span style="display:inline-block;width:40px;height:14px;background:#f5f5f5;border-radius:2px;vertical-align:middle;border:1px solid #ddd;"></span> | `--color-default-tint` |
-| Info / Note | `#1e3a5f` | <span style="display:inline-block;width:40px;height:14px;background:#1e3a5f;border-radius:2px;vertical-align:middle;"></span> | `--color-accent` | `#edf1f7` | <span style="display:inline-block;width:40px;height:14px;background:#edf1f7;border-radius:2px;vertical-align:middle;border:1px solid #ddd;"></span> | `--color-accent-tint` |
-| Tip | `#1a7a6d` | <span style="display:inline-block;width:40px;height:14px;background:#1a7a6d;border-radius:2px;vertical-align:middle;"></span> | `--color-tip` | `#e8f6f3` | <span style="display:inline-block;width:40px;height:14px;background:#e8f6f3;border-radius:2px;vertical-align:middle;border:1px solid #ddd;"></span> | `--color-tip-tint` |
-| Important | `#6b3fa0` | <span style="display:inline-block;width:40px;height:14px;background:#6b3fa0;border-radius:2px;vertical-align:middle;"></span> | `--color-important` | `#f0e8f5` | <span style="display:inline-block;width:40px;height:14px;background:#f0e8f5;border-radius:2px;vertical-align:middle;border:1px solid #ddd;"></span> | `--color-important-tint` |
-| Caution | `#946b00` | <span style="display:inline-block;width:40px;height:14px;background:#946b00;border-radius:2px;vertical-align:middle;"></span> | `--color-caution` | `#fef9e7` | <span style="display:inline-block;width:40px;height:14px;background:#fef9e7;border-radius:2px;vertical-align:middle;border:1px solid #ddd;"></span> | `--color-caution-tint` |
-| Warning | `#d94040` | <span style="display:inline-block;width:40px;height:14px;background:#d94040;border-radius:2px;vertical-align:middle;"></span> | `--color-warn` | `#fdf0f0` | <span style="display:inline-block;width:40px;height:14px;background:#fdf0f0;border-radius:2px;vertical-align:middle;border:1px solid #ddd;"></span> | `--color-warn-tint` |
+| Default | `#666` | <span class="swatch" style="background:#666"></span> | `--color-default` | `#f5f5f5` | <span class="swatch" style="background:#f5f5f5; border:1px solid #ddd"></span> | `--color-default-tint` |
+| Info / Note | `#1e3a5f` | <span class="swatch" style="background:#1e3a5f"></span> | `--color-accent` | `#edf1f7` | <span class="swatch" style="background:#edf1f7; border:1px solid #ddd"></span> | `--color-accent-tint` |
+| Tip | `#1a7a6d` | <span class="swatch" style="background:#1a7a6d"></span> | `--color-tip` | `#e8f6f3` | <span class="swatch" style="background:#e8f6f3; border:1px solid #ddd"></span> | `--color-tip-tint` |
+| Important | `#6b3fa0` | <span class="swatch" style="background:#6b3fa0"></span> | `--color-important` | `#f0e8f5` | <span class="swatch" style="background:#f0e8f5; border:1px solid #ddd"></span> | `--color-important-tint` |
+| Caution | `#946b00` | <span class="swatch" style="background:#946b00"></span> | `--color-caution` | `#fef9e7` | <span class="swatch" style="background:#fef9e7; border:1px solid #ddd"></span> | `--color-caution-tint` |
+| Warning | `#d94040` | <span class="swatch" style="background:#d94040"></span> | `--color-warn` | `#fdf0f0` | <span class="swatch" style="background:#fdf0f0; border:1px solid #ddd"></span> | `--color-warn-tint` |
 
 ### Result text classes
 
@@ -263,9 +263,9 @@ CSS classes in `style.css`, applied automatically by `table_transforms.py`.
 
 | Class | Hex | Swatch | Constant | Contrast |
 |-------|-----|--------|----------|----------|
-| `.result-win` | `#32854f` | <span style="display:inline-block;width:40px;height:14px;background:#32854f;border-radius:2px;vertical-align:middle;"></span> | `COLOUR_POSITIVE_TEXT` | 4.6:1 |
-| `.result-loss` | `#c43c3c` | <span style="display:inline-block;width:40px;height:14px;background:#c43c3c;border-radius:2px;vertical-align:middle;"></span> | `COLOUR_NEGATIVE_TEXT` | 4.6:1 |
-| `.result-draw` | `#767676` | <span style="display:inline-block;width:40px;height:14px;background:#767676;border-radius:2px;vertical-align:middle;"></span> | `COLOUR_NEUTRAL_TEXT` | 4.5:1 |
+| `.result-win` | `#32854f` | <span class="swatch" style="background:#32854f"></span> | `COLOUR_POSITIVE_TEXT` | 4.6:1 |
+| `.result-loss` | `#c43c3c` | <span class="swatch" style="background:#c43c3c"></span> | `COLOUR_NEGATIVE_TEXT` | 4.6:1 |
+| `.result-draw` | `#767676` | <span class="swatch" style="background:#767676"></span> | `COLOUR_NEUTRAL_TEXT` | 4.5:1 |
 
 ### Delta arrows and status markers
 
@@ -282,9 +282,9 @@ Status markers use fill-tier constants -- they are symbols, not readable text:
 
 | Variable | Hex | Swatch | Usage |
 |----------|-----|--------|-------|
-| `--color-muted` | `#999` | <span style="display:inline-block;width:40px;height:14px;background:#999;border-radius:2px;vertical-align:middle;"></span> | Page numbers, light text |
-| `--color-rule` | `#ddd` | <span style="display:inline-block;width:40px;height:14px;background:#ddd;border-radius:2px;vertical-align:middle;"></span> | Horizontal rules |
-| `--color-code-bg` | `#f4f4f4` | <span style="display:inline-block;width:40px;height:14px;background:#f4f4f4;border-radius:2px;vertical-align:middle;border:1px solid #ddd;"></span> | Code / pre background |
+| `--color-muted` | `#999` | <span class="swatch" style="background:#999"></span> | Page numbers, light text |
+| `--color-rule` | `#ddd` | <span class="swatch" style="background:#ddd"></span> | Horizontal rules |
+| `--color-code-bg` | `#f4f4f4` | <span class="swatch" style="background:#f4f4f4; border:1px solid #ddd"></span> | Code / pre background |
 
 
 ## Chart Typography
@@ -357,53 +357,34 @@ Size steps: -5, -3, -2, -2 (consistent acceleration). Line-height: 1.2 + 0.05 pe
 
 **Base table** (td 8.5pt, th 9pt, padding 3.5pt 5pt):
 
-<table style="width:70%; font-size:8.5pt; line-height:1.4; border-collapse:collapse;">
-<tr>
-<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:left;">Team</th>
-<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">P</th>
-<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">W</th>
-<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">L</th>
-<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">Pts</th>
-</tr>
-<tr>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt;">Warrandyte 1</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">14</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">10</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">3</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">42</td>
-</tr>
-<tr>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt;">Eltham 1</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">14</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">8</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">5</td>
-<td style="border:0.5pt solid #555; padding:3.5pt 5pt; text-align:center;">34</td>
-</tr>
-</table>
+| Team | P | W | L | Pts |
+|------|:-:|:-:|:-:|:-:|
+| Warrandyte 1 | 14 | 10 | 3 | 42 |
+| Eltham 1 | 14 | 8 | 5 | 34 |
 
 **Compact table** (td 7.5pt, th 8pt, padding 2pt 4pt):
 
-<table style="width:70%; font-size:7.5pt; line-height:1.25; border-collapse:collapse;">
+<table style="font-size:7.5pt; line-height:1.25;">
 <tr>
-<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:2pt 4pt; text-align:left;">Team</th>
-<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:2pt 4pt; text-align:center;">P</th>
-<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:2pt 4pt; text-align:center;">W</th>
-<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:2pt 4pt; text-align:center;">L</th>
-<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:2pt 4pt; text-align:center;">Pts</th>
+<th style="padding:2pt 4pt">Team</th>
+<th class="ctr" style="padding:2pt 4pt">P</th>
+<th class="ctr" style="padding:2pt 4pt">W</th>
+<th class="ctr" style="padding:2pt 4pt">L</th>
+<th class="ctr" style="padding:2pt 4pt">Pts</th>
 </tr>
 <tr>
-<td style="border:0.5pt solid #555; padding:2pt 4pt;">Warrandyte 1</td>
-<td style="border:0.5pt solid #555; padding:2pt 4pt; text-align:center;">14</td>
-<td style="border:0.5pt solid #555; padding:2pt 4pt; text-align:center;">10</td>
-<td style="border:0.5pt solid #555; padding:2pt 4pt; text-align:center;">3</td>
-<td style="border:0.5pt solid #555; padding:2pt 4pt; text-align:center;">42</td>
+<td style="padding:2pt 4pt">Warrandyte 1</td>
+<td class="ctr" style="padding:2pt 4pt">14</td>
+<td class="ctr" style="padding:2pt 4pt">10</td>
+<td class="ctr" style="padding:2pt 4pt">3</td>
+<td class="ctr" style="padding:2pt 4pt">42</td>
 </tr>
 <tr>
-<td style="border:0.5pt solid #555; padding:2pt 4pt;">Eltham 1</td>
-<td style="border:0.5pt solid #555; padding:2pt 4pt; text-align:center;">14</td>
-<td style="border:0.5pt solid #555; padding:2pt 4pt; text-align:center;">8</td>
-<td style="border:0.5pt solid #555; padding:2pt 4pt; text-align:center;">5</td>
-<td style="border:0.5pt solid #555; padding:2pt 4pt; text-align:center;">34</td>
+<td style="padding:2pt 4pt">Eltham 1</td>
+<td class="ctr" style="padding:2pt 4pt">14</td>
+<td class="ctr" style="padding:2pt 4pt">8</td>
+<td class="ctr" style="padding:2pt 4pt">5</td>
+<td class="ctr" style="padding:2pt 4pt">34</td>
 </tr>
 </table>
 
