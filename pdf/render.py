@@ -296,6 +296,11 @@ def _front_matter_css(metadata):
         rules.append('h2 { break-before: page; margin-top: 0; }')
         # h2 immediately after h1 stays together (cover page pattern)
         rules.append('h1 + h2 { break-before: auto; }')
+        # Without a TOC, keep the first content h2 on the title page so the
+        # title doesn't sit alone above a forced break. With a TOC, let it
+        # break normally — the TOC fills the title page.
+        if not metadata.get('toc'):
+            rules.append('.content > h2:first-child { break-before: auto; }')
     return '\n'.join(rules)
 
 

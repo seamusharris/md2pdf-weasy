@@ -322,17 +322,21 @@ body {
 }
 
 .toc-title {
-    font-size: 11pt;
+    font-family: "Myriad Pro", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+    font-size: 17pt;
     font-weight: 700;
-    margin-bottom: var(--space-xs);
+    line-height: 1.25;
+    letter-spacing: 0.005em;
     color: var(--color-heading);
+    margin-top: var(--space-lg);
+    margin-bottom: var(--space-md);
+    font-feature-settings: "kern", "liga", "lnum";
 }
 
 .toc ul {
     list-style: none;
     padding-left: 0;
     margin: 0;
-    font-size: 9pt;
     line-height: 1.6;
     font-feature-settings: "kern", "liga", "lnum";
 }
@@ -341,9 +345,36 @@ body {
     padding-left: 5mm;
 }
 
+/* Top-level entries (h2 in source): sans companion, weight 600, with a
+   margin above each one so sub-entries group visually under their parent. */
+.toc > ul > li {
+    font-family: "Myriad Pro", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+    font-size: 11pt;
+    font-weight: 400;
+    margin-top: var(--space-sm);
+}
+
+.toc > ul > li:first-child {
+    margin-top: 0;
+}
+
+/* Nested entries (h3+): serif body, regular weight, slightly smaller. */
+.toc ul ul li {
+    font-family: "Minion Pro", "AntSerif", "Georgia", serif;
+    font-size: 10pt;
+    font-weight: normal;
+}
+
 .toc a {
     color: var(--color-text);
     text-decoration: none;
+}
+
+/* Page number in the same colour as the entry text; spaced-dot leader
+   reads lighter than tight dots without losing the line-of-sight cue. */
+.toc a::after {
+    content: leader('. ') target-counter(attr(href), page);
+    font-feature-settings: "kern", "liga", "lnum", "tnum";
 }
 
 
@@ -414,12 +445,11 @@ h4 + h5 {
     margin-top: var(--space-xs);    /* 1.5mm */
 }
 
-/* When h2_page_break is on, the first h2 inside .content stays on the
-   title page rather than forcing an immediate page break that leaves
-   the title page nearly empty. */
-.content > h2:first-child {
-    break-before: auto;
-}
+/* When h2_page_break is on and there's no TOC, the first h2 inside
+   .content stays on the title page rather than forcing an immediate
+   page break that leaves the title page nearly empty. The rule is
+   emitted conditionally by render.py (_front_matter_css) so it only
+   applies when there's no TOC to fill the title page. */
 
 
 /* ── Paragraphs ───────────────────────────────────────────────────────── */
@@ -531,6 +561,12 @@ table {
     line-height: 1.4;
     font-feature-settings: "kern", "liga", "lnum", "tnum";   /* lining + tabular figures align columns */
     break-inside: avoid;
+}
+
+/* Two adjacent tables (no intervening heading or prose) need a clearer
+   gap than table-after-paragraph spacing. */
+table + table {
+    margin-top: var(--space-lg);
 }
 
 /* Fixed layout when colgroup widths are declared via front matter */
