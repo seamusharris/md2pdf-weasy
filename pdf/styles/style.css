@@ -268,6 +268,7 @@
         content: "Page " counter(page) "/" counter(pages);
         font-family: "Myriad Pro", "Helvetica Neue", "Helvetica", sans-serif;
         font-size: 7.5pt;
+        font-weight: 300;
         color: var(--color-muted);
     }
 }
@@ -423,10 +424,10 @@ h4 {
     margin-bottom: var(--space-xs);
 }
 
-/* Soften the sub-heading tier — h1/h2 stay heavy 700 (set above), but
-   h3/h4 drop to 600 for a two-tier hierarchy that reads less blocky
-   than all-700 across four levels. */
-h3, h4 { font-weight: 600; }
+/* Soften everything below h1 — only the document title stays at heavy
+   700. h2-h4 drop to Semibold (600) for a hierarchy that reads less
+   blocky than all-700 across four heading levels at 12-17pt sizes. */
+h2, h3, h4 { font-weight: 600; }
 
 /* Consecutive heading collapse: floor is --space-xs (1.5mm) */
 h1 + h2 {
@@ -527,7 +528,10 @@ dd {
 
 /* ── Footnotes ────────────────────────────────────────────────────────── */
 
+/* Footnotes use Minion Caption — the 6-8pt optical cut is drawn for
+   small sizes with thicker strokes and wider counters than Pro. */
 .footnote {
+    font-family: "Minion Caption", "Minion Pro", "AntSerif", "Georgia", serif;
     font-size: 7.5pt;
     color: var(--color-light);
     border-top: 0.5pt solid var(--color-rule);
@@ -676,10 +680,12 @@ tr.table-section td {
     border-bottom: 1pt solid var(--color-border-light);
 }
 
-/* Footer rows (totals) */
+/* Footer rows (totals): Caption serif at Semibold to tie totals visually
+   to the cells they summarize, without the ink-spot of full Bold. */
 tr.table-footer td {
     background: var(--color-header-bg);
-    font-weight: 700;
+    font-family: "Minion Caption", "Minion Pro", "AntSerif", "Georgia", serif;
+    font-weight: 600;
     border-top: 1pt solid var(--color-border-light);
     border-bottom: 1pt solid var(--color-border-light);
 }
@@ -776,7 +782,7 @@ img {
 
 /* ── Inline / misc ────────────────────────────────────────────────────── */
 
-strong { font-weight: 700; }
+strong { font-weight: 600; }
 em { font-style: italic; }
 a { color: var(--color-link); text-decoration: none; }
 hr { border: none; border-top: 0.5pt solid var(--color-rule); margin: var(--space-md) 0; }
