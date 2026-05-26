@@ -146,3 +146,19 @@ reports.
 
 > **Warning:** Watch for promoted teams with <25% win rates in their new
 > section — flag for review at the next regrading cycle.
+
+
+## Direction-arrow callouts
+
+A blockquote starting with `▲` or `▼` is classified automatically as an
+`up` or `down` callout. The arrow stays in the rendered text; the class
+gives the callout its direction-tinted border and background. Themes that
+don't define `--color-up` / `--color-down` leave the callout in default
+styling.
+
+> ▲ **Wallabies** — 1st of 8 · 9W–0L · GA% 312 · +18 · Strong promote signal.
+
+> ▼ **Quokkas** — 4th of 4 · 0W–3L · GA% 40 · -18 · Lost to 1st, 2nd, 3rd.
+
+A keyword still wins over the arrow, so `> ▼ **Warning:** ...` is styled
+as a warning, not a down callout.

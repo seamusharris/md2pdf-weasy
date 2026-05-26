@@ -231,7 +231,7 @@
 
 body {
     font-family: "Minion Pro", "AntSerif", "Georgia", "Times New Roman", serif;
-    font-size: 10pt;
+    font-size: 11pt;
     line-height: 1.45;
     color: var(--color-text);
     font-feature-settings: "kern", "liga", "onum";   /* old-style figures in body */
@@ -251,6 +251,7 @@ body {
     margin-bottom: var(--space-md);
     text-align: center;
     color: var(--color-muted);
+    font-feature-settings: "kern", "liga", "lnum";
 }
 
 
@@ -274,6 +275,7 @@ body {
     margin: 0;
     font-size: 9pt;
     line-height: 1.6;
+    font-feature-settings: "kern", "liga", "lnum";
 }
 
 .toc ul ul {
@@ -293,6 +295,9 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
     letter-spacing: 0.005em;
     color: var(--color-heading);
+    /* Lining figures in display sizes — old-style figures look mis-baselined
+       against bold caps at h1/h2 sizes. Body prose keeps "onum" for texture. */
+    font-feature-settings: "kern", "liga", "lnum";
     break-after: avoid;
     break-inside: avoid;
 }
@@ -465,7 +470,7 @@ table {
     font-family: "Minion Caption", "Minion Pro", "AntSerif", "Georgia", serif;
     font-size: 9pt;
     line-height: 1.4;
-    font-feature-settings: "kern", "liga", "tnum";   /* tabular figures align columns */
+    font-feature-settings: "kern", "liga", "lnum", "tnum";   /* lining + tabular figures align columns */
     break-inside: avoid;
 }
 

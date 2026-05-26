@@ -52,3 +52,20 @@ tr.highlight-mod-down td { background: var(--color-mod-down); font-weight: 700; 
 tr.verdict-success td { background: var(--color-verdict-ok); }
 tr.verdict-warning td { background: var(--color-verdict-warn); }
 tr.verdict-failure td { background: var(--color-verdict-fail); }
+
+
+/* ── Direction-arrow callouts ─────────────────────────────────────────── */
+/* Auto-applied by the classifier when a blockquote starts with ▲ or ▼.
+   Border uses the strong tier; background uses the lightest tier so the
+   callout reads as "directional information" rather than competing with
+   table rows that use the strong colour as a row fill. */
+
+blockquote.up {
+    border-left-color: var(--color-up);
+    background: var(--color-watch-up);
+}
+
+blockquote.down {
+    border-left-color: var(--color-down);
+    background: var(--color-watch-down);
+}

@@ -80,8 +80,18 @@ Colours come from the bundled `--color-up`, `--color-mod-up`,
 
 ## `risk_tables`
 
-For each table matching a listed CSS class, the post-processor reads the
-last column's content as a percentage and colour-codes the cell.
+For each table matching a listed CSS class, the post-processor reads
+percentage cells and colour-codes them — `.risk-high` (≥50%, red),
+`.risk-med` (25-49%, amber), `.risk-low` (<25%, green).
+
+Two scan modes:
+
+- **`last`** *(default)* — only the last `<td>` of each data row is read.
+  Use when the table has one explicit "Risk" column.
+- **`all`** — every `<td>` is read. Use when every numeric column is a
+  risk percentage (e.g. risk-by-age-and-boundary).
+
+### Single-column risk (default)
 
 ```yaml
 ---
@@ -105,11 +115,42 @@ risk_tables: ["swap-summary"]
 | 15U S1  | C    | Likely     | 18%  |
 ```
 
-The "Risk" column cells get `.risk-high` (≥50%, red), `.risk-med`
-(25-49%, amber), or `.risk-low` (<25%, green).
+Only the **Risk** cells get coloured.
 
-Only tables whose CSS class is in the `risk_tables` list are processed —
-the post-processor doesn't guess.
+### Whole-table risk (`columns: all`)
+
+```yaml
+---
+tables:
+  risk-promotion:
+    css_class: risk-promotion
+    columns:
+      - {name: Boundary}
+      - {name: 11U, align: right}
+      - {name: 13U, align: right}
+      - {name: 15U, align: right}
+risk_tables:
+  - {class: risk-promotion, columns: all}
+---
+```
+
+```markdown
+| Boundary | 11U | 13U | 15U |
+|----------|----:|----:|----:|
+| Into S1  | 58% | 55% | 71% |
+| Into S2  | 21% | 21% | 27% |
+```
+
+Every percentage cell gets coloured by its own value.
+
+### Notes
+
+- Bare strings in `risk_tables` (e.g. `["swap-summary"]`) are shorthand
+  for `{class: swap-summary, columns: last}` — back-compat.
+- Only tables whose CSS class is listed are processed — the
+  post-processor doesn't guess.
+- Cells that don't begin with `\d+%` are left alone (so heading-row
+  text and labels are safe).
 
 ## Verdict rows
 

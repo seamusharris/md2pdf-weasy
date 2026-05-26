@@ -8,6 +8,7 @@ from pdf.table_transforms import (
     _match_layout,
     align_table_columns,
     apply_table_layouts,
+    colour_risk_cells,
     detect_table_section_rows,
 )
 
@@ -201,3 +202,72 @@ class TestDetectTableSectionRows:
         """
         result = detect_table_section_rows(html)
         assert 'class="table-section"' in result
+
+
+class TestColourRiskCells:
+    """Risk percentage cell colouring: last-column (default) and all-cell modes."""
+
+    LAST_COL_TABLE = (
+        '<table class="swap-summary">'
+        '<thead><tr><th>Team</th><th>Risk</th></tr></thead>'
+        '<tbody>'
+        '<tr><td>Kangaroos</td><td>18%</td></tr>'
+        '<tr><td>Wallabies</td><td>32%</td></tr>'
+        '<tr><td>Possums</td><td>67%</td></tr>'
+        '</tbody></table>'
+    )
+
+    ALL_CELLS_TABLE = (
+        '<table class="risk-promotion">'
+        '<thead><tr><th>Boundary</th><th>11U</th><th>15U</th></tr></thead>'
+        '<tbody>'
+        '<tr><td>Into S1</td><td>58%</td><td>71%</td></tr>'
+        '<tr><td>Into S2</td><td>21%</td><td>27%</td></tr>'
+        '</tbody></table>'
+    )
+
+    def test_no_risk_tables_is_noop(self):
+        assert colour_risk_cells(self.LAST_COL_TABLE, risk_tables=None) == self.LAST_COL_TABLE
+        assert colour_risk_cells(self.LAST_COL_TABLE, risk_tables=[]) == self.LAST_COL_TABLE
+
+    def test_string_entry_uses_last_column(self):
+        result = colour_risk_cells(self.LAST_COL_TABLE, risk_tables=['swap-summary'])
+        assert 'class="risk-low">18%' in result
+        assert 'class="risk-med">32%' in result
+        assert 'class="risk-high">67%' in result
+
+    def test_first_column_text_not_coloured_in_last_mode(self):
+        result = colour_risk_cells(self.LAST_COL_TABLE, risk_tables=['swap-summary'])
+        assert 'class="risk' not in result.split('Kangaroos')[0]
+
+    def test_dict_with_columns_all_colours_every_cell(self):
+        result = colour_risk_cells(
+            self.ALL_CELLS_TABLE,
+            risk_tables=[{'class': 'risk-promotion', 'columns': 'all'}],
+        )
+        assert 'class="risk-high">58%' in result
+        assert 'class="risk-high">71%' in result
+        assert 'class="risk-low">21%' in result
+        assert 'class="risk-med">27%' in result
+
+    def test_dict_with_columns_last_matches_string_behaviour(self):
+        as_dict = colour_risk_cells(
+            self.LAST_COL_TABLE,
+            risk_tables=[{'class': 'swap-summary', 'columns': 'last'}],
+        )
+        as_string = colour_risk_cells(self.LAST_COL_TABLE, risk_tables=['swap-summary'])
+        assert as_dict == as_string
+
+    def test_non_matching_class_left_alone(self):
+        result = colour_risk_cells(self.LAST_COL_TABLE, risk_tables=['other-class'])
+        assert result == self.LAST_COL_TABLE
+
+    def test_unknown_columns_mode_falls_back_to_last(self):
+        result = colour_risk_cells(
+            self.ALL_CELLS_TABLE,
+            risk_tables=[{'class': 'risk-promotion', 'columns': 'sideways'}],
+        )
+        # Falls back to 'last' — only the last column gets coloured.
+        assert 'class="risk-high">71%' in result
+        # 58% sits in the non-last column → must not be wrapped.
+        assert '<td>58%</td>' in result

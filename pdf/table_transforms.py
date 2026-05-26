@@ -356,23 +356,58 @@ def colour_results(html):
 
 
 def colour_risk_cells(html, risk_tables=None):
-    """Add background colour to Risk percentage cells in specified tables.
+    """Add background colour to risk percentage cells in specified tables.
 
-    Parses the last <td> in each data row of matching tables and applies:
+    Scans <td> cells in each data row of matching tables and applies:
     - risk-high (>=50%) — red tint
     - risk-med (25-49%) — amber tint
     - risk-low (<25%) — green tint
 
     Args:
-        risk_tables: List of CSS class names to process (e.g. ['swap-summary']).
+        risk_tables: List of table specs. Each entry is either:
+            - a string CSS class name (back-compat; scans the last column only)
+            - a dict ``{class: str, columns: 'last' | 'all'}`` — 'last' is the
+              default and matches the back-compat behaviour; 'all' scans every
+              <td> in the row (use for tables where every numeric column is a
+              risk percentage, e.g. promotion-risk-by-age-and-boundary tables).
             When None or empty, this function is a no-op.
     """
     if not risk_tables:
         return html
 
+    # Normalise into {class_name: columns_mode}. Unknown modes fall back to 'last'.
+    specs: dict[str, str] = {}
+    for entry in risk_tables:
+        if isinstance(entry, str):
+            specs[entry] = 'last'
+        elif isinstance(entry, dict):
+            cls = entry.get('class')
+            if not cls:
+                continue
+            mode = entry.get('columns', 'last')
+            specs[cls] = mode if mode in ('last', 'all') else 'last'
+
+    if not specs:
+        return html
+
+    def _risk_class(content: str) -> str | None:
+        pct_match = re.match(r'(\d+)%', content.strip())
+        if not pct_match:
+            return None
+        pct = int(pct_match.group(1))
+        if pct >= 50:
+            return 'risk-high'
+        if pct >= 25:
+            return 'risk-med'
+        return 'risk-low'
+
     def process_table(match):
         table_html = match.group(0)
-        if not any(f'class="{cls}"' in table_html for cls in risk_tables):
+        cols_mode = next(
+            (mode for cls, mode in specs.items() if f'class="{cls}"' in table_html),
+            None,
+        )
+        if cols_mode is None:
             return table_html
 
         def colour_row(row_match):
@@ -382,21 +417,18 @@ def colour_risk_cells(html, risk_tables=None):
             cells = list(re.finditer(r'<td[^>]*>(.*?)</td>', row, re.DOTALL))
             if not cells:
                 return row
-            last_cell = cells[-1]
-            content = last_cell.group(1).strip()
-            pct_match = re.match(r'(\d+)%', content)
-            if not pct_match:
-                return row
-            pct = int(pct_match.group(1))
-            if pct >= 50:
-                cls = 'risk-high'
-            elif pct >= 25:
-                cls = 'risk-med'
-            else:
-                cls = 'risk-low'
-            old_td = last_cell.group(0)
-            new_td = old_td.replace('<td', f'<td class="{cls}"', 1)
-            return row[:last_cell.start()] + new_td + row[last_cell.end():]
+
+            targets = cells if cols_mode == 'all' else [cells[-1]]
+            # Splice from right to left so earlier offsets stay valid.
+            result = row
+            for cell in reversed(targets):
+                cls = _risk_class(cell.group(1))
+                if not cls:
+                    continue
+                old_td = cell.group(0)
+                new_td = old_td.replace('<td', f'<td class="{cls}"', 1)
+                result = result[:cell.start()] + new_td + result[cell.end():]
+            return result
 
         return re.sub(r'<tr[^>]*>.*?</tr>', colour_row, table_html, flags=re.DOTALL)
 

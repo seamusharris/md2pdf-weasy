@@ -74,6 +74,24 @@ class TestClassifyBlockquotes:
         result = _classify("<p>[!important] read this</p>")
         assert 'class="important"' in result
 
+    def test_up_arrow_becomes_up_tier(self):
+        result = _classify("<p>▲ <strong>Wallabies</strong> — top of section</p>")
+        assert 'class="up"' in result
+
+    def test_down_arrow_becomes_down_tier(self):
+        result = _classify("<p>▼ <strong>Quokkas</strong> — last of section</p>")
+        assert 'class="down"' in result
+
+    def test_keyword_wins_over_arrow_prefix(self):
+        # Author wrote ▼ AND Warning — warning styling takes precedence.
+        result = _classify("<p>▼ <strong>Warning:</strong> something</p>")
+        assert 'class="warning"' in result
+
+    def test_arrow_in_middle_of_blockquote_does_not_trigger(self):
+        # Arrow must be at the start of the blockquote content.
+        result = _classify("<p>The team finished ▼ at the bottom</p>")
+        assert 'class="default-aside"' in result
+
 
 class TestSplitMergedBlockquotes:
     """When python-markdown merges multiple > lines into one blockquote."""

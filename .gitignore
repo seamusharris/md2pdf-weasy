@@ -13,8 +13,8 @@ dist/
 # Test artefacts
 .pytest_cache/
 
-# Visual-review sample PDFs (regenerated via `make samples`)
-samples/
+# Visual-review example PDFs (regenerated via `make examples`)
+examples/**/*.pdf
 
 # OS
 .DS_Store

@@ -2,18 +2,19 @@
 #
 # Usage:
 #   make test       # run the pytest suite (70-ish tests, ~2s)
-#   make samples    # render tests/sample.md with each theme into samples/
-#   make clean      # delete samples/, .pytest_cache/, build artefacts
+#   make examples   # render every examples/**/*.md to PDF beside the source
+#   make clean      # delete generated PDFs, .pytest_cache/, build artefacts
 
 PY := python
 
-.PHONY: test samples clean
+.PHONY: test examples clean
 
 test:
 	$(PY) -m pytest
 
-samples:
-	$(PY) tools/render-samples.py
+examples:
+	$(PY) tools/render-examples.py
 
 clean:
-	rm -rf samples/ .pytest_cache/ build/ *.egg-info pdf/__pycache__ tests/__pycache__ tools/__pycache__
+	rm -f examples/*/*.pdf
+	rm -rf .pytest_cache/ build/ *.egg-info pdf/__pycache__ tests/__pycache__ tools/__pycache__

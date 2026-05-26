@@ -7,6 +7,11 @@ Blockquote callout tiers (cool-to-warm):
     important   — #6b3fa0 purple border, light purple background
     caution     — #946b00 amber border, light amber background
     warning     — #d94040 red border, light pink background
+
+Domain-direction tiers (only styled by themes that define --color-up /
+--color-down — currently regrading):
+    up          — leading ▲ on the blockquote; promotion-direction callout
+    down        — leading ▼ on the blockquote; demotion-direction callout
 """
 
 import re
@@ -104,6 +109,18 @@ def classify_blockquotes(html, extra_keywords=None):
             pattern = rf"<strong>\s*{re.escape(keyword)}\s*:?\s*</strong>"
             if re.search(pattern, content, re.IGNORECASE):
                 return f'<blockquote class="{tier}">{content}</blockquote>'
+
+        # Direction-arrow fallback — ▲ / ▼ at the start of the
+        # blockquote. Only fires when no keyword matched, so
+        # `> ▼ **Warning:** ...` still gets warning styling. The
+        # arrow is preserved in the rendered text; the class is what
+        # themes hook into. Themes that define --color-up / --color-down
+        # (currently regrading) provide the colour; otherwise the class
+        # is a no-op.
+        arrow_match = re.match(r'\s*<p>\s*([▲▼])', content)
+        if arrow_match:
+            tier = 'up' if arrow_match.group(1) == '▲' else 'down'
+            return f'<blockquote class="{tier}">{content}</blockquote>'
 
         # Info tier — plain text fallback (schedule compatibility)
         text = re.sub(r'<[^>]+>', '', content).strip()
