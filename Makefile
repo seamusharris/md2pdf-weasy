@@ -1,13 +1,23 @@
 # md2pdf-weasy — package-level convenience targets
 #
 # Usage:
-#   make test       # run the pytest suite (70-ish tests, ~2s)
+#   make setup      # one-time: create .venv/ and install package + test deps
+#   make test       # run the pytest suite (~80 tests, ~2s)
 #   make examples   # render every examples/**/*.md to PDF beside the source
 #   make clean      # delete generated PDFs, .pytest_cache/, build artefacts
+#
+# All targets use .venv/bin/python so you don't need to activate the venv.
+# WeasyPrint additionally requires Pango at the system level
+# (`brew install pango` on macOS).
 
-PY := python
+PY := .venv/bin/python
+PIP := .venv/bin/pip
 
-.PHONY: test examples clean
+.PHONY: setup test examples clean
+
+setup:
+	python3 -m venv .venv
+	$(PIP) install -e ".[test]"
 
 test:
 	$(PY) -m pytest

@@ -23,6 +23,20 @@ pip install "md2pdf-weasy @ git+ssh://git@github.com/seamusharris/md2pdf-weasy.g
 Requires Python 3.11+ and WeasyPrint's system libraries (Cairo + Pango).
 On macOS: `brew install pango`.
 
+## Development
+
+Self-contained venv inside the repo — two commands from a fresh clone:
+
+```bash
+make setup      # creates .venv/, installs package + test extras editable
+make test       # ~80 tests, ~2s
+make examples   # renders examples/**/*.md → PDF beside each source
+```
+
+The `make` targets all use `.venv/bin/python` so they work without
+activating the venv. Use this venv when running ad-hoc commands too —
+e.g. `.venv/bin/python -m pdf input.md output.pdf`.
+
 ## Use
 
 ```yaml
