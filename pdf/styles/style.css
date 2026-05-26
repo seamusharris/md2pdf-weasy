@@ -602,8 +602,8 @@ th {
 
 /* Column alignment classes -- used by charts/tables.py and postprocessor */
 th.left { text-align: left; }
-td.num, th.num  { text-align: right; }
-td.ctr  { text-align: center; }
+td.num, th.num { text-align: right; }
+td.ctr, th.ctr { text-align: center; }
 
 
 /* ── Row highlights ───────────────────────────────────────────────────── */
@@ -789,6 +789,19 @@ hr { border: none; border-top: 0.5pt solid var(--color-rule); margin: var(--spac
 
 .keep-with-next { break-after: avoid; }
 .keep-together { break-inside: avoid; }
+
+/* Inline colour swatch — palette/style-guide docs use this to render a
+   small filled rectangle next to a hex value or CSS variable name.
+   Set the background via inline style="background:#hex" (or var(--x)).
+   For very-light colours that disappear on white, add an inline
+   border in the same style attribute. */
+.swatch {
+    display: inline-block;
+    width: 40px;
+    height: 14px;
+    border-radius: 2px;
+    vertical-align: middle;
+}
 
 /* SVG charts: centre on page */
 svg {
