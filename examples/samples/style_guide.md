@@ -181,11 +181,11 @@ CSS variables defined in `:root` of `pdf/styles/style.css`. Override any variabl
 
 <table style="width:70%; font-size:8.5pt; line-height:1.4; border-collapse:collapse;">
 <tr>
-<th style="font-size:9pt; font-weight:700; background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:left;">Team</th>
-<th style="font-size:9pt; font-weight:700; background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">P</th>
-<th style="font-size:9pt; font-weight:700; background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">W</th>
-<th style="font-size:9pt; font-weight:700; background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">L</th>
-<th style="font-size:9pt; font-weight:700; background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">Pts</th>
+<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:left;">Team</th>
+<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">P</th>
+<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">W</th>
+<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">L</th>
+<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">Pts</th>
 </tr>
 <tr style="background:#d8e1ee; font-weight:700;">
 <td style="border:0.5pt solid #555; padding:3.5pt 5pt;">Warrandyte 1</td>
@@ -359,11 +359,11 @@ Size steps: -5, -3, -2, -2 (consistent acceleration). Line-height: 1.2 + 0.05 pe
 
 <table style="width:70%; font-size:8.5pt; line-height:1.4; border-collapse:collapse;">
 <tr>
-<th style="font-size:9pt; font-weight:700; background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:left;">Team</th>
-<th style="font-size:9pt; font-weight:700; background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">P</th>
-<th style="font-size:9pt; font-weight:700; background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">W</th>
-<th style="font-size:9pt; font-weight:700; background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">L</th>
-<th style="font-size:9pt; font-weight:700; background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">Pts</th>
+<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:left;">Team</th>
+<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">P</th>
+<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">W</th>
+<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">L</th>
+<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:3.5pt 5pt; text-align:center;">Pts</th>
 </tr>
 <tr>
 <td style="border:0.5pt solid #555; padding:3.5pt 5pt;">Warrandyte 1</td>
@@ -385,11 +385,11 @@ Size steps: -5, -3, -2, -2 (consistent acceleration). Line-height: 1.2 + 0.05 pe
 
 <table style="width:70%; font-size:7.5pt; line-height:1.25; border-collapse:collapse;">
 <tr>
-<th style="font-size:8pt; font-weight:700; background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:2pt 4pt; text-align:left;">Team</th>
-<th style="font-size:8pt; font-weight:700; background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:2pt 4pt; text-align:center;">P</th>
-<th style="font-size:8pt; font-weight:700; background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:2pt 4pt; text-align:center;">W</th>
-<th style="font-size:8pt; font-weight:700; background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:2pt 4pt; text-align:center;">L</th>
-<th style="font-size:8pt; font-weight:700; background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:2pt 4pt; text-align:center;">Pts</th>
+<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:2pt 4pt; text-align:left;">Team</th>
+<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:2pt 4pt; text-align:center;">P</th>
+<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:2pt 4pt; text-align:center;">W</th>
+<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:2pt 4pt; text-align:center;">L</th>
+<th style="background:#e8e8e8; border:0.5pt solid #555; border-bottom:1pt solid #444; padding:2pt 4pt; text-align:center;">Pts</th>
 </tr>
 <tr>
 <td style="border:0.5pt solid #555; padding:2pt 4pt;">Warrandyte 1</td>
