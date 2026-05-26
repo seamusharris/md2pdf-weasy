@@ -8,13 +8,17 @@ Google OFL fonts used by the `wnc` theme.
 
 | Family | Files | Licence | Used by |
 |---|---|---|---|
-| **Minion Pro** | 23 OTF | Adobe, personal-use only | Bundled body default + alpine theme |
-| **Myriad Pro** | 20 OTF | Adobe, personal-use only | Bundled heading/UI default + alpine theme |
+| **Minion Pro** | 64 OTF | Adobe, personal-use only | Bundled body default + alpine theme |
+| **Myriad Pro** | 30 OTF | Adobe, personal-use only | Bundled heading/UI default + alpine theme |
 | **AntSerif** | 4 TTF | OFL | Fallback serif, available to any theme |
 | **Montserrat** | 2 variable TTF | OFL | `wnc` theme headings |
 | **Open Sans** | 2 variable TTF | OFL | `wnc` theme body |
 
-Total: ~51 files, ~10 MB on disk.
+Total: ~102 files, ~21 MB on disk. The full Minion (both widths × all
+four optical sizes × four weights × two styles) and most of Myriad
+(three widths × five weights × two styles — only SemiExtended omitted)
+ship so themes and overlays can reach for any cut without surprise
+fallbacks.
 
 ## Licensing — read this
 
@@ -30,40 +34,52 @@ implications:
 The OFL fonts (AntSerif, Montserrat, Open Sans) can be freely
 redistributed.
 
-## Minion Pro — optical sizes
+## Minion Pro — optical sizes × widths
 
-Minion is declared as four separate font-family names so CSS can pick
-the right cut for each size range:
+Minion is split into eight font-family names: four optical sizes ×
+two widths (normal and condensed). CSS picks the right cut for each
+size range; pair with a condensed family when columns are tight.
 
-| Family name | Optical | Suitable for |
-|---|---|---|
-| `"Minion Caption"` | 6-8pt | Table cells, fine print |
-| `"Minion Pro"` | 9-13pt | Body text |
-| `"Minion Subhead"` | 14-24pt | Section headers |
-| `"Minion Display"` | 25pt+ | Document titles |
+| Family name | Optical | Width | Suitable for |
+|---|---|---|---|
+| `"Minion Caption"` | 6-8pt | normal | Table cells, fine print |
+| `"Minion Pro"` | 9-13pt | normal | Body text |
+| `"Minion Subhead"` | 14-24pt | normal | Section headers |
+| `"Minion Display"` | 25pt+ | normal | Document titles |
+| `"Minion Condensed Caption"` | 6-8pt | condensed | Dense tables |
+| `"Minion Condensed"` | 9-13pt | condensed | Narrow-column body |
+| `"Minion Condensed Subhead"` | 14-24pt | condensed | Tight sidebar heads |
+| `"Minion Condensed Display"` | 25pt+ | condensed | Compact titles |
 
-The bundled `style.css` wires these to elements by default:
+Each family has the full weight axis: Regular (400), Medium (500),
+Semibold (600), Bold (700), each with matching italic. That's eight
+cuts per family, 64 files in total.
+
+The bundled `style.css` wires the normal-width families to elements by
+default:
 
 ```css
 body { font-family: "Minion Pro", "AntSerif", "Georgia", serif; }
 table { font-family: "Minion Caption", "Minion Pro", "Georgia", serif; }
 ```
 
-Each optical has Regular, Italic, Bold, Bold-Italic; the Regular optical
-also has Medium and Semibold weights for nuanced body emphasis.
+## Myriad Pro — weights × widths
 
-## Myriad Pro — widths
-
-Myriad ships in three widths plus extra weights:
+Myriad ships in three widths (normal, semi-condensed, condensed) at five
+weights each. The semi-extended width is not bundled.
 
 | Family name | Width | Weights |
 |---|---|---|
-| `"Myriad Pro"` | standard | Light, Regular, Semibold, Bold, Black |
-| `"Myriad SemiCondensed"` | between standard and condensed | Regular, Bold |
-| `"Myriad Condensed"` | tight | Regular, Semibold, Bold |
+| `"Myriad Pro"` | normal | Light (300), Regular, Semibold, Bold, Black (900) |
+| `"Myriad SemiCondensed"` | between normal and condensed | Light, Regular, Semibold, Bold, Black |
+| `"Myriad Condensed"` | tight | Light, Regular, Semibold, Bold, Black |
+
+Each weight has an italic. **There is no Medium (500) cut in Myriad
+Pro — Adobe ships no Medium for this family.** Browsers asked for `500`
+will fall back to nearest. Use Minion's 500 if you need a true Medium.
 
 Used by default for headings, table headers, and UI labels. The
-condensed widths are available for tight columns when needed.
+condensed widths are available for tight columns and dense data tables.
 
 ## Variable fonts
 

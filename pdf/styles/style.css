@@ -49,12 +49,14 @@
    ─────────────────────────────────────────────────────────────────────── */
 
 /* ── Minion Caption (6-8pt optical — table cells, small/dense text) ── */
-@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-Capt.otf")          format("opentype"); font-weight: normal; font-style: normal; }
-@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-ItCapt.otf")        format("opentype"); font-weight: normal; font-style: italic; }
-@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-MediumCapt.otf")    format("opentype"); font-weight: 500;    font-style: normal; }
-@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-SemiboldCapt.otf")  format("opentype"); font-weight: 600;    font-style: normal; }
-@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-BoldCapt.otf")      format("opentype"); font-weight: bold;   font-style: normal; }
-@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-BoldItCapt.otf")    format("opentype"); font-weight: bold;   font-style: italic; }
+@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-Capt.otf")           format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-ItCapt.otf")         format("opentype"); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-MediumCapt.otf")     format("opentype"); font-weight: 500;    font-style: normal; }
+@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-MediumItCapt.otf")   format("opentype"); font-weight: 500;    font-style: italic; }
+@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-SemiboldCapt.otf")   format("opentype"); font-weight: 600;    font-style: normal; }
+@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-SemiboldItCapt.otf") format("opentype"); font-weight: 600;    font-style: italic; }
+@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-BoldCapt.otf")       format("opentype"); font-weight: bold;   font-style: normal; }
+@font-face { font-family: "Minion Caption"; src: url("../fonts/MinionPro-BoldItCapt.otf")     format("opentype"); font-weight: bold;   font-style: italic; }
 
 /* ── Minion Pro (9-13pt optical — body text) ───────────────────────── */
 @font-face { font-family: "Minion Pro"; src: url("../fonts/MinionPro-Regular.otf")      format("opentype"); font-weight: normal; font-style: normal; }
@@ -67,17 +69,64 @@
 @font-face { font-family: "Minion Pro"; src: url("../fonts/MinionPro-BoldIt.otf")       format("opentype"); font-weight: bold;   font-style: italic; }
 
 /* ── Minion Subhead (14-24pt optical — section headers if serif) ───── */
-@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-Subh.otf")         format("opentype"); font-weight: normal; font-style: normal; }
-@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-ItSubh.otf")       format("opentype"); font-weight: normal; font-style: italic; }
-@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-MediumSubh.otf")   format("opentype"); font-weight: 500;    font-style: normal; }
-@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-BoldSubh.otf")     format("opentype"); font-weight: bold;   font-style: normal; }
-@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-BoldItSubh.otf")   format("opentype"); font-weight: bold;   font-style: italic; }
+@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-Subh.otf")           format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-ItSubh.otf")         format("opentype"); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-MediumSubh.otf")     format("opentype"); font-weight: 500;    font-style: normal; }
+@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-MediumItSubh.otf")   format("opentype"); font-weight: 500;    font-style: italic; }
+@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-SemiboldSubh.otf")   format("opentype"); font-weight: 600;    font-style: normal; }
+@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-SemiboldItSubh.otf") format("opentype"); font-weight: 600;    font-style: italic; }
+@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-BoldSubh.otf")       format("opentype"); font-weight: bold;   font-style: normal; }
+@font-face { font-family: "Minion Subhead"; src: url("../fonts/MinionPro-BoldItSubh.otf")     format("opentype"); font-weight: bold;   font-style: italic; }
 
 /* ── Minion Display (25pt+ optical — document titles) ──────────────── */
-@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-Disp.otf")         format("opentype"); font-weight: normal; font-style: normal; }
-@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-ItDisp.otf")       format("opentype"); font-weight: normal; font-style: italic; }
-@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-BoldDisp.otf")     format("opentype"); font-weight: bold;   font-style: normal; }
-@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-BoldItDisp.otf")   format("opentype"); font-weight: bold;   font-style: italic; }
+@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-Disp.otf")           format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-ItDisp.otf")         format("opentype"); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-MediumDisp.otf")     format("opentype"); font-weight: 500;    font-style: normal; }
+@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-MediumItDisp.otf")   format("opentype"); font-weight: 500;    font-style: italic; }
+@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-SemiboldDisp.otf")   format("opentype"); font-weight: 600;    font-style: normal; }
+@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-SemiboldItDisp.otf") format("opentype"); font-weight: 600;    font-style: italic; }
+@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-BoldDisp.otf")       format("opentype"); font-weight: bold;   font-style: normal; }
+@font-face { font-family: "Minion Display"; src: url("../fonts/MinionPro-BoldItDisp.otf")     format("opentype"); font-weight: bold;   font-style: italic; }
+
+/* ── Minion Condensed (narrow body — dense columns, footnote-stacks) ─── */
+@font-face { font-family: "Minion Condensed"; src: url("../fonts/MinionPro-Cn.otf")           format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Minion Condensed"; src: url("../fonts/MinionPro-CnIt.otf")         format("opentype"); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Minion Condensed"; src: url("../fonts/MinionPro-MediumCn.otf")     format("opentype"); font-weight: 500;    font-style: normal; }
+@font-face { font-family: "Minion Condensed"; src: url("../fonts/MinionPro-MediumCnIt.otf")   format("opentype"); font-weight: 500;    font-style: italic; }
+@font-face { font-family: "Minion Condensed"; src: url("../fonts/MinionPro-SemiboldCn.otf")   format("opentype"); font-weight: 600;    font-style: normal; }
+@font-face { font-family: "Minion Condensed"; src: url("../fonts/MinionPro-SemiboldCnIt.otf") format("opentype"); font-weight: 600;    font-style: italic; }
+@font-face { font-family: "Minion Condensed"; src: url("../fonts/MinionPro-BoldCn.otf")       format("opentype"); font-weight: bold;   font-style: normal; }
+@font-face { font-family: "Minion Condensed"; src: url("../fonts/MinionPro-BoldCnIt.otf")     format("opentype"); font-weight: bold;   font-style: italic; }
+
+/* ── Minion Condensed Caption (narrow + small optical) ───────────────── */
+@font-face { font-family: "Minion Condensed Caption"; src: url("../fonts/MinionPro-CnCapt.otf")           format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Minion Condensed Caption"; src: url("../fonts/MinionPro-CnItCapt.otf")         format("opentype"); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Minion Condensed Caption"; src: url("../fonts/MinionPro-MediumCnCapt.otf")     format("opentype"); font-weight: 500;    font-style: normal; }
+@font-face { font-family: "Minion Condensed Caption"; src: url("../fonts/MinionPro-MediumCnItCapt.otf")   format("opentype"); font-weight: 500;    font-style: italic; }
+@font-face { font-family: "Minion Condensed Caption"; src: url("../fonts/MinionPro-SemiboldCnCapt.otf")   format("opentype"); font-weight: 600;    font-style: normal; }
+@font-face { font-family: "Minion Condensed Caption"; src: url("../fonts/MinionPro-SemiboldCnItCapt.otf") format("opentype"); font-weight: 600;    font-style: italic; }
+@font-face { font-family: "Minion Condensed Caption"; src: url("../fonts/MinionPro-BoldCnCapt.otf")       format("opentype"); font-weight: bold;   font-style: normal; }
+@font-face { font-family: "Minion Condensed Caption"; src: url("../fonts/MinionPro-BoldCnItCapt.otf")     format("opentype"); font-weight: bold;   font-style: italic; }
+
+/* ── Minion Condensed Subhead (narrow + 14-24pt optical) ─────────────── */
+@font-face { font-family: "Minion Condensed Subhead"; src: url("../fonts/MinionPro-CnSubh.otf")           format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Minion Condensed Subhead"; src: url("../fonts/MinionPro-CnItSubh.otf")         format("opentype"); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Minion Condensed Subhead"; src: url("../fonts/MinionPro-MediumCnSubh.otf")     format("opentype"); font-weight: 500;    font-style: normal; }
+@font-face { font-family: "Minion Condensed Subhead"; src: url("../fonts/MinionPro-MediumCnItSubh.otf")   format("opentype"); font-weight: 500;    font-style: italic; }
+@font-face { font-family: "Minion Condensed Subhead"; src: url("../fonts/MinionPro-SemiboldCnSubh.otf")   format("opentype"); font-weight: 600;    font-style: normal; }
+@font-face { font-family: "Minion Condensed Subhead"; src: url("../fonts/MinionPro-SemiboldCnItSubh.otf") format("opentype"); font-weight: 600;    font-style: italic; }
+@font-face { font-family: "Minion Condensed Subhead"; src: url("../fonts/MinionPro-BoldCnSubh.otf")       format("opentype"); font-weight: bold;   font-style: normal; }
+@font-face { font-family: "Minion Condensed Subhead"; src: url("../fonts/MinionPro-BoldCnItSubh.otf")     format("opentype"); font-weight: bold;   font-style: italic; }
+
+/* ── Minion Condensed Display (narrow + 25pt+ optical) ───────────────── */
+@font-face { font-family: "Minion Condensed Display"; src: url("../fonts/MinionPro-CnDisp.otf")           format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Minion Condensed Display"; src: url("../fonts/MinionPro-CnItDisp.otf")         format("opentype"); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Minion Condensed Display"; src: url("../fonts/MinionPro-MediumCnDisp.otf")     format("opentype"); font-weight: 500;    font-style: normal; }
+@font-face { font-family: "Minion Condensed Display"; src: url("../fonts/MinionPro-MediumCnItDisp.otf")   format("opentype"); font-weight: 500;    font-style: italic; }
+@font-face { font-family: "Minion Condensed Display"; src: url("../fonts/MinionPro-SemiboldCnDisp.otf")   format("opentype"); font-weight: 600;    font-style: normal; }
+@font-face { font-family: "Minion Condensed Display"; src: url("../fonts/MinionPro-SemiboldCnItDisp.otf") format("opentype"); font-weight: 600;    font-style: italic; }
+@font-face { font-family: "Minion Condensed Display"; src: url("../fonts/MinionPro-BoldCnDisp.otf")       format("opentype"); font-weight: bold;   font-style: normal; }
+@font-face { font-family: "Minion Condensed Display"; src: url("../fonts/MinionPro-BoldCnItDisp.otf")     format("opentype"); font-weight: bold;   font-style: italic; }
 
 /* ── Myriad Pro (sans companion for headings, labels) ──────────────── */
 @font-face { font-family: "Myriad Pro"; src: url("../fonts/MyriadPro-Light.otf")        format("opentype"); font-weight: 300;    font-style: normal; }
@@ -92,18 +141,28 @@
 @font-face { font-family: "Myriad Pro"; src: url("../fonts/MyriadPro-BlackIt.otf")      format("opentype"); font-weight: 900;    font-style: italic; }
 
 /* ── Myriad SemiCondensed (tight-but-readable) ─────────────────────── */
-@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-SemiCn.otf")        format("opentype"); font-weight: normal; font-style: normal; }
-@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-SemiCnIt.otf")      format("opentype"); font-weight: normal; font-style: italic; }
-@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-BoldSemiCn.otf")    format("opentype"); font-weight: bold;   font-style: normal; }
-@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-BoldSemiCnIt.otf")  format("opentype"); font-weight: bold;   font-style: italic; }
+@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-LightSemiCn.otf")      format("opentype"); font-weight: 300;    font-style: normal; }
+@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-LightSemiCnIt.otf")    format("opentype"); font-weight: 300;    font-style: italic; }
+@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-SemiCn.otf")           format("opentype"); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-SemiCnIt.otf")         format("opentype"); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-SemiboldSemiCn.otf")   format("opentype"); font-weight: 600;    font-style: normal; }
+@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-SemiboldSemiCnIt.otf") format("opentype"); font-weight: 600;    font-style: italic; }
+@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-BoldSemiCn.otf")       format("opentype"); font-weight: bold;   font-style: normal; }
+@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-BoldSemiCnIt.otf")     format("opentype"); font-weight: bold;   font-style: italic; }
+@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-BlackSemiCn.otf")      format("opentype"); font-weight: 900;    font-style: normal; }
+@font-face { font-family: "Myriad SemiCondensed"; src: url("../fonts/MyriadPro-BlackSemiCnIt.otf")    format("opentype"); font-weight: 900;    font-style: italic; }
 
 /* ── Myriad Condensed (tight columns / table headers) ──────────────── */
+@font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-LightCond.otf")         format("opentype"); font-weight: 300;    font-style: normal; }
+@font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-LightCondIt.otf")       format("opentype"); font-weight: 300;    font-style: italic; }
 @font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-Cond.otf")              format("opentype"); font-weight: normal; font-style: normal; }
 @font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-CondIt.otf")            format("opentype"); font-weight: normal; font-style: italic; }
 @font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-SemiboldCond.otf")      format("opentype"); font-weight: 600;    font-style: normal; }
 @font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-SemiboldCondIt.otf")    format("opentype"); font-weight: 600;    font-style: italic; }
 @font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-BoldCond.otf")          format("opentype"); font-weight: bold;   font-style: normal; }
 @font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-BoldCondIt.otf")        format("opentype"); font-weight: bold;   font-style: italic; }
+@font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-BlackCond.otf")         format("opentype"); font-weight: 900;    font-style: normal; }
+@font-face { font-family: "Myriad Condensed"; src: url("../fonts/MyriadPro-BlackCondIt.otf")       format("opentype"); font-weight: 900;    font-style: italic; }
 
 /* ── AntSerif (OFL fallback) ───────────────────────────────────────── */
 @font-face {
