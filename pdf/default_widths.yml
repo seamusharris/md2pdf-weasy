@@ -33,7 +33,11 @@ widths:
   "%":           6
   "GF":          7
   "GA":          7
+  "F":           7
+  "A":           7
+  "B":           6
   "Pts":         6
+  "PTS":         6
   "Score":      10
   "Margin":      8
 
