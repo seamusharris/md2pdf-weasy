@@ -582,7 +582,7 @@ th, td {
     border: 0.5pt solid var(--color-border);
     padding: 3.5pt 5pt;
     text-align: left;
-    vertical-align: top;
+    vertical-align: middle;
 }
 
 tr {
