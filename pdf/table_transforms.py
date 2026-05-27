@@ -329,28 +329,42 @@ def _highlight_direction_rows(table_html):
 def colour_results(html):
     """Add colour to W/L/D result cells in round results and section tables.
 
-    Win (W +N) -> green, Loss (L -N) -> red, Draw (D) -> grey.
+    Win (W, W +N, "Forfeit win") -> green;
+    Loss (L, L -N, "Forfeit loss") -> red;
+    Draw (D) -> grey;
+    "Bye"/"Abandoned" -> grey (neutral).
     Targets td cells containing result patterns. Preserves existing bold/strong.
     """
     def colour_cell(match):
         td = match.group(0)
         inner = match.group(1)
         clean = _strip_tags(inner).strip()
+        clean_lower = clean.lower()
 
-        if clean.startswith('W ') or clean == 'W':
+        if clean.startswith('W ') or clean in ('W', 'FW') or clean_lower == 'forfeit win':
             cls = 'result-win'
-        elif clean.startswith('L ') or clean == 'L':
+        elif clean.startswith('L ') or clean in ('L', 'FL') or clean_lower == 'forfeit loss':
             cls = 'result-loss'
         elif clean == 'D':
             cls = 'result-draw'
+        elif clean_lower == 'bye':
+            cls = 'result-bye'
+        elif clean in ('ABN',) or clean_lower == 'abandoned':
+            cls = 'result-abandoned'
         else:
             return td
 
         coloured = f'<span class="{cls}">{inner}</span>'
         return td.replace(inner, coloured, 1)
 
+    # Accept ASCII hyphen-minus and en-dash (U+2013) for the sign — callers
+    # may use either; e.g. "L -10" or "L –10".
     return re.sub(
-        r'<td[^>]*>((?:<strong>)?[WLD](?:\s*[+-]?\d+)?(?:</strong>)?)</td>',
+        r'<td[^>]*>((?:<strong>)?(?:'
+        r'[WLD](?:\s*[+\-–]?\d+)?'
+        r'|FW|FL|ABN'
+        r'|Forfeit\s+win|Forfeit\s+loss|Bye|Abandoned'
+        r')(?:</strong>)?)</td>',
         colour_cell, html
     )
 

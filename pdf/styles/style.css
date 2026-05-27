@@ -665,9 +665,11 @@ td.risk-low  { background: var(--color-risk-low); }
 
 /* ── Result text colours (darkened chart hues, WCAG AA on white) ──────── */
 
-.result-win  { color: #32854f; font-weight: 700; }
-.result-loss { color: #c43c3c; font-weight: 700; }
-.result-draw { color: #767676; font-weight: 700; }
+.result-win       { color: #32854f; font-weight: 700; }
+.result-loss      { color: #c43c3c; font-weight: 700; }
+.result-draw      { color: #767676; font-weight: 700; }
+.result-bye       { color: #6b7280; font-weight: 700; }  /* gray-500 */
+.result-abandoned { color: #4b5563; font-weight: 700; }  /* gray-600 — darker */
 
 
 /* ── Section divider rows ─────────────────────────────────────────────── */
