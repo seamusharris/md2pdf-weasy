@@ -567,10 +567,6 @@ def apply_table_layouts(html, metadata):
     def process_table(match):
         table_html = match.group(0)
 
-        # Skip tables with section rows (training doc format)
-        if 'class="table-section"' in table_html:
-            return table_html
-
         headers = _extract_headers(table_html)
         _name, layout = _match_layout(headers, table_layouts)
 
