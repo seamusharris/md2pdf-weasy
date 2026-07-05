@@ -24,15 +24,29 @@ _DEFAULT_WIDTHS_PATH = os.path.join(
 )
 
 
+def _normalise_header(text):
+    """Normalise a header for registry lookup: strip tags, collapse whitespace,
+    lowercase. Keeps ``Team``, ``team``, and ``Team `` interchangeable.
+
+    Self-contained (no _strip_tags) so it is safe to call at module load from
+    _load_default_widths, before the helpers section is defined.
+    """
+    text = re.sub(r'<[^>]+>', '', str(text))
+    return re.sub(r'\s+', ' ', text).strip().lower()
+
+
 def _load_default_widths():
     if not os.path.exists(_DEFAULT_WIDTHS_PATH):
-        return {'fallback': 10, 'widths': {}}
+        return {'fallback': 15, 'fallback_numeric': 8, 'widths': {}}
     with open(_DEFAULT_WIDTHS_PATH, 'r', encoding='utf-8') as f:
         loaded = yaml.safe_load(f) or {}
     return {
-        'fallback': loaded.get('fallback', 10),
-        # Lowercased keys for case-insensitive lookup
-        'widths': {k.lower(): v for k, v in (loaded.get('widths') or {}).items()},
+        'fallback': loaded.get('fallback', 15),
+        # Narrower default for unknown columns whose content is numeric/short.
+        'fallback_numeric': loaded.get('fallback_numeric', 8),
+        # Normalised keys for case-insensitive, whitespace-tolerant lookup.
+        'widths': {_normalise_header(k): v
+                   for k, v in (loaded.get('widths') or {}).items()},
     }
 
 
@@ -43,7 +57,7 @@ def _column_width(col):
     """Resolve a column's width: explicit width first, then defaults by name."""
     if 'width' in col:
         return col['width']
-    name = col.get('name', '').lower()
+    name = _normalise_header(col.get('name', ''))
     return _DEFAULT_WIDTHS['widths'].get(name, _DEFAULT_WIDTHS['fallback'])
 
 
@@ -80,6 +94,44 @@ def _is_short_text(text):
     """Check if text is a short centred value (1-3 chars, like H/A, W/L)."""
     clean = _strip_tags(text).strip()
     return len(clean) <= 3 and clean != ""
+
+
+# Content-type detectors used by the column classifier. Each answers "could
+# this single cell be of type X?"; a column is typed X when all its non-empty
+# cells qualify. Kept narrow so a column only lands on a specialised type when
+# the whole column really is that type.
+
+_PCT_RE = re.compile(r"^[+-]?\d+(?:\.\d+)?\s*%$")
+_TIME_RE = re.compile(r"^\d{1,2}:\d{2}(?:\s*[ap]\.?m\.?)?$", re.IGNORECASE)
+_SCORE_RE = re.compile(
+    r"^[WLD]?\s*[+\-−]?\d+\s*[-–—]\s*[+\-−]?\d+$"  # 45-38, 45–38
+    r"|^\d+-\d+-\d+$"                                                  # 5-3-0 records
+    r"|^[WL]\s*[+\-−]\s*\d+$",                                    # W +5 / L -10
+)
+_MONTHS = (r"jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec")
+_DATE_RE = re.compile(
+    rf"^\d{{4}}-\d{{2}}-\d{{2}}$"                       # ISO 2024-05-01
+    rf"|^\d{{1,2}}\s+(?:{_MONTHS})[a-z]*$"              # 14 Jun
+    rf"|^(?:{_MONTHS})[a-z]*\s+\d{{1,2}}$"              # Jun 14
+    rf"|^\d{{1,2}}/\d{{1,2}}(?:/\d{{2,4}})?$",          # 5/14 or 5/14/25
+    re.IGNORECASE,
+)
+
+
+def _is_percentage(text):
+    return bool(_PCT_RE.match(_strip_tags(text).strip()))
+
+
+def _is_time_like(text):
+    return bool(_TIME_RE.match(_strip_tags(text).strip()))
+
+
+def _is_score_like(text):
+    return bool(_SCORE_RE.match(_strip_tags(text).strip()))
+
+
+def _is_date_like(text):
+    return bool(_DATE_RE.match(_strip_tags(text).strip()))
 
 
 # =============================================================================
@@ -633,6 +685,115 @@ def apply_table_layouts(html, metadata):
         return table_html
 
     return re.sub(r'<table\b[^>]*>.*?</table>', process_table, html, flags=re.DOTALL)
+
+
+# =============================================================================
+# DEFAULT TABLE WIDTHS (applied to every table, not just declared layouts)
+# =============================================================================
+
+import logging as _logging
+
+_log = _logging.getLogger(__name__)
+
+
+def _table_body_rows(table_html):
+    """Return the body rows of a table as lists of cell-HTML strings.
+
+    Skips header rows. Used to infer a column's type from its content.
+    """
+    tbody = re.search(r'<tbody>(.*?)</tbody>', table_html, re.DOTALL)
+    area = tbody.group(1) if tbody else table_html
+    rows = []
+    for row in re.findall(r'<tr[^>]*>(.*?)</tr>', area, re.DOTALL):
+        if '<th' in row:
+            continue
+        rows.append(re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL))
+    return rows
+
+
+def _content_fallback_width(cells):
+    """Width weight for a column with no registry entry, inferred from content:
+    all-numeric / all-short columns are narrow, everything else is prose-wide."""
+    non_empty = [c for c in cells if _strip_tags(c).strip()]
+    if non_empty and all(_is_numeric(c) or _is_short_text(c) for c in non_empty):
+        return _DEFAULT_WIDTHS['fallback_numeric']
+    return _DEFAULT_WIDTHS['fallback']
+
+
+def _infer_column_widths(headers, body_rows, extra_widths):
+    """Resolve a width weight per column: per-doc override, then registry by
+    header name, then content-based fallback. Returns (widths, unknown_headers).
+    """
+    widths = []
+    unknown = []
+    for i, header in enumerate(headers):
+        key = _normalise_header(header)
+        if key in extra_widths:
+            widths.append(extra_widths[key])
+        elif key in _DEFAULT_WIDTHS['widths']:
+            widths.append(_DEFAULT_WIDTHS['widths'][key])
+        else:
+            col_cells = [row[i] for row in body_rows if i < len(row)]
+            widths.append(_content_fallback_width(col_cells))
+            if _strip_tags(header).strip():
+                unknown.append(_strip_tags(header).strip())
+    return widths, unknown
+
+
+def apply_default_table_widths(html, metadata=None):
+    """Give every table a colgroup of registry/content-derived widths.
+
+    Runs after ``apply_table_layouts``: any table that already carries a
+    ``<colgroup>`` (a declared layout matched, or the author supplied one) is
+    left untouched, so declared layouts remain the override. Every other table
+    gains ``table-layout: fixed`` widths so similar columns line up
+    consistently regardless of the particular content width.
+
+    Opt out per document with ``auto_table_widths: false``. Per-document width
+    hints can be supplied via ``extra_column_widths: {Header: weight}`` without
+    declaring a full layout.
+    """
+    metadata = metadata or {}
+    if metadata.get('auto_table_widths') is False:
+        return html
+
+    extra_raw = metadata.get('extra_column_widths') or {}
+    extra_widths = {_normalise_header(k): v for k, v in extra_raw.items()}
+
+    unknown_seen = set()
+
+    def process(match):
+        table_html = match.group(0)
+        if '<colgroup' in table_html:
+            return table_html  # already has declared widths
+        headers = _extract_headers(table_html)
+        if not headers:
+            return table_html  # no header row to key widths on
+        body_rows = _table_body_rows(table_html)
+        # Skip colspan/ragged tables — a fixed colgroup would misrender them.
+        if 'colspan' in table_html or any(
+            len(r) != len(headers) for r in body_rows
+        ):
+            return table_html
+
+        widths, unknown = _infer_column_widths(headers, body_rows, extra_widths)
+        unknown_seen.update(unknown)
+        columns = [{'name': h, 'width': w} for h, w in zip(headers, widths)]
+        colgroup = _build_colgroup(columns)
+        return re.sub(r'<table\b[^>]*>',
+                      lambda m: f'{m.group(0)}\n{colgroup}',
+                      table_html, count=1)
+
+    result = re.sub(r'<table\b[^>]*>.*?</table>', process, html, flags=re.DOTALL)
+
+    if unknown_seen:
+        _log.info(
+            "default widths: %d column header(s) not in the registry, sized by "
+            "content — add to default_widths.yml or extra_column_widths for a "
+            "consistent width: %s",
+            len(unknown_seen), ", ".join(sorted(unknown_seen)),
+        )
+    return result
 
 
 # =============================================================================
