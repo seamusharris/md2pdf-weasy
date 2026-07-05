@@ -104,6 +104,31 @@ class TestMdToHtmlCodeProtection:
         html = md_to_html('body', {'title': 'Q&A <live>'})
         assert '<h1>Q&amp;A &lt;live&gt;</h1>' in html
 
+    def test_consecutive_bold_label_lines_become_separate_paragraphs(self):
+        # Generated field summaries glue **Label:** lines together; they must
+        # not collapse into one run-together paragraph.
+        src = (
+            "**Rehab stage:** running\n"
+            "**Focus:** stability\n"
+            "**Tone:** encouraging"
+        )
+        html = md_to_html(src, {})
+        assert html.count('<strong>Rehab stage:</strong>') == 1
+        # Three distinct paragraphs, one per field.
+        assert '<strong>Focus:</strong> stability</p>' in html
+        assert '<strong>Tone:</strong> encouraging</p>' in html
+
+    def test_bold_label_with_value_on_next_line_stays_one_paragraph(self):
+        src = "**Focus:**\nmobility work"
+        html = md_to_html(src, {})
+        assert '<strong>Focus:</strong>\nmobility work</p>' in html
+
+    def test_ordinary_prose_starting_with_bold_is_not_split(self):
+        # No colon → not a label; soft-wrapped prose is left intact.
+        src = "This keeps going\n**and this** is still the same sentence."
+        html = md_to_html(src, {})
+        assert html.count('<p>') == 1
+
 
 class TestValidateFrontMatter:
 

@@ -241,6 +241,10 @@ def resolve_tables_include(metadata: dict, md_path: str | None = None) -> dict:
 _FENCE_RE = re.compile(r'(?ms)^([ \t]*)(`{3,}|~{3,})[^\n]*\n.*?^\1?\2[ \t]*$')
 _INLINE_CODE_RE = re.compile(r'(`+)[^\n]*?\1')
 _LIST_MARKER_RE = re.compile(r'^[ \t]*(?:[-*+] |\d+\. )')
+# A "bold label" line: **Label:** value  or  **Label**: value. Generated
+# markdown emits runs of these on consecutive lines with no blank between
+# them, which markdown collapses into a single run-together paragraph.
+_BOLD_LABEL_RE = re.compile(r'^[ \t]*\*\*[^*\n]{1,80}\*\*[ \t]*:|^[ \t]*\*\*[^*\n]{1,80}:[ \t]*\*\*')
 
 
 def _protect_code(md_content: str) -> tuple[str, list[str]]:
@@ -268,24 +272,33 @@ def _restore_code(md_content: str, stash: list[str]) -> str:
     return md_content
 
 
-def _ensure_blank_line_before_lists(md_content: str) -> str:
-    """Insert a blank line before a list that starts right after a paragraph.
+def _separate_generated_blocks(md_content: str) -> str:
+    """Insert blank lines that generated markdown omits between block elements.
 
-    python-markdown requires the blank line but generated markdown often omits
-    it. Only fires when the previous line is a non-empty, non-list line, so
-    genuinely *tight* lists (consecutive items) are left tight rather than
-    forced loose.
+    python-markdown needs a blank line to start a new block, but generated
+    markdown frequently glues blocks together with single newlines. Two cases
+    are repaired:
+
+    - A **list** that starts right after a paragraph/heading gets a blank line
+      before it. Consecutive list items are left untouched, so genuinely
+      *tight* lists stay tight rather than being forced loose.
+    - A run of **bold-label** lines (``**Rehab stage:** ...``) — the pattern
+      generated field summaries use — gets a blank line before each label, so
+      each field becomes its own paragraph instead of collapsing into one
+      run-together block.
+
+    A blank is only inserted when the line is glued to a preceding non-blank
+    line, so already-separated content is left as-is (no double blanks).
     """
     lines = md_content.split('\n')
     out: list[str] = []
     for i, line in enumerate(lines):
-        if (
-            i > 0
-            and _LIST_MARKER_RE.match(line)
-            and lines[i - 1].strip()
-            and not _LIST_MARKER_RE.match(lines[i - 1])
-        ):
-            out.append('')
+        if i > 0 and lines[i - 1].strip():
+            prev_is_list = bool(_LIST_MARKER_RE.match(lines[i - 1]))
+            if _LIST_MARKER_RE.match(line) and not prev_is_list:
+                out.append('')
+            elif _BOLD_LABEL_RE.match(line):
+                out.append('')
         out.append(line)
     return '\n'.join(out)
 
@@ -302,9 +315,9 @@ def md_to_html(md_content: str, metadata: dict) -> str:
 
     md_content = typographic_convert(md_content)
 
-    # Ensure blank line before list markers — python-markdown requires it
-    # but generated markdown often omits it.
-    md_content = _ensure_blank_line_before_lists(md_content)
+    # Repair block separation that generated markdown omits (lists glued to
+    # paragraphs, runs of bold-label field lines collapsing into one block).
+    md_content = _separate_generated_blocks(md_content)
 
     md_content = _restore_code(md_content, code_stash)
 
