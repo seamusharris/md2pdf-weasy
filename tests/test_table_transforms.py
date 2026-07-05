@@ -344,6 +344,7 @@ class TestTypedColumnWidths:
         assert _classify_column("Risk", ["58%", "0%"]) == "pct"
         assert _classify_column("Time", ["9:00", "9:18"]) == "time"
         assert _classify_column("Date", ["14 Jun", "21 Jun"]) == "date"
+        assert _classify_column("Date", ["Saturday 14 June", "Sunday 22 June"]) == "date"
         assert _classify_column("Score", ["45-38", "6-24"]) == "score"
         assert _classify_column("Record", ["0W-2L-1D", "4W-0L"]) == "score"
         assert _classify_column("Team", ["Warrandyte Wallabies"]) == "text"

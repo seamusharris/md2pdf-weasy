@@ -600,7 +600,19 @@ table.fit { width: auto; }
 th, td {
     box-sizing: border-box;   /* so a <col> width is the cell's border-box width */
     border: 0.5pt solid var(--color-border);
-    padding: 0.4em 0.55em;    /* em, scales with font-size (~3.5pt 5pt @9pt) */
+    /* Vertical padding is deliberately asymmetric (0.5 top / 0.3 bottom).
+       The body font (Minion Caption) leaves a ~0.27em descender void below
+       the baseline and only ~0.08em above the caps, so symmetric padding makes
+       text look high; WeasyPrint has no text-box-trim, so we shift the content
+       down ~0.1em. The two numbers are DERIVED FROM THE FONT METRICS, not
+       eyeballed — test_cell_padding_tracks_font_metrics recomputes them from
+       the bundled OTF and fails if the font changes or the values drift. The
+       top+bottom sum stays 0.8em (== symmetric 0.4+0.4) so cell height,
+       backgrounds and borders are byte-for-byte unchanged. Horizontal padding
+       drives column width — keep in sync with CELL_OVERHEAD_EM in
+       table_transforms.py. */
+    padding: 0.5em 0.55em 0.3em;
+    line-height: 1.2;
     text-align: left;
     vertical-align: middle;
     overflow-wrap: break-word;  /* long tokens/URLs wrap instead of bleeding */
@@ -617,13 +629,15 @@ th {
     font-size: 8.5pt;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    text-align: left;
+    text-align: center;   /* headers are centred by default */
     border-bottom: 1pt solid var(--color-border-heavy);
 }
 
-/* Column alignment classes -- used by charts/tables.py and postprocessor */
+/* Column alignment classes -- used by charts/tables.py and postprocessor.
+   Data cells follow their column type (numbers right, short codes centred);
+   headers stay centred unless a column explicitly asks for a left header. */
 th.left { text-align: left; }
-td.num, th.num { text-align: right; }
+td.num { text-align: right; }
 td.ctr, th.ctr { text-align: center; }
 
 

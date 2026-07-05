@@ -111,10 +111,12 @@ _SCORE_RE = re.compile(
     re.IGNORECASE,
 )
 _MONTHS = (r"jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec")
+_WEEKDAYS = (r"mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun")
 _DATE_RE = re.compile(
     rf"^\d{{4}}-\d{{2}}-\d{{2}}$"                       # ISO 2024-05-01
     rf"|^\d{{1,2}}\s+(?:{_MONTHS})[a-z]*$"              # 14 Jun
     rf"|^(?:{_MONTHS})[a-z]*\s+\d{{1,2}}$"              # Jun 14
+    rf"|^(?:{_WEEKDAYS})[a-z]*\s+\d{{1,2}}\s+(?:{_MONTHS})[a-z]*$"  # Saturday 14 June
     rf"|^\d{{1,2}}/\d{{1,2}}(?:/\d{{2,4}})?$",          # 5/14 or 5/14/25
     re.IGNORECASE,
 )
