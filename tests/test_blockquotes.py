@@ -113,3 +113,11 @@ class TestSplitMergedBlockquotes:
         html = "<blockquote>\n<p>a</p>\n<p>b</p>\n<p>c</p>\n</blockquote>"
         result = split_merged_blockquotes(html)
         assert result.count("<blockquote>") == 3
+
+    def test_blockquote_with_a_list_is_not_split_and_keeps_the_list(self):
+        # Splitting on <p> alone would drop the <ul>; it must be left intact.
+        html = ("<blockquote>\n<p>intro</p>\n<ul><li>a</li><li>b</li></ul>\n"
+                "<p>outro</p>\n</blockquote>")
+        result = split_merged_blockquotes(html)
+        assert result.count("<blockquote>") == 1
+        assert "<ul><li>a</li><li>b</li></ul>" in result

@@ -94,7 +94,7 @@ def detect_table_section_rows(html):
     """
     def process_row(match):
         row = match.group(0)
-        cells = re.findall(r"<td>(.*?)</td>", row, flags=re.DOTALL)
+        cells = re.findall(r"<td[^>]*>(.*?)</td>", row, flags=re.DOTALL)
         if len(cells) >= 2:
             non_empty = [c.strip() for c in cells if c.strip()]
             if len(non_empty) == 1 and cells[0].strip():
@@ -206,7 +206,10 @@ def highlight_table_rows(html):
         cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.DOTALL)
         for cell in cells:
             stripped = cell.strip()
-            m = re.match(r"^<strong>(.+)</strong>$", stripped)
+            # [^<] so a cell with two bold runs ("<strong>A</strong> vs
+            # <strong>B</strong>") isn't greedily matched as one, which would
+            # ship unbalanced tags.
+            m = re.match(r"^<strong>([^<]+)</strong>$", stripped)
             if m:
                 inner = m.group(1)
                 if len(inner) > 3:
@@ -276,7 +279,7 @@ def _highlight_direction_rows(table_html):
         cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.DOTALL)
         for cell in cells:
             stripped = cell.strip()
-            m = re.match(r"^<strong>(.+)</strong>$", stripped)
+            m = re.match(r"^<strong>([^<]+)</strong>$", stripped)
             if not m:
                 continue
             inner = m.group(1)
@@ -306,12 +309,16 @@ def _highlight_direction_rows(table_html):
             else:
                 css_class = f'highlight-{direction}'
 
-            # Replace or add class on <tr>
-            if 'class="' in row:
-                new_row = re.sub(r'class="[^"]*"', f'class="{css_class}"',
-                                 row, count=1)
+            # Replace or add class on the <tr> open tag specifically — a
+            # blanket first-class substitution could land on a <td>'s class.
+            tr_open = re.match(r'<tr\b[^>]*>', row)
+            open_tag = tr_open.group(0)
+            if 'class="' in open_tag:
+                new_open = re.sub(r'class="[^"]*"', f'class="{css_class}"',
+                                  open_tag, count=1)
             else:
-                new_row = row.replace("<tr>", f'<tr class="{css_class}">', 1)
+                new_open = open_tag[:-1] + f' class="{css_class}">'
+            new_row = new_open + row[tr_open.end():]
 
             # Replace bold content with cleaned version
             new_row = new_row.replace(f"<strong>{inner}</strong>", clean, 1)
@@ -365,7 +372,7 @@ def colour_results(html):
         r'|FW|FL|ABN'
         r'|Forfeit\s+win|Forfeit\s+loss|Bye|Abandoned'
         r')(?:</strong>)?)</td>',
-        colour_cell, html
+        colour_cell, html, flags=re.IGNORECASE
     )
 
 
@@ -405,10 +412,10 @@ def colour_risk_cells(html, risk_tables=None):
         return html
 
     def _risk_class(content: str) -> str | None:
-        pct_match = re.match(r'(\d+)%', content.strip())
+        pct_match = re.match(r'(\d+(?:\.\d+)?)\s*%', content.strip())
         if not pct_match:
             return None
-        pct = int(pct_match.group(1))
+        pct = float(pct_match.group(1))
         if pct >= 50:
             return 'risk-high'
         if pct >= 25:
@@ -440,7 +447,12 @@ def colour_risk_cells(html, risk_tables=None):
                 if not cls:
                     continue
                 old_td = cell.group(0)
-                new_td = old_td.replace('<td', f'<td class="{cls}"', 1)
+                # Merge into any existing class (cells are already class="num"
+                # from auto-alignment) rather than emitting a second attribute.
+                if 'class="' in old_td:
+                    new_td = re.sub(r'class="', f'class="{cls} ', old_td, count=1)
+                else:
+                    new_td = old_td.replace('<td', f'<td class="{cls}"', 1)
                 result = result[:cell.start()] + new_td + result[cell.end():]
             return result
 
@@ -475,7 +487,7 @@ def _match_layout(header_texts, table_layouts):
         columns = layout.get('columns', [])
         if len(columns) != len(normalised):
             continue
-        if all(c['name'].lower() == h for c, h in zip(columns, normalised)):
+        if all(c.get('name', '').lower() == h for c, h in zip(columns, normalised)):
             return layout_name, layout
 
     return None, None
@@ -537,11 +549,14 @@ def _apply_column_alignment(table_html, columns):
             return cell_match.group(0)
 
         cell_idx[0] = 0
-        row_html = re.sub(r'<(t[dh])(\s[^>]*)?>(.+?)</\1>',
+        # (.*?) not (.+?): empty cells (<td></td>, or markdown's alignment-
+        # styled empties) must still be counted, else the column index desyncs
+        # and every cell after an empty one gets the wrong column's alignment.
+        row_html = re.sub(r'<(t[dh])(\s[^>]*)?>(.*?)</\1>',
                           set_align, row_html, flags=re.DOTALL)
         return row_html
 
-    return re.sub(r'<tr>.*?</tr>', align_cells, table_html, flags=re.DOTALL)
+    return re.sub(r'<tr[^>]*>.*?</tr>', align_cells, table_html, flags=re.DOTALL)
 
 
 def apply_table_layouts(html, metadata):
@@ -574,18 +589,28 @@ def apply_table_layouts(html, metadata):
         if layout:
             columns = layout.get('columns', [])
 
-            # Inject colgroup
+            # Inject colgroup right after the opening <table…> tag (which may
+            # carry attributes when the table came through md_in_html/attr_list).
             colgroup = _build_colgroup(columns)
-            table_html = table_html.replace('<table>', f'<table>\n{colgroup}', 1)
+            table_html = re.sub(
+                r'<table\b[^>]*>',
+                lambda m: f'{m.group(0)}\n{colgroup}',
+                table_html, count=1,
+            )
 
             # Apply alignment
             table_html = _apply_column_alignment(table_html, columns)
 
-            # Add CSS class to table if declared
+            # Add CSS class to table if declared, merging with any existing one.
             css_class = layout.get('css_class')
             if css_class:
-                table_html = table_html.replace(
-                    '<table>', f'<table class="{css_class}">', 1)
+                def _add_table_class(m):
+                    tag = m.group(0)
+                    if 'class="' in tag:
+                        return re.sub(r'class="', f'class="{css_class} ', tag, count=1)
+                    return tag[:-1] + f' class="{css_class}">'
+                table_html = re.sub(r'<table\b[^>]*>', _add_table_class,
+                                    table_html, count=1)
 
             # Per-table highlight mode
             highlight_mode = layout.get('highlight')
@@ -607,7 +632,7 @@ def apply_table_layouts(html, metadata):
 
         return table_html
 
-    return re.sub(r'<table>.*?</table>', process_table, html, flags=re.DOTALL)
+    return re.sub(r'<table\b[^>]*>.*?</table>', process_table, html, flags=re.DOTALL)
 
 
 # =============================================================================
@@ -629,14 +654,14 @@ def generate_toc(html, max_depth=3):
         id attributes added to headings.
     """
     heading_pat = re.compile(
-        r'<(h([1-6]))[^>]*>(.*?)</\1>', re.DOTALL
+        r'<(h([1-6]))([^>]*)>(.*?)</\1>', re.DOTALL
     )
     headings = []
     for match in heading_pat.finditer(html):
         level = int(match.group(2))
         if level > max_depth:
             continue
-        text = re.sub(r'<[^>]+>', '', match.group(3)).strip()
+        text = re.sub(r'<[^>]+>', '', match.group(4)).strip()
         headings.append((level, text, match))
 
     if not headings:
@@ -660,11 +685,12 @@ def generate_toc(html, max_depth=3):
             counter += 1
         used_ids.add(slug)
 
-        # Replace heading tag with one that has an id
-        old_tag = match.group(0)
+        # Replace heading tag with one that has an id, preserving any existing
+        # attributes (e.g. the break-before style injected by no-page-break).
         tag_name = match.group(1)
-        inner = match.group(3)
-        new_tag = f'<{tag_name} id="{slug}">{inner}</{tag_name}>'
+        attrs = re.sub(r'\s*id="[^"]*"', '', match.group(3))
+        inner = match.group(4)
+        new_tag = f'<{tag_name} id="{slug}"{attrs}>{inner}</{tag_name}>'
         modified = modified[:match.start()] + new_tag + modified[match.end():]
 
         toc_entries.append((level, text, slug))

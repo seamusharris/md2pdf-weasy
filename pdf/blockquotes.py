@@ -25,8 +25,15 @@ def split_merged_blockquotes(html):
     gets its own border and spacing.
     """
     def splitter(match):
-        paragraphs = re.findall(r"<p>(.*?)</p>", match.group(1), flags=re.DOTALL)
+        inner = match.group(1)
+        paragraphs = re.findall(r"<p>(.*?)</p>", inner, flags=re.DOTALL)
         if len(paragraphs) <= 1:
+            return match.group(0)
+        # Only split a blockquote that is *nothing but* <p> children. If it
+        # also holds a list, table, or other block, splitting on paragraphs
+        # alone would silently drop that content, so leave it intact.
+        residue = re.sub(r"<p>.*?</p>", "", inner, flags=re.DOTALL).strip()
+        if residue:
             return match.group(0)
         return "\n".join(
             f"<blockquote>\n<p>{p.strip()}</p>\n</blockquote>"

@@ -5,9 +5,11 @@ from pdf.table_transforms import (
     _DEFAULT_WIDTHS,
     _build_colgroup,
     _extract_headers,
+    _highlight_direction_rows,
     _match_layout,
     align_table_columns,
     apply_table_layouts,
+    colour_results,
     colour_risk_cells,
     detect_table_section_rows,
 )
@@ -271,3 +273,46 @@ class TestColourRiskCells:
         assert 'class="risk-high">71%' in result
         # 58% sits in the non-last column → must not be wrapped.
         assert '<td>58%</td>' in result
+
+
+class TestTransformCorrectnessFixes:
+    """Regression tests for the batch-2 transform bug fixes."""
+
+    def test_alignment_survives_an_empty_cell(self):
+        # An empty middle cell must not desync the column index; the last
+        # column (all numeric) should still be right-aligned.
+        table = (
+            '<table><tbody>'
+            '<tr><td>Mon</td><td></td><td>30</td></tr>'
+            '<tr><td>Tue</td><td>x</td><td>45</td></tr>'
+            '</tbody></table>'
+        )
+        result = align_table_columns(table)
+        assert result.count('<td class="num">30</td>') == 1
+        assert '<td class="num">45</td>' in result
+
+    def test_risk_cell_merges_with_existing_class(self):
+        table = '<table class="r"><tr><td class="num">67%</td></tr></table>'
+        result = colour_risk_cells(table, risk_tables=['r'])
+        assert '<td class="risk-high num">67%</td>' in result
+
+    def test_risk_cell_accepts_decimal_percent(self):
+        table = '<table class="r"><tr><td>58.5%</td></tr></table>'
+        result = colour_risk_cells(table, risk_tables=['r'])
+        assert 'risk-high' in result
+
+    def test_result_colouring_is_case_insensitive(self):
+        result = colour_results('<td>BYE</td><td>Forfeit Win</td>')
+        assert 'result-bye' in result
+        assert 'result-win' in result
+
+    def test_direction_marker_class_lands_on_the_row_not_a_cell(self):
+        row = '<tr><td class="num">5</td><td><strong>{up}Possums</strong></td></tr>'
+        result = _highlight_direction_rows(row)
+        assert '<tr class="highlight-up">' in result
+        assert '<td class="num">5</td>' in result  # cell class preserved
+
+    def test_match_layout_tolerates_a_column_without_name(self):
+        # A front-matter typo (a column missing 'name') must warn/skip, not crash.
+        layouts = {'L': {'columns': [{'width': 30}, {'name': 'W'}]}}
+        assert _match_layout(['Team', 'W'], layouts) == (None, None)
