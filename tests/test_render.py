@@ -8,6 +8,7 @@ import yaml
 
 from pdf.render import (
     _tracked_rows,
+    md_to_html,
     parse_front_matter,
     resolve_tables_include,
     validate_front_matter,
@@ -51,6 +52,57 @@ class TestParseFrontMatter:
         meta, body = parse_front_matter(content)
         assert meta == {}
         assert body == "# Heading"
+
+    def test_document_opening_with_thematic_break_is_not_front_matter(self):
+        # A doc that opens with a `---` horizontal rule parses to a scalar, not
+        # a mapping — it must be handed back untouched, not crash.
+        content = "---\n# Heading\n\nIntro text\n\n---\n\nAfter the rule"
+        meta, body = parse_front_matter(content)
+        assert meta == {}
+        assert body == content
+
+    def test_malformed_yaml_is_tolerated(self, caplog):
+        content = "---\ntitle: [unclosed\n---\n# Body"
+        meta, body = parse_front_matter(content)
+        assert meta == {}
+        assert body == content
+
+    def test_closing_delimiter_must_be_on_its_own_line(self):
+        # A `---` embedded in a value should not terminate the front matter.
+        content = "---\ntitle: A --- B\nsubtitle: x\n---\n# Body"
+        meta, body = parse_front_matter(content)
+        assert meta == {'title': 'A --- B', 'subtitle': 'x'}
+        assert body == "# Body"
+
+
+class TestMdToHtmlCodeProtection:
+
+    def test_typography_does_not_touch_fenced_code(self):
+        html = md_to_html('```\na -> b\n```', {})
+        assert 'a -&gt; b' in html or 'a -> b' in html
+        assert '→' not in html
+
+    def test_typography_does_not_touch_inline_code(self):
+        html = md_to_html('Use `x -> y` here.', {})
+        assert '→' not in html
+        # Prose arrows outside code still convert.
+        html2 = md_to_html('go from a -> b', {})
+        assert '→' in html2
+
+    def test_tight_list_stays_tight(self):
+        # Consecutive items must not be forced loose (no <p> wrapping in <li>).
+        html = md_to_html('- one\n- two\n- three', {})
+        assert '<li>one</li>' in html
+
+    def test_blank_line_inserted_before_list_after_paragraph(self):
+        # A list glued to the preceding paragraph is still recognised as a list.
+        html = md_to_html('A paragraph.\n- item one\n- item two', {})
+        assert '<ul>' in html
+        assert '<li>item one</li>' in html
+
+    def test_title_is_html_escaped(self):
+        html = md_to_html('body', {'title': 'Q&A <live>'})
+        assert '<h1>Q&amp;A &lt;live&gt;</h1>' in html
 
 
 class TestValidateFrontMatter:

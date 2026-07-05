@@ -27,6 +27,7 @@ Requires: weasyprint, markdown, pyyaml
 """
 from __future__ import annotations
 
+import html as _html
 import logging
 import os
 import re
@@ -130,8 +131,12 @@ def validate_front_matter(metadata: dict) -> list[str]:
         else:
             expected = _FRONT_MATTER_SCHEMA[key]
             if not isinstance(value, expected):
+                if isinstance(expected, tuple):
+                    expected_name = " or ".join(t.__name__ for t in expected)
+                else:
+                    expected_name = expected.__name__
                 warnings.append(
-                    f"front matter '{key}': expected {expected.__name__}, "
+                    f"front matter '{key}': expected {expected_name}, "
                     f"got {type(value).__name__}"
                 )
     return warnings
@@ -156,12 +161,30 @@ def parse_front_matter(content: str) -> tuple[dict, str]:
         # Markdown content starts here
     """
     if content.startswith("---"):
-        end = content.find("---", 3)
-        if end != -1:
-            meta = yaml.safe_load(content[3:end].strip()) or {}
+        # The closing delimiter must be a line of its own (a bare `---`), not a
+        # `---` embedded inside a YAML value or a `---` horizontal rule further
+        # down the body.
+        close = re.search(r'^---[ \t]*$', content[3:], re.MULTILINE)
+        if close is not None:
+            raw = content[3:3 + close.start()]
+            rest = content[3 + close.end():]
+            try:
+                meta = yaml.safe_load(raw.strip()) or {}
+            except yaml.YAMLError as exc:
+                log.warning("front matter is not valid YAML; ignoring it: %s", exc)
+                return {}, content
+            # A document that merely opens with a `---` thematic break parses to
+            # a scalar/list rather than a mapping — treat that as "no front
+            # matter" and hand the whole document back untouched.
+            if not isinstance(meta, dict):
+                log.warning(
+                    "front matter did not parse to a mapping (got %s); ignoring it",
+                    type(meta).__name__,
+                )
+                return {}, content
             for warning in validate_front_matter(meta):
                 log.warning("%s", warning)
-            return meta, content[end + 3:].strip()
+            return meta, rest.strip()
     return {}, content
 
 
@@ -215,6 +238,58 @@ def resolve_tables_include(metadata: dict, md_path: str | None = None) -> dict:
 # CONVERSION
 # =============================================================================
 
+_FENCE_RE = re.compile(r'(?ms)^([ \t]*)(`{3,}|~{3,})[^\n]*\n.*?^\1?\2[ \t]*$')
+_INLINE_CODE_RE = re.compile(r'(`+)[^\n]*?\1')
+_LIST_MARKER_RE = re.compile(r'^[ \t]*(?:[-*+] |\d+\. )')
+
+
+def _protect_code(md_content: str) -> tuple[str, list[str]]:
+    """Stash fenced and inline code spans behind placeholders.
+
+    Typography conversion and the list-marker normalisation below operate on
+    raw markdown, so without this guard they would rewrite ``->``, quotes,
+    digit ranges, etc. *inside* code samples. Placeholders contain no newlines
+    or list markers, so neither pass touches the stashed content.
+    """
+    stash: list[str] = []
+
+    def _stash(match: re.Match) -> str:
+        stash.append(match.group(0))
+        return f'\x00CODE{len(stash) - 1}\x00'
+
+    md_content = _FENCE_RE.sub(_stash, md_content)
+    md_content = _INLINE_CODE_RE.sub(_stash, md_content)
+    return md_content, stash
+
+
+def _restore_code(md_content: str, stash: list[str]) -> str:
+    for i, original in enumerate(stash):
+        md_content = md_content.replace(f'\x00CODE{i}\x00', original, 1)
+    return md_content
+
+
+def _ensure_blank_line_before_lists(md_content: str) -> str:
+    """Insert a blank line before a list that starts right after a paragraph.
+
+    python-markdown requires the blank line but generated markdown often omits
+    it. Only fires when the previous line is a non-empty, non-list line, so
+    genuinely *tight* lists (consecutive items) are left tight rather than
+    forced loose.
+    """
+    lines = md_content.split('\n')
+    out: list[str] = []
+    for i, line in enumerate(lines):
+        if (
+            i > 0
+            and _LIST_MARKER_RE.match(line)
+            and lines[i - 1].strip()
+            and not _LIST_MARKER_RE.match(lines[i - 1])
+        ):
+            out.append('')
+        out.append(line)
+    return '\n'.join(out)
+
+
 def md_to_html(md_content: str, metadata: dict) -> str:
     """Convert markdown string to a complete HTML document.
 
@@ -222,11 +297,16 @@ def md_to_html(md_content: str, metadata: dict) -> str:
     post-processing. Direction markers ({up}/{down}/{mod}) in bold cells
     are also handled during post-processing.
     """
+    # Protect code spans/fences from the source-level rewrites that follow.
+    md_content, code_stash = _protect_code(md_content)
+
     md_content = typographic_convert(md_content)
 
     # Ensure blank line before list markers — python-markdown requires it
     # but generated markdown often omits it.
-    md_content = re.sub(r'([^\n])\n([-*+] |\d+\. )', r'\1\n\n\2', md_content)
+    md_content = _ensure_blank_line_before_lists(md_content)
+
+    md_content = _restore_code(md_content, code_stash)
 
     html_body = markdown.markdown(
         md_content,
@@ -254,22 +334,18 @@ def md_to_html(md_content: str, metadata: dict) -> str:
         toc_html, html_body = generate_toc(html_body, max_depth=toc_depth)
         toc_html += "\n"
 
-    # Title block from YAML front matter
+    # Title block from YAML front matter. Escape first so stray <, > or &
+    # in the front matter can't inject markup or drop content, then apply
+    # typography (quotes/dashes) to the escaped text.
     title_html = ""
     if metadata.get("title"):
-        title_html += (
-            '<h1>'
-            f'{typographic_convert(metadata["title"])}'
-            '</h1>\n'
-        )
+        safe_title = typographic_convert(_html.escape(str(metadata["title"]), quote=False))
+        title_html += f'<h1>{safe_title}</h1>\n'
     if metadata.get("subtitle"):
-        title_html += (
-            '<p class="doc-subtitle">'
-            f'{typographic_convert(metadata["subtitle"])}'
-            '</p>\n'
-        )
+        safe_subtitle = typographic_convert(_html.escape(str(metadata["subtitle"]), quote=False))
+        title_html += f'<p class="doc-subtitle">{safe_subtitle}</p>\n'
 
-    title_text = metadata.get("title", "Document")
+    title_text = _html.escape(str(metadata.get("title", "Document")), quote=False)
 
     return (
         '<!DOCTYPE html>\n'

@@ -22,7 +22,10 @@ _TYPO_RULES = [
     (re.compile(r"->"), "\u2192"),
     (re.compile(r"(\d\w*)\s*x\s+(\d)"),
      lambda m: m.group(1) + " \u00d7 " + m.group(2)),
-    (re.compile(r"(\d)-(\d)"),
+    # En dash for isolated digit ranges only (6-8). The boundaries keep it
+    # from firing inside dates (2024-05-01) or W-L-D records (5-3-0), where a
+    # third hyphen-digit group sits on one side.
+    (re.compile(r"(?<![\d-])(\d+)-(\d+)(?![\d-])"),
      lambda m: m.group(1) + "\u2013" + m.group(2)),
     (re.compile(r'(?:^|(?<=\s)|(?<=\*)|(?<=\())\"(\S)'), lambda m: "\u201c" + m.group(1)),
     (re.compile(r'(\S)\"(?=\s|$|[,.\*\)\:]|$)'), lambda m: m.group(1) + "\u201d"),

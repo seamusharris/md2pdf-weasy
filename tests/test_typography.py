@@ -20,6 +20,14 @@ class TestTypographicConvert:
     def test_digit_range_becomes_en_dash(self):
         assert typographic_convert("6-8") == "6–8"
 
+    def test_dates_are_not_turned_into_en_dashes(self):
+        # ISO dates have a third hyphen-digit group and must be left alone.
+        assert typographic_convert("2024-05-01") == "2024-05-01"
+
+    def test_wld_records_are_not_turned_into_en_dashes(self):
+        # W-L-D records (5-3-0) are used verbatim by table alignment detection.
+        assert typographic_convert("5-3-0") == "5-3-0"
+
     def test_multiplication_sign_between_digits(self):
         result = typographic_convert("5m x 5m")
         assert "×" in result
