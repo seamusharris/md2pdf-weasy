@@ -151,7 +151,9 @@ th {
     letter-spacing: 0;
 }
 
-/* Subtle row striping */
-tr:nth-child(even) td {
+/* Subtle row striping — applied to the row, not the cell, so semantic
+   cell backgrounds (risk tints, tracked/verdict/section rows) paint over the
+   stripe instead of being overridden by it. */
+tr:nth-child(even) {
     background: #f9f9f9;
 }

@@ -27,6 +27,15 @@ class TestConvertPageBreaks:
         assert 'break-before: auto' in result
         assert '<!-- no-page-break -->' not in result
 
+    def test_no_page_break_merges_into_existing_style(self):
+        # A heading that already has an inline style must not end up with two
+        # style attributes (the second would be dropped by the HTML parser).
+        html = '<!-- no-page-break -->\n<h2 style="color:red">Section</h2>'
+        result = convert_page_breaks(html)
+        assert result.count('style=') == 1
+        assert 'break-before: auto' in result
+        assert 'color:red' in result
+
     def test_whitespace_around_markers_is_tolerant(self):
         # Extra spaces inside the comment delimiters should still match
         html = "<!--    page-break   -->"

@@ -125,10 +125,19 @@ def convert_page_breaks(html):
         '<div style="break-before: page;"></div>',
         html,
     )
-    # <!-- no-page-break --> before a heading suppresses its automatic break
+    # <!-- no-page-break --> before a heading suppresses its automatic break,
+    # merging into any existing style rather than emitting a second attribute.
+    def _suppress_break(match):
+        tag = match.group(1)
+        if 'break-before' in tag:
+            return tag
+        if 'style="' in tag:
+            return tag.replace('style="', 'style="break-before: auto; ', 1)
+        return tag[:-1] + ' style="break-before: auto;">'
+
     html = re.sub(
-        r'<!--\s*no-page-break\s*-->\s*(<h[1-6])',
-        r'\1 style="break-before: auto;"',
+        r'<!--\s*no-page-break\s*-->\s*(<h[1-6][^>]*>)',
+        _suppress_break,
         html,
     )
     return html
