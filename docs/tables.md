@@ -54,7 +54,7 @@ optional `css_class` added to `<table>`.
 
 ## Default widths registry
 
-`pdf/default_widths.yml` ships with ~80 header-name → width mappings so
+`pdf/default_widths.yml` ships with ~90 header-name → width mappings so
 layouts only need to specify `width:` for columns the registry doesn't
 know about. Examples:
 
@@ -71,9 +71,9 @@ know about. Examples:
 "Action":    40
 ```
 
-Project-level layouts override the registry. Layouts override per-doc
-overrides. (Per-doc front-matter `tables:` wins over `tables_include:`
-shared layouts which win over registry defaults.)
+Precedence: per-doc front-matter `tables:` wins over `tables_include:`
+shared layouts, which win over registry defaults. An explicit `width:` on
+a column always overrides the registry lookup for that column.
 
 To extend the registry, edit `pdf/default_widths.yml` in the package —
 benefits all projects using the pipeline.
@@ -114,7 +114,7 @@ Per-layout `highlight:` field controls row-level highlighting:
 |---|---|
 | `row` (default if tracked_rows is set) | Full row highlight via `<tr class="highlight">` |
 | `bold-only` | Keep bold cells but no row-level class |
-| `none` | Strip bold from matched cells, no highlight |
+| `none` | No row-level highlighting. Currently behaves identically to `bold-only` — bold cell content is **not** stripped. |
 
 ```yaml
 tables:
@@ -125,9 +125,19 @@ tables:
 
 ## Auto-alignment
 
-The pipeline scans each column's cell content and auto-applies
-`text-align: right` to columns where every cell is numeric (digits,
-decimals, percentages, en-dashes, fractions, win-loss notation).
+The pipeline scans each column's cell content and adds an alignment class
+to the `<td>` cells:
+
+- Columns where every cell is numeric (digits, decimals, percentages,
+  en-dashes, fractions, win-loss notation, or empty/`-`) get `class="num"`
+  — right-aligned. A short numeric **first** column (rank/index) is
+  centred instead.
+- Columns where every cell is short text (≤3 characters, like `H`/`A` or
+  `W`/`L`) get `class="ctr"` — centred.
+- Everything else stays left-aligned (the default).
+
+The `num` and `ctr` classes are styled in `style.css` (`td.num` →
+right, `td.ctr` → center).
 
 Disable with `auto_align_columns: false` in front matter if you want
 manual control.
@@ -161,5 +171,12 @@ Each `<col>` in a generated `<colgroup>` gets a class `col-<header-name-
 lowercased-hyphenated>`. Use this for per-column CSS targeting:
 
 ```css
-table.weekly-schedule col.col-tss { text-align: right; font-feature-settings: "tnum"; }
+table.weekly-schedule col.col-tss { background: #fafafa; }
 ```
+
+Note the CSS limitation: only a handful of properties (notably `width`,
+`background`, `border`) apply through `<col>` elements — `text-align`
+does **not** inherit from `<col>` to the cells. Real per-column alignment
+comes from the cell-level classes (`td.num` / `td.ctr` from auto-align,
+or the `align:` key on a column definition, which writes an inline
+`text-align` onto each `th`/`td`).

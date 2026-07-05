@@ -34,7 +34,8 @@
    in pdf/fonts/. Paths are relative to this CSS file so ../fonts/ resolves
    to pdf/fonts/. WeasyPrint handles relative URLs.
 
-   Primary system (Adobe, personal-use licensed — see pdf/README):
+   Primary system (Adobe, personal-use licensed — see the repository
+   README's licence note; do not redistribute):
      Minion Pro      — body serif, 4 optical sizes (Caption / Regular /
                        Subhead / Display), each declared as its own
                        font-family name so CSS can pick the right cut

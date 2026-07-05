@@ -35,8 +35,8 @@ Slashes, backslashes, and `..` are rejected for safety; only bare names.
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `h2_page_break` | bool | false | When true, every `h2` starts on a new page. CSS rule injected: `h2 { break-before: page; margin-top: 0; }`. The bundled `style.css` also lets the first `h2` inside `.content` stay on the title page so it doesn't start empty. |
-| `toc` | bool | false | When true, generate a table of contents from `h2` and `h3` (configurable depth) and insert it after the title. |
+| `h2_page_break` | bool | false | When true, every `h2` starts on a new page. CSS is injected by `render.py` (`_front_matter_css`): `h2 { break-before: page; margin-top: 0; }` plus `h1 + h2 { break-before: auto; }` (so an `h2` right after the title stays on the cover). When there is **no** TOC, `.content > h2:first-child { break-before: auto; }` is also injected so the first content `h2` stays on the title page rather than leaving it near-empty. These rules are conditional — not part of the unconditional bundled `style.css`. |
+| `toc` | bool | false | When true, generate a table of contents from the body headings (`h1` through `h{toc_depth}`) and insert it after the title. |
 | `toc_depth` | int | 3 | Maximum heading depth to include in the TOC. Only meaningful when `toc: true`. |
 
 ## Tables
@@ -45,8 +45,8 @@ Slashes, backslashes, and `..` are rejected for safety; only bare names.
 |---|---|---|---|
 | `tables` | dict | `{}` | Per-document table layouts. See [tables.md](tables.md). |
 | `tables_include` | str | — | Path to a shared YAML file of layouts. Resolved cwd-relative first, then relative to the markdown file. Per-doc `tables` overrides shared layouts by key. |
-| `auto_align_columns` | bool | true | When true (default), columns with numeric-only cells get `text-align: right` automatically. Set false to disable. |
-| `auto_highlight_bold_rows` | bool | false | When true, table rows where the first cell is bold are highlighted via `<tr class="highlight">`. Opt-in for retrospective reports. |
+| `auto_align_columns` | bool | true | When true (default), auto-align columns by content: all-numeric columns get `class="num"` (right-aligned) and all-short (≤3-char) columns get `class="ctr"` (centred). Set false to disable. See [tables.md](tables.md). |
+| `auto_highlight_bold_rows` | bool | false | When true, any table row containing a cell that is wholly wrapped in `**bold**` (inner text longer than 3 characters) gets `<tr class="highlight">`, and the bold markup on that cell is removed (the row CSS re-bolds it). Opt-in for retrospective reports. |
 
 ## Callouts
 
@@ -63,8 +63,8 @@ All four are dormant unless the corresponding key is set. See
 |---|---|---|---|
 | `tracked_rows` | list[str] | — | Highlight any row whose cells contain one of these strings. Adds `<tr class="highlight">`. |
 | `tracked_teams` | list[str] | — | Deprecated alias for `tracked_rows`. Warns on use. |
-| `direction_markers` | bool | false | Scan bold cells for `{up}` / `{down}` / `{mod}` markers; apply `tr.highlight-up` etc. row classes. |
-| `risk_tables` | list[str] | — | List of CSS class names; for each matching table, colour-code last-column percentage cells (red ≥ 50%, amber 25-49%, green < 25%). |
+| `direction_markers` | bool | false | Scan bold cells for `{up}` / `{down}` markers, each optionally followed by `{mod}` or `{watch}`; apply `tr.highlight-up`, `tr.highlight-mod-up`, `tr.highlight-watch-up` etc. row classes. |
+| `risk_tables` | list[str \| dict] | — | List of table specs. A bare string is a CSS class name whose matching table has its **last** column colour-coded; a dict `{class: <name>, columns: last \| all}` picks last-column (default) or every-cell scanning. Cells are coloured red ≥ 50%, amber 25-49%, green < 25%. See [domain-features.md](domain-features.md). |
 
 ## Example combining several
 

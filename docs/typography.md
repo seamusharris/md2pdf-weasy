@@ -15,15 +15,22 @@ You can write naturally in ASCII; the output PDF gets proper typography.
 |---|---|---|
 | ` -- ` (spaces around `--`) | ` — ` (em dash) | Surrounding spaces required |
 | `->` | `→` (arrow) | Anywhere |
-| `5m x 5m` | `5m × 5m` (multiplication) | Digit + `x` + digit pattern |
-| `6-8` | `6–8` (en dash) | Digit-hyphen-digit |
+| `5m x 5m` | `5m × 5m` (multiplication) | Digit(s) + `x` + **space** + digit; the space after `x` is required, so `5x5` is left alone |
+| `6-8` | `6–8` (en dash) | Isolated digit-hyphen-digit only |
 | `"text"` | `"text"` (curly quotes) | Standard pairing rules |
 | `don't` | `don't` (curly apostrophe) | Inside a word |
-| `it's` | `it's` (curly apostrophe) | Followed by space/punctuation |
+| `teams'` | `teams'` (curly apostrophe) | Trailing apostrophe followed by space/punctuation |
 | `...` | `…` (ellipsis) | Three literal dots |
 
+The en-dash rule only fires on an **isolated** digit range — the pattern
+requires no digit or hyphen on either side. This deliberately leaves
+dates (`2024-05-01`) and win-loss-draw records (`5-3-0`) intact, since
+those have a third hyphen-digit group adjacent to the middle hyphen.
+
 Conversion runs on markdown content only — HTML tags are skipped so
-attributes don't get mangled.
+attributes don't get mangled, and fenced/inline code is protected (see
+[Source normalisation](#source-normalisation-for-generated-markdown)
+below).
 
 You can still write the Unicode characters directly if you prefer. Both
 work; the conversion just makes ASCII source render nicely without

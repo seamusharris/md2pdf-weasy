@@ -1,10 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "md2pdf-weasy"
 version = "0.1.0"
 description = "Markdown to PDF via WeasyPrint with YAML front-matter control"
+readme = "README.md"
 requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "Jimmy Harris" }]
+classifiers = [
+    "Private :: Do Not Upload",
+    "Programming Language :: Python :: 3",
+    "Topic :: Text Processing :: Markup :: Markdown",
+    "Topic :: Printing",
+]
 dependencies = [
-    "weasyprint",
+    # style.css uses table:has(colgroup) and leader()/target-counter, which
+    # need a reasonably modern WeasyPrint.
+    "weasyprint>=60",
     "markdown>=3.4",
     "pymdown-extensions>=10.0",
     "pyyaml>=6.0",
