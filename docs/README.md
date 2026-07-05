@@ -11,6 +11,7 @@ landing page; this directory is for depth.
 | [front-matter.md](front-matter.md) | Every supported front-matter field, with types and examples |
 | [themes.md](themes.md) | The four named themes (alpine, wnc, regrading, neutral) + compact; how to add your own |
 | [tables.md](tables.md) | Per-document table layouts, `tables_include`, default widths registry, alignment, highlight modes, section dividers |
+| [table-widths.md](table-widths.md) | Automatic typed column widths — how columns are classified, grouped to share a width, and sized; flex columns; overrides |
 | [callouts.md](callouts.md) | Blockquote callouts, keyword detection, `extra_callout_keywords` |
 | [typography.md](typography.md) | ASCII → Unicode conversions, embedded page-break markers |
 | [domain-features.md](domain-features.md) | `tracked_rows`, `direction_markers`, `risk_tables`, verdict CSS classes |
