@@ -359,18 +359,19 @@ class TestTypedColumnWidths:
         out = []
         for c in cols:
             m = re.search(r'class="(w\d)"', c)
-            out.append(m.group(1) if m else "FLEX")
+            out.append(m.group(1) if m else "em")   # wide columns get an em width
         return out
 
     def test_stat_columns_share_one_width(self):
         result = apply_default_table_widths(self._ladder())
         classes = self._classes(result)
-        # Pos, W, L, GF, GA, Pts are all stat -> identical class; Team is flex.
+        # Pos, W, L, GF, GA, Pts are all stat -> identical rung; Team is a wide
+        # (em-width) column.
         headers = ["Pos", "Team", "W", "L", "GF", "GA", "Pts"]
         by_header = dict(zip(headers, classes))
-        assert by_header["Team"] == "FLEX"
+        assert by_header["Team"] == "em"
         stat = {by_header[h] for h in ("Pos", "W", "L", "GF", "GA", "Pts")}
-        assert stat != {"FLEX"} and len(stat) == 1   # one shared token width
+        assert stat != {"em"} and len(stat) == 1     # one shared token width
 
     def test_all_token_table_gets_fit_class(self):
         html = (
@@ -378,11 +379,13 @@ class TestTypedColumnWidths:
             "<tbody><tr><td>1</td><td>5</td><td>42</td></tr></tbody></table>"
         )
         result = apply_default_table_widths(html)
-        assert 'class="fit"' in result       # no flex column -> shrink to fit
+        assert 'class="fit"' in result
 
-    def test_table_with_flex_is_not_fit(self):
+    def test_every_table_shrinks_to_fit(self):
+        # All columns are fixed (tokens by ladder, wide by doc-wide width), so a
+        # table sizes to its content instead of stretching a column to 100%.
         result = apply_default_table_widths(self._ladder())
-        assert "fit" not in result
+        assert 'class="fit"' in result
 
     def test_disabled_by_front_matter(self):
         result = apply_default_table_widths(self._ladder(), {"table_widths": False})
@@ -397,10 +400,11 @@ class TestTypedColumnWidths:
         assert "<colgroup>" not in apply_default_table_widths(html)
 
     def test_column_type_override(self):
-        # Force Team to a fixed label instead of flex.
+        # Force Team to a label — still a wide column, so it gets an em width.
         result = apply_default_table_widths(self._ladder(), {"columns": {"Team": "label"}})
-        classes = self._classes(result)
-        assert "FLEX" not in classes          # Team no longer flex -> table is all-token
+        by_header = dict(zip(["Pos", "Team", "W", "L", "GF", "GA", "Pts"],
+                            self._classes(result)))
+        assert by_header["Team"] == "em"
         assert 'class="fit"' in result
 
     def test_explicit_width_override(self):
@@ -408,19 +412,17 @@ class TestTypedColumnWidths:
         assert 'style="width:12em"' in result
 
 
-class TestFlexAllocation:
-    """Category detection + water-fill flex-column allocation."""
+class TestDocLevelWidths:
+    """Document-level width grouping for wide columns."""
 
-    def test_is_category_column(self):
-        from pdf.table_transforms import _is_category_column
-        cat = ["15U Champ Pool A", "17U Reserve Pool B", "Open"] * 4  # 12 rows, 3 distinct
-        assert _is_category_column("Division", cat) is True
-        # A name-ish header is never demoted, even if values repeat.
-        assert _is_category_column("Home", cat) is False
-        # Too few rows for cardinality to mean anything.
-        assert _is_category_column("Division", ["A", "B"]) is False
-        # Mostly-unique values are a name column, not a category.
-        assert _is_category_column("Team", [f"Team {i}" for i in range(20)]) is False
+    def test_column_identity_shares_team_headers(self):
+        from pdf.table_transforms import _column_identity
+        # Team / Home / Away all resolve to one identity; Division to its own.
+        team = _column_identity("Home")
+        assert _column_identity("Away") == team
+        assert _column_identity("Team") == team
+        assert _column_identity("Home Team") == team
+        assert _column_identity("Division") != team
 
     def _schedule(self):
         homes = ["Manningham 15U Champ", "Frankston District 17U Champ",
@@ -452,14 +454,33 @@ class TestFlexAllocation:
             out.append(m.group(1) if m else "BARE")
         return out
 
-    def test_bounded_category_is_pinned_names_stay_flex(self):
+    def test_wide_columns_get_em_widths_tokens_get_rungs(self):
         result = apply_default_table_widths(self._schedule())
         cols = dict(zip(["Time", "Ct", "Rd", "Division", "Home", "Away"],
                         self._colmap(result)))
-        # Division (low cardinality) is pinned to an em width, not flexed.
+        # Division and the two name columns are wide -> explicit em widths.
         assert cols["Division"].endswith("em")
-        # The two name columns both stay bare so they split the remainder evenly.
-        assert cols["Home"] == "BARE"
-        assert cols["Away"] == "BARE"
-        # Court/Round stay narrow token columns.
+        assert cols["Home"].endswith("em") and cols["Away"].endswith("em")
+        # Home and Away share the team identity -> identical width.
+        assert cols["Home"] == cols["Away"]
+        # Court/Round stay narrow token rungs; the table shrinks to fit.
         assert cols["Ct"].startswith("w") and cols["Rd"].startswith("w")
+        assert 'class="fit"' in result
+
+    def test_identity_width_shared_across_tables(self):
+        # A team column in a second, separate table gets the SAME width as the
+        # widest team name anywhere in the document.
+        schedule = self._schedule()
+        summary = ("<table><thead><tr><th>Team</th><th>Gms</th></tr></thead>"
+                   "<tbody><tr><td>Casey</td><td>9</td></tr>"
+                   "<tr><td>Yarra</td><td>8</td></tr></tbody></table>")
+        result = apply_default_table_widths(schedule + "\n" + summary)
+        import re
+        widths = re.findall(r'width:([\d.]+)em', result)
+        # The summary's short "Team" column is widened to the doc-wide team
+        # width (driven by the long schedule names), so that value recurs.
+        home = self._colmap(
+            re.search(r'<table[^>]*>.*?</table>', result, re.DOTALL).group(0))
+        # The team width appears at least 3× (Home, Away, summary Team).
+        team_w = home[4]  # Home column
+        assert result.count(f'width:{team_w}') >= 3

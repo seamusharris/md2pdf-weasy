@@ -745,6 +745,11 @@ _TYPE_CANONICAL = {
 }
 _FLEX_TYPES = frozenset({'text', 'prose'})
 _KNOWN_TYPES = frozenset(_TYPE_CANONICAL) | _FLEX_TYPES
+# Numeric tokens use the shared em ladder (consistent by type across the doc).
+_LADDER_TYPES = frozenset(_TYPE_CANONICAL) - {'label'}
+# "Wide" columns (short labels, names, prose) get a width that is shared per
+# column identity across the whole document — see _column_identity.
+_WIDE_TYPES = _FLEX_TYPES | {'label'}
 
 
 def _char_em_body(ch):
@@ -844,16 +849,15 @@ def _snap_up_rung(target_em):
     return len(_LADDER_EM) - 1
 
 
-# --- Flex-column allocation --------------------------------------------------
+# --- Wide-column widths (document-level grouping) -----------------------------
 
 import functools
 
-# A4 portrait content width (210mm − 2×18mm margins) in 9pt-table em. Only used
-# to decide WHICH flex columns to cap; the bare column absorbs the true
-# remainder, so an off estimate (theme/landscape) degrades gracefully.
+# A4 portrait content width (210mm − 2×18mm margins) in 9pt-table em. A table
+# whose fixed columns would exceed this is scaled down to fit.
 _PAGE_CONTENT_EM = 54.8
-# Headers that name an open-ended entity — never demote these to a fixed
-# category width even if their values happen to repeat.
+# Headers naming a team/entity share one "@team" identity, so Team, Home and
+# Away all get a single width across the whole document.
 _NAME_HINTS = frozenset({'team', 'home', 'away', 'opponent', 'club', 'name',
                          'player'})
 _BODY_FONT_PATH = os.path.join(
@@ -895,42 +899,167 @@ def _measure_em(text, header=False):
 
 
 def _flex_natural_em(header, cells):
-    """Width a flex column needs to hold its widest cell/header without wrapping."""
+    """Width a wide column needs to hold its widest cell/header without wrapping."""
     widest = max((_measure_em(c) for c in cells), default=0.0)
     return max(widest, _measure_em(header, header=True)) \
         + _CELL_OVERHEAD_EM + _SAFETY_EM
 
 
-def _is_category_column(header, values):
-    """A bounded *category* column (few values that repeat) is a fixed label,
-    not a name column that should flex. Thresholds validated on real reports:
-    enough rows for cardinality to mean something, few distinct values that
-    genuinely repeat, and not a name-ish header."""
-    n = len(values)
-    if n < 8:
-        return False
-    distinct = len(set(values))
-    if distinct > 12 or distinct / n > 0.30:
-        return False
-    return not (set(_normalise_header(header).split()) & _NAME_HINTS)
+def _column_identity(header):
+    """Document-level grouping key for a wide column. All team/entity headers
+    share one identity so Team/Home/Away get a single width across the document;
+    everything else is keyed by its normalised header (so every "Division"
+    column matches, etc.)."""
+    norm = _normalise_header(header)
+    if set(norm.split()) & _NAME_HINTS:
+        return '\x00team'
+    return norm
+
+
+def _analyze_table_for_widths(table_html, overrides):
+    """First pass: classify a table's columns and compute the widths it needs.
+
+    Returns a dict (headers, types, explicit, group_rung, nat) or None if the
+    table should be left alone (already has a colgroup, no header row, or a
+    colspan/ragged shape a fixed colgroup would misrender)."""
+    if '<colgroup' in table_html:
+        return None
+    headers = _extract_headers(table_html)
+    if not headers:
+        return None
+    body_rows = _table_body_rows(table_html)
+    if 'colspan' in table_html or any(len(r) != len(headers) for r in body_rows):
+        return None
+
+    # Type each column (respecting overrides).
+    types = []
+    explicit = {}
+    for i, header in enumerate(headers):
+        ov = overrides.get(_normalise_header(header))
+        if ov is not None:
+            if isinstance(ov, str) and ov.lower() in _KNOWN_TYPES:
+                types.append(ov.lower())
+                continue
+            explicit[i] = f'{ov}em' if isinstance(ov, (int, float)) else str(ov)
+            types.append('_explicit')
+            continue
+        col_cells = [row[i] for row in body_rows if i < len(row)]
+        types.append(_classify_column(header, col_cells))
+
+    # Numeric-token columns → one shared ladder rung per type (header-floored).
+    col_floor = []
+    for i, header in enumerate(headers):
+        cells = [_strip_tags(row[i]).strip() for row in body_rows if i < len(row)]
+        widest = max((_text_em(c) for c in cells), default=0.0)
+        col_floor.append(
+            max(widest, _header_em(header)) + _CELL_OVERHEAD_EM + _SAFETY_EM)
+    group_rung = {}
+    for t in set(types):
+        if t not in _LADDER_TYPES:
+            continue
+        canonical = _LADDER_EM[_TYPE_CANONICAL[t]]
+        group_floor = max(col_floor[i] for i, tt in enumerate(types) if tt == t)
+        group_rung[t] = _snap_up_rung(max(canonical, group_floor))
+
+    # Wide columns (label/text/prose) → the natural width they need.
+    nat = {}
+    for i, t in enumerate(types):
+        if t in _WIDE_TYPES:
+            cells = [c for c in (_strip_tags(row[i]).strip()
+                                 for row in body_rows if i < len(row)) if c]
+            nat[i] = _flex_natural_em(headers[i], cells)
+
+    return {'headers': headers, 'types': types, 'explicit': explicit,
+            'group_rung': group_rung, 'nat': nat}
+
+
+def _emit_table_widths(table_html, a, identity_width):
+    """Second pass: inject the colgroup. Numeric columns take their ladder rung;
+    wide columns take their identity's document-wide width (so the same kind of
+    column is the same width in every table).
+
+    If the fixed columns fit the page, the table shrinks to fit (never
+    stretches one column). If they overflow (e.g. two long team columns at the
+    doc-wide width), the wide columns are scaled down just enough to fit — the
+    only case the shared width is not honoured exactly, in exchange for the
+    table staying on the page."""
+    # Target width per column; token columns keep their ladder em.
+    wide_em = {}       # index -> doc-wide em (scalable)
+    token_em = 0.0
+    for i, t in enumerate(a['types']):
+        if t in _WIDE_TYPES:
+            wide_em[i] = identity_width.get(
+                _column_identity(a['headers'][i]), a['nat'][i])
+        elif t != '_explicit':
+            token_em += _LADDER_EM[a['group_rung'][t]]
+        else:
+            v = a['explicit'][i]
+            token_em += float(v[:-2]) if v.endswith('em') else 10.0
+
+    wide_total = sum(wide_em.values())
+    total = token_em + wide_total
+    overflow = total > _PAGE_CONTENT_EM and wide_total > 0
+    if overflow:
+        # Take the deficit from the WIDEST wide columns first (proportional to
+        # each column's excess over the narrowest), so a already-tight column
+        # like Division isn't shrunk into wrapping while roomy team columns
+        # have slack.
+        deficit = total - _PAGE_CONTENT_EM
+        w_min = min(wide_em.values())
+        excess = sum(w - w_min for w in wide_em.values())
+        if excess > deficit:
+            for i in wide_em:
+                wide_em[i] -= deficit * (wide_em[i] - w_min) / excess
+        else:                       # even flattening to w_min isn't enough
+            f = max((_PAGE_CONTENT_EM - token_em) / wide_total, 0.1)
+            for i in wide_em:
+                wide_em[i] *= f
+
+    cols = []
+    for i, t in enumerate(a['types']):
+        if t == '_explicit':
+            cols.append(f'<col style="width:{a["explicit"][i]}">')
+        elif t in _WIDE_TYPES:
+            cols.append(f'<col style="width:{wide_em[i]:.2f}em">')
+        else:
+            cols.append(f'<col class="w{a["group_rung"][t] + 1}">')
+    colgroup = '<colgroup>' + ''.join(cols) + '</colgroup>'
+
+    result = re.sub(r'<table\b[^>]*>',
+                    lambda m: f'{m.group(0)}\n{colgroup}', table_html, count=1)
+
+    if not overflow:            # fits — shrink to content (don't stretch to 100%)
+        def _add_fit(m):
+            tag = m.group(0)
+            if 'class="' in tag:
+                return re.sub(r'class="', 'class="fit ', tag, count=1)
+            return tag[:-1] + ' class="fit">'
+        result = re.sub(r'<table\b[^>]*>', _add_fit, result, count=1)
+    return result
 
 
 def apply_default_table_widths(html, metadata=None):
-    """Give every colgroup-less table typed, content-consistent column widths.
+    """Give every colgroup-less table typed, document-consistent column widths.
 
     Runs after ``apply_table_layouts``: any table that already carries a
     ``<colgroup>`` (a declared layout matched, or the author supplied one) is
-    left untouched, so declared layouts stay the override layer. Every other
-    table is classified column-by-column; token columns get an absolute em
-    width from the shared ladder (identical for the same type across all
-    tables), flex columns absorb the remainder.
+    left untouched, so declared layouts stay the override layer.
+
+    Two passes over the document's tables:
+      1. Classify each column. Numeric columns get a shared em-ladder width by
+         type. "Wide" columns (short labels, names, prose) get the width they
+         need, keyed by a document-level *identity* (all team/Home/Away columns
+         share one; every "Division" column shares one; etc.).
+      2. Emit each colgroup using the widest width seen for each identity across
+         the whole document, so the same kind of column is the same width in
+         every table — a schedule's Home/Away, a summary's Team, and a ladder's
+         Team all line up. Every column is fixed, so a table sizes to its
+         content instead of stretching one column to fill the page.
 
     Front matter:
       table_widths: false   — disable this pass for the document
       columns: {Header: type|width}
-                            — force a column's type (stat/num/.../text/prose)
-                              or pin an explicit width (a number → em, or any
-                              CSS length string).
+                            — force a column's type or pin an explicit width.
     """
     metadata = metadata or {}
     if metadata.get('table_widths') in (False, 'off', 'none', 'legacy'):
@@ -941,138 +1070,30 @@ def apply_default_table_widths(html, metadata=None):
         for k, v in (metadata.get('columns') or {}).items()
     }
 
-    def process(match):
-        table_html = match.group(0)
-        if '<colgroup' in table_html:
-            return table_html
-        headers = _extract_headers(table_html)
-        if not headers:
-            return table_html
-        body_rows = _table_body_rows(table_html)
-        # A fixed colgroup would misrender colspan/ragged tables — skip them.
-        if 'colspan' in table_html or any(
-            len(r) != len(headers) for r in body_rows
-        ):
-            return table_html
+    # Pass 1: analyse every table, accumulate the widest natural width per
+    # document-level column identity.
+    spans = []                 # (start, end, analysis-or-None)
+    identity_width = {}
+    for m in re.finditer(r'<table\b[^>]*>.*?</table>', html, flags=re.DOTALL):
+        a = _analyze_table_for_widths(m.group(0), overrides)
+        spans.append((m.start(), m.end(), a))
+        if a is None:
+            continue
+        for i, w in a['nat'].items():
+            ident = _column_identity(a['headers'][i])
+            identity_width[ident] = max(identity_width.get(ident, 0.0), w)
 
-        # 1. type each column (respecting overrides), and note explicit pins
-        types = []
-        explicit = {}
-        for i, header in enumerate(headers):
-            ov = overrides.get(_normalise_header(header))
-            if ov is not None:
-                if isinstance(ov, str) and ov.lower() in _KNOWN_TYPES:
-                    types.append(ov.lower())
-                    continue
-                explicit[i] = f'{ov}em' if isinstance(ov, (int, float)) else str(ov)
-                types.append('_explicit')
-                continue
-            col_cells = [row[i] for row in body_rows if i < len(row)]
-            types.append(_classify_column(header, col_cells))
-
-        # 2. per-column floor = max(widest cell, own header) + box overhead.
-        #    Grouping keeps same-type columns uniform; correct typing (numeric
-        #    stats vs alphanumeric labels) keeps a wide-header label out of a
-        #    narrow numeric group.
-        col_floor = []
-        for i, header in enumerate(headers):
-            cells = [_strip_tags(row[i]).strip()
-                     for row in body_rows if i < len(row)]
-            widest = max((_text_em(c) for c in cells), default=0.0)
-            col_floor.append(
-                max(widest, _header_em(header)) + _CELL_OVERHEAD_EM + _SAFETY_EM
-            )
-
-        # 3. one shared rung per token type-group (canonical, floored, snapped)
-        group_rung = {}
-        for t in set(types):
-            if t in _FLEX_TYPES or t == '_explicit':
-                continue
-            canonical = _LADDER_EM[_TYPE_CANONICAL[t]]
-            group_floor = max(col_floor[i] for i, tt in enumerate(types) if tt == t)
-            group_rung[t] = _snap_up_rung(max(canonical, group_floor))
-
-        # 4. allocate flex-column widths (water-fill). WeasyPrint fixed layout
-        #    splits width-less columns EQUALLY, so a narrow flex column (a
-        #    bounded category like Division) would steal an equal share from the
-        #    real name columns and wrap them. Instead: pin bounded/narrow flex
-        #    columns at their natural width and leave only genuinely-hungry
-        #    columns bare to absorb the remainder.
-        flex_idx = [i for i, t in enumerate(types) if t in _FLEX_TYPES]
-        pinned = {}   # column index -> fixed width em
-        nat = {}
-        for i in flex_idx:
-            cells = [c for c in (_strip_tags(row[i]).strip()
-                                 for row in body_rows if i < len(row)) if c]
-            nat[i] = _flex_natural_em(headers[i], cells)
-            # Low-cardinality category columns are fixed regardless of width.
-            if _is_category_column(headers[i], cells):
-                pinned[i] = nat[i]
-
-        elastic = [i for i in flex_idx if i not in pinned]
-        if elastic:
-            fixed_em = 0.0
-            for i, t in enumerate(types):
-                if i in pinned:
-                    fixed_em += pinned[i]
-                elif t == '_explicit':
-                    v = explicit[i]
-                    fixed_em += float(v[:-2]) if v.endswith('em') else 10.0
-                elif t not in _FLEX_TYPES:
-                    fixed_em += _LADDER_EM[group_rung[t]]
-            avail = max(_PAGE_CONTENT_EM - fixed_em, 0.0)
-
-            widest = max(elastic, key=lambda j: nat[j])
-            capped = {}
-            unsat = set(elastic)
-            while len(unsat) > 1:
-                fair = (avail - sum(capped.values())) / len(unsat)
-                # Pin a column only if it fits its fair share AND is clearly
-                # narrower than the widest (< 75%), so near-equal paired names
-                # (Home/Away) stay bare and split evenly — category detection
-                # already handles the genuine outliers.
-                cand = [i for i in unsat
-                        if i != widest and nat[i] <= fair
-                        and nat[i] < nat[widest] * 0.75]
-                if not cand:
-                    break
-                i = min(cand, key=lambda j: nat[j])
-                capped[i] = nat[i]
-                unsat.discard(i)
-            pinned.update(capped)
-
-        # 5. emit the colgroup
-        cols = []
-        for i, t in enumerate(types):
-            if i in pinned:
-                cols.append(f'<col style="width:{pinned[i]:.2f}em">')
-            elif t == '_explicit':
-                cols.append(f'<col style="width:{explicit[i]}">')
-            elif t in _FLEX_TYPES:
-                cols.append('<col>')            # bare — absorbs the remainder
-            else:
-                cols.append(f'<col class="w{group_rung[t] + 1}">')
-        colgroup = '<colgroup>' + ''.join(cols) + '</colgroup>'
-
-        result = re.sub(r'<table\b[^>]*>',
-                        lambda m: f'{m.group(0)}\n{colgroup}',
-                        table_html, count=1)
-
-        # 6. no bare flex column (all-token, or every flex pinned) → shrink to
-        #    fit rather than stretch to 100% (fixed layout would smear the slack
-        #    back into the fixed columns).
-        bare_exists = any(t in _FLEX_TYPES and i not in pinned
-                          for i, t in enumerate(types))
-        if not bare_exists:
-            def _add_fit(m):
-                tag = m.group(0)
-                if 'class="' in tag:
-                    return re.sub(r'class="', 'class="fit ', tag, count=1)
-                return tag[:-1] + ' class="fit">'
-            result = re.sub(r'<table\b[^>]*>', _add_fit, result, count=1)
-        return result
-
-    return re.sub(r'<table\b[^>]*>.*?</table>', process, html, flags=re.DOTALL)
+    # Pass 2: rebuild the document, emitting each table's colgroup.
+    out = []
+    last = 0
+    for start, end, a in spans:
+        out.append(html[last:start])
+        table_html = html[start:end]
+        out.append(table_html if a is None
+                   else _emit_table_widths(table_html, a, identity_width))
+        last = end
+    out.append(html[last:])
+    return ''.join(out)
 
 
 # =============================================================================
