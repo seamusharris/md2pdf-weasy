@@ -95,6 +95,8 @@ _FRONT_MATTER_SCHEMA = {
     'extra_callout_keywords': dict,
     'auto_align_columns': bool,
     'auto_highlight_bold_rows': bool,
+    'table_widths': (bool, str),      # false/'off' disables the typed-width pass
+    'columns': dict,                  # Header -> type name or explicit width
     'toc': bool,
     'toc_depth': int,
     'h2_page_break': bool,

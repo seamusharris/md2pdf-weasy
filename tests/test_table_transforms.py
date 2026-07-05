@@ -2,12 +2,14 @@
 
 from pdf.table_transforms import (
     _column_width,
+    _classify_column,
     _DEFAULT_WIDTHS,
     _build_colgroup,
     _extract_headers,
     _highlight_direction_rows,
     _match_layout,
     align_table_columns,
+    apply_default_table_widths,
     apply_table_layouts,
     colour_results,
     colour_risk_cells,
@@ -316,3 +318,89 @@ class TestTransformCorrectnessFixes:
         # A front-matter typo (a column missing 'name') must warn/skip, not crash.
         layouts = {'L': {'columns': [{'width': 30}, {'name': 'W'}]}}
         assert _match_layout(['Team', 'W'], layouts) == (None, None)
+
+
+class TestTypedColumnWidths:
+    """Content-typed absolute-em column widths (apply_default_table_widths)."""
+
+    def _ladder(self, extra_cols=""):
+        return (
+            "<table><thead><tr>"
+            "<th>Pos</th><th>Team</th><th>W</th><th>L</th>"
+            "<th>GF</th><th>GA</th><th>Pts</th>" + extra_cols +
+            "</tr></thead><tbody>"
+            "<tr><td>1</td><td>Warrandyte Wallabies</td><td>12</td><td>2</td>"
+            "<td>486</td><td>310</td><td>24</td></tr>"
+            "<tr><td>8</td><td>Park Orchards</td><td>2</td><td>12</td>"
+            "<td>205</td><td>498</td><td>4</td></tr>"
+            "</tbody></table>"
+        )
+
+    def test_classify_column_types(self):
+        assert _classify_column("W", ["12", "2"]) == "stat"
+        assert _classify_column("GF", ["486", "205"]) == "stat"     # 3 digits
+        assert _classify_column("Amount", ["1,234", "9999"]) == "num"
+        assert _classify_column("GA%", ["150.5", "44"]) == "pct"    # % header
+        assert _classify_column("Risk", ["58%", "0%"]) == "pct"
+        assert _classify_column("Time", ["9:00", "9:18"]) == "time"
+        assert _classify_column("Date", ["14 Jun", "21 Jun"]) == "date"
+        assert _classify_column("Score", ["45-38", "6-24"]) == "score"
+        assert _classify_column("Record", ["0W-2L-1D", "4W-0L"]) == "score"
+        assert _classify_column("Team", ["Warrandyte Wallabies"]) == "text"
+        assert _classify_column("Day", ["Mon", "Tue"]) == "stat"    # <=3 chars
+        assert _classify_column("Status", ["Active", "Closed"]) == "label"
+
+    def _classes(self, html):
+        import re
+        cg = re.search(r"<colgroup>.*?</colgroup>", html, re.DOTALL).group(0)
+        cols = re.findall(r"<col(?: [^>]*)?>", cg)
+        out = []
+        for c in cols:
+            m = re.search(r'class="(w\d)"', c)
+            out.append(m.group(1) if m else "FLEX")
+        return out
+
+    def test_stat_columns_share_one_width(self):
+        result = apply_default_table_widths(self._ladder())
+        classes = self._classes(result)
+        # Pos, W, L, GF, GA, Pts are all stat -> identical class; Team is flex.
+        headers = ["Pos", "Team", "W", "L", "GF", "GA", "Pts"]
+        by_header = dict(zip(headers, classes))
+        assert by_header["Team"] == "FLEX"
+        stat = {by_header[h] for h in ("Pos", "W", "L", "GF", "GA", "Pts")}
+        assert stat != {"FLEX"} and len(stat) == 1   # one shared token width
+
+    def test_all_token_table_gets_fit_class(self):
+        html = (
+            "<table><thead><tr><th>Rd</th><th>Ct</th><th>GF</th></tr></thead>"
+            "<tbody><tr><td>1</td><td>5</td><td>42</td></tr></tbody></table>"
+        )
+        result = apply_default_table_widths(html)
+        assert 'class="fit"' in result       # no flex column -> shrink to fit
+
+    def test_table_with_flex_is_not_fit(self):
+        result = apply_default_table_widths(self._ladder())
+        assert "fit" not in result
+
+    def test_disabled_by_front_matter(self):
+        result = apply_default_table_widths(self._ladder(), {"table_widths": False})
+        assert "<colgroup>" not in result
+
+    def test_existing_colgroup_is_left_alone(self):
+        html = "<table><colgroup><col></colgroup><thead><tr><th>W</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>"
+        assert apply_default_table_widths(html) == html
+
+    def test_colspan_table_skipped(self):
+        html = '<table><thead><tr><th>A</th><th>B</th></tr></thead><tbody><tr><td colspan="2">x</td></tr></tbody></table>'
+        assert "<colgroup>" not in apply_default_table_widths(html)
+
+    def test_column_type_override(self):
+        # Force Team to a fixed label instead of flex.
+        result = apply_default_table_widths(self._ladder(), {"columns": {"Team": "label"}})
+        classes = self._classes(result)
+        assert "FLEX" not in classes          # Team no longer flex -> table is all-token
+        assert 'class="fit"' in result
+
+    def test_explicit_width_override(self):
+        result = apply_default_table_widths(self._ladder(), {"columns": {"Team": "12em"}})
+        assert 'style="width:12em"' in result

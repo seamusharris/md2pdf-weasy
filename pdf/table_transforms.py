@@ -106,7 +106,9 @@ _TIME_RE = re.compile(r"^\d{1,2}:\d{2}(?:\s*[ap]\.?m\.?)?$", re.IGNORECASE)
 _SCORE_RE = re.compile(
     r"^[WLD]?\s*[+\-−]?\d+\s*[-–—]\s*[+\-−]?\d+$"  # 45-38, 45–38
     r"|^\d+-\d+-\d+$"                                                  # 5-3-0 records
+    r"|^\d+W-\d+L(?:-\d+D)?$"                                     # 0W-2L-1D records
     r"|^[WL]\s*[+\-−]\s*\d+$",                                    # W +5 / L -10
+    re.IGNORECASE,
 )
 _MONTHS = (r"jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec")
 _DATE_RE = re.compile(
@@ -711,89 +713,235 @@ def _table_body_rows(table_html):
     return rows
 
 
-def _content_fallback_width(cells):
-    """Width weight for a column with no registry entry, inferred from content:
-    all-numeric / all-short columns are narrow, everything else is prose-wide."""
-    non_empty = [c for c in cells if _strip_tags(c).strip()]
-    if non_empty and all(_is_numeric(c) or _is_short_text(c) for c in non_empty):
-        return _DEFAULT_WIDTHS['fallback_numeric']
-    return _DEFAULT_WIDTHS['fallback']
+# --- Typed-column width model -------------------------------------------------
+#
+# Every column is classified from its CONTENT into a semantic type; token types
+# get an absolute width from a shared em ladder (so the same kind of column is
+# the same width in every table and document), while flex types (names, prose)
+# are left width-less to absorb the remainder. Widths resolve PER TYPE-GROUP, so
+# e.g. GF/GA/Pts in a ladder all share one width. All the em numbers were
+# measured against the bundled Minion Caption 9pt / Myriad 8.5pt fonts — see the
+# `project_table_width_redesign` memory.
+
+_CELL_OVERHEAD_EM = 1.16          # 2×0.55em padding + 0.06em border (border-box)
+_SAFETY_EM = 0.3                  # comfort margin so content near a rung edge
+                                  # (e.g. "9:00 AM" breaking at its space) gets
+                                  # the next rung instead of wrapping
+_HEADER_EM_SCALE = 8.5 / 9.0      # headers render at 8.5pt inside a 9pt table
+_LADDER_EM = [2.5, 3.0, 3.5, 4.5, 5.5, 7.0, 9.0]   # → CSS classes w1..w7
+
+# Token type → canonical rung (index into _LADDER_EM). idx is folded into stat
+# (they share a rung, and the "Pos" header floor forces ≥3em anyway).
+_TYPE_CANONICAL = {
+    'stat': 1,   # w2 3.0em — W/L/D/GF/GA/Pts, ranks, ≤3-digit numbers
+    'num': 2,    # w3 3.5em — 4-digit ints, signed 3-digit
+    'time': 2,   # w3 3.5em — 0:30
+    'pct': 3,    # w4 4.5em — 68%, 99.5%
+    'score': 3,  # w4 4.5em — 45–38, 5-3-0, W +5
+    'date': 3,   # w4 4.5em — 14 Jun (ISO bumps up via the cell floor)
+    'label': 3,  # w4 4.5em — Sat / Home / Final (snaps up to fit)
+}
+_FLEX_TYPES = frozenset({'text', 'prose'})
+_KNOWN_TYPES = frozenset(_TYPE_CANONICAL) | _FLEX_TYPES
 
 
-def _infer_column_widths(headers, body_rows, extra_widths):
-    """Resolve a width weight per column: per-doc override, then registry by
-    header name, then content-based fallback. Returns (widths, unknown_headers).
-    """
-    widths = []
-    unknown = []
-    for i, header in enumerate(headers):
-        key = _normalise_header(header)
-        if key in extra_widths:
-            widths.append(extra_widths[key])
-        elif key in _DEFAULT_WIDTHS['widths']:
-            widths.append(_DEFAULT_WIDTHS['widths'][key])
+def _char_em_body(ch):
+    """Measured advance of one character in the 9pt Minion Caption cell font,
+    as a fraction of font-size."""
+    if ch.isdigit():
+        return 0.487          # tabular figures — exact, no kerning
+    if ch == ' ':
+        return 0.241
+    if ch in '.:':
+        return 0.237
+    if ch == '-':
+        return 0.364
+    if ch == '–':        # en dash (scores)
+        return 0.521
+    if ch == '−':        # minus (negative GD)
+        return 0.599
+    if ch == '%':
+        return 0.786
+    if ch == '/':
+        return 0.337
+    if ch.islower():
+        return 0.466
+    if ch.isupper():
+        return 0.659
+    return 0.55               # unknown glyph — mid estimate
+
+
+def _text_em(text):
+    """Estimated rendered width of a body-cell string, in table em."""
+    return sum(_char_em_body(c) for c in text)
+
+
+def _header_em(text):
+    """Estimated rendered width of a header string, in table em. Headers are
+    uppercased 8.5pt Myriad with letter-spacing (already in the advances)."""
+    total = 0.0
+    for c in text.upper():
+        if c.isdigit():
+            total += 0.566
+        elif c.isalpha():
+            total += 0.640
+        elif c == ' ':
+            total += 0.30
         else:
-            col_cells = [row[i] for row in body_rows if i < len(row)]
-            widths.append(_content_fallback_width(col_cells))
-            if _strip_tags(header).strip():
-                unknown.append(_strip_tags(header).strip())
-    return widths, unknown
+            total += 0.45
+    return total * _HEADER_EM_SCALE
+
+
+def _classify_column(header, cells):
+    """Assign a semantic type to a column from its content (header is only a
+    tie-break hint). All non-empty cells must qualify for a specialised type."""
+    vals = [_strip_tags(c).strip() for c in cells]
+    vals = [v for v in vals if v]
+    hdr = _strip_tags(header).strip()
+
+    if not vals:                       # empty column — guess from the header
+        return 'label' if len(hdr) <= 12 else 'text'
+
+    def every(fn):
+        return all(fn(v) for v in vals)
+
+    if every(_is_percentage) or (hdr.endswith('%') and every(_is_numeric)):
+        return 'pct'
+    if every(_is_time_like):
+        return 'time'
+    if every(_is_date_like):
+        return 'date'
+    if every(_is_score_like):
+        return 'score'
+    if every(_is_numeric):
+        # Count digits, not characters, so a signed/decimal 3-digit value
+        # (+176, −293) stays `stat` and shares the ladder's stat group.
+        max_digits = max(len(re.sub(r'\D', '', v)) for v in vals)
+        return 'stat' if max_digits <= 3 else 'num'
+    if every(_is_short_text):          # ≤3-char codes: W/L, H/A, ✓
+        return 'stat'
+
+    maxlen = max(len(v) for v in vals)
+    maxwords = max(len(v.split()) for v in vals)
+    if maxlen <= 12 and maxwords <= 2:
+        return 'label'
+    if maxlen > 40 or maxwords > 6:
+        return 'prose'
+    return 'text'
+
+
+def _snap_up_rung(target_em):
+    """Smallest ladder rung index whose width covers target_em; clamps to the
+    widest rung (token content then wraps inside via overflow-wrap)."""
+    for i, rung in enumerate(_LADDER_EM):
+        if target_em <= rung + 1e-9:
+            return i
+    return len(_LADDER_EM) - 1
 
 
 def apply_default_table_widths(html, metadata=None):
-    """Give every table a colgroup of registry/content-derived widths.
+    """Give every colgroup-less table typed, content-consistent column widths.
 
     Runs after ``apply_table_layouts``: any table that already carries a
     ``<colgroup>`` (a declared layout matched, or the author supplied one) is
-    left untouched, so declared layouts remain the override. Every other table
-    gains ``table-layout: fixed`` widths so similar columns line up
-    consistently regardless of the particular content width.
+    left untouched, so declared layouts stay the override layer. Every other
+    table is classified column-by-column; token columns get an absolute em
+    width from the shared ladder (identical for the same type across all
+    tables), flex columns absorb the remainder.
 
-    Opt out per document with ``auto_table_widths: false``. Per-document width
-    hints can be supplied via ``extra_column_widths: {Header: weight}`` without
-    declaring a full layout.
+    Front matter:
+      table_widths: false   — disable this pass for the document
+      columns: {Header: type|width}
+                            — force a column's type (stat/num/.../text/prose)
+                              or pin an explicit width (a number → em, or any
+                              CSS length string).
     """
     metadata = metadata or {}
-    if metadata.get('auto_table_widths') is False:
+    if metadata.get('table_widths') in (False, 'off', 'none', 'legacy'):
         return html
 
-    extra_raw = metadata.get('extra_column_widths') or {}
-    extra_widths = {_normalise_header(k): v for k, v in extra_raw.items()}
-
-    unknown_seen = set()
+    overrides = {
+        _normalise_header(k): v
+        for k, v in (metadata.get('columns') or {}).items()
+    }
 
     def process(match):
         table_html = match.group(0)
         if '<colgroup' in table_html:
-            return table_html  # already has declared widths
+            return table_html
         headers = _extract_headers(table_html)
         if not headers:
-            return table_html  # no header row to key widths on
+            return table_html
         body_rows = _table_body_rows(table_html)
-        # Skip colspan/ragged tables — a fixed colgroup would misrender them.
+        # A fixed colgroup would misrender colspan/ragged tables — skip them.
         if 'colspan' in table_html or any(
             len(r) != len(headers) for r in body_rows
         ):
             return table_html
 
-        widths, unknown = _infer_column_widths(headers, body_rows, extra_widths)
-        unknown_seen.update(unknown)
-        columns = [{'name': h, 'width': w} for h, w in zip(headers, widths)]
-        colgroup = _build_colgroup(columns)
-        return re.sub(r'<table\b[^>]*>',
-                      lambda m: f'{m.group(0)}\n{colgroup}',
-                      table_html, count=1)
+        # 1. type each column (respecting overrides), and note explicit pins
+        types = []
+        explicit = {}
+        for i, header in enumerate(headers):
+            ov = overrides.get(_normalise_header(header))
+            if ov is not None:
+                if isinstance(ov, str) and ov.lower() in _KNOWN_TYPES:
+                    types.append(ov.lower())
+                    continue
+                explicit[i] = f'{ov}em' if isinstance(ov, (int, float)) else str(ov)
+                types.append('_explicit')
+                continue
+            col_cells = [row[i] for row in body_rows if i < len(row)]
+            types.append(_classify_column(header, col_cells))
 
-    result = re.sub(r'<table\b[^>]*>.*?</table>', process, html, flags=re.DOTALL)
+        # 2. per-column floor = max(widest cell, header) + box overhead
+        col_floor = []
+        for i, header in enumerate(headers):
+            cells = [_strip_tags(row[i]).strip()
+                     for row in body_rows if i < len(row)]
+            widest = max((_text_em(c) for c in cells), default=0.0)
+            col_floor.append(
+                max(widest, _header_em(header)) + _CELL_OVERHEAD_EM + _SAFETY_EM
+            )
 
-    if unknown_seen:
-        _log.info(
-            "default widths: %d column header(s) not in the registry, sized by "
-            "content — add to default_widths.yml or extra_column_widths for a "
-            "consistent width: %s",
-            len(unknown_seen), ", ".join(sorted(unknown_seen)),
-        )
-    return result
+        # 3. resolve one rung per token type-group (canonical, floored, snapped)
+        group_rung = {}
+        for t in set(types):
+            if t in _FLEX_TYPES or t == '_explicit':
+                continue
+            canonical = _LADDER_EM[_TYPE_CANONICAL[t]]
+            group_floor = max(col_floor[i] for i, tt in enumerate(types) if tt == t)
+            group_rung[t] = _snap_up_rung(max(canonical, group_floor))
+
+        # 4. emit the colgroup; flex columns stay width-less
+        cols = []
+        has_flex = False
+        for i, t in enumerate(types):
+            if t == '_explicit':
+                cols.append(f'<col style="width:{explicit[i]}">')
+            elif t in _FLEX_TYPES:
+                has_flex = True
+                cols.append('<col>')
+            else:
+                cols.append(f'<col class="w{group_rung[t] + 1}">')
+        colgroup = '<colgroup>' + ''.join(cols) + '</colgroup>'
+
+        result = re.sub(r'<table\b[^>]*>',
+                        lambda m: f'{m.group(0)}\n{colgroup}',
+                        table_html, count=1)
+
+        # 5. all-token tables must shrink to fit, not stretch to 100% (which
+        #    fixed layout would redistribute back into the columns)
+        if not has_flex:
+            def _add_fit(m):
+                tag = m.group(0)
+                if 'class="' in tag:
+                    return re.sub(r'class="', 'class="fit ', tag, count=1)
+                return tag[:-1] + ' class="fit">'
+            result = re.sub(r'<table\b[^>]*>', _add_fit, result, count=1)
+        return result
+
+    return re.sub(r'<table\b[^>]*>.*?</table>', process, html, flags=re.DOTALL)
 
 
 # =============================================================================

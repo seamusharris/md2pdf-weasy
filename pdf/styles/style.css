@@ -574,16 +574,36 @@ table + table {
     margin-top: var(--space-lg);
 }
 
-/* Fixed layout when colgroup widths are declared via front matter */
+/* Fixed layout when colgroup widths are declared (front-matter layouts or the
+   typed-width pass). */
 table:has(colgroup) {
     table-layout: fixed;
 }
 
+/* Typed column-width ladder. The width pass classifies each column by content
+   and emits <col class="wN">; flex columns (names/prose) get no class and
+   absorb the remainder. Widths are em, so they scale with the table font-size
+   (a compact/large theme retunes them for free). See table_transforms.py. */
+col.w1 { width: 2.5em; }   /* 2 digits, "#"                          */
+col.w2 { width: 3em;   }   /* stat: ≤3 digits, ranks, P/W/GF/PTS      */
+col.w3 { width: 3.5em; }   /* num, time: 4 digits, −106, 0:30        */
+col.w4 { width: 4.5em; }   /* pct, score, date, label: 45–38, 14 Jun */
+col.w5 { width: 5.5em; }   /* MARGIN-width headers, 112–108          */
+col.w6 { width: 7em;   }   /* ISO dates, Wednesday                   */
+col.w7 { width: 9em;   }   /* longest non-wrapping labels            */
+
+/* All-token tables (no flex column) shrink to fit instead of stretching to
+   100% — under fixed layout a full-width all-fixed table redistributes the
+   leftover back into the columns. The width pass adds this class. */
+table.fit { width: auto; }
+
 th, td {
+    box-sizing: border-box;   /* so a <col> width is the cell's border-box width */
     border: 0.5pt solid var(--color-border);
-    padding: 3.5pt 5pt;
+    padding: 0.4em 0.55em;    /* em, scales with font-size (~3.5pt 5pt @9pt) */
     text-align: left;
     vertical-align: middle;
+    overflow-wrap: break-word;  /* long tokens/URLs wrap instead of bleeding */
 }
 
 tr {

@@ -42,6 +42,7 @@ from pdf.table_transforms import (  # noqa: F401
     _build_colgroup,
     _apply_column_alignment,
     apply_table_layouts,
+    apply_default_table_widths,
     generate_toc,
 )
 
@@ -168,6 +169,10 @@ def postprocess(html, metadata=None):
     # Table layout from front matter
     if metadata and metadata.get('tables'):
         html = apply_table_layouts(html, metadata)
+
+    # Typed column widths for every other table (declared layouts already have
+    # a colgroup and are skipped). Gives consistent, content-typed widths.
+    html = apply_default_table_widths(html, metadata)
 
     # Tracked-row highlighting (when tables: is absent, e.g. schedule
     # passing only tracked_rows without table layout declarations).
