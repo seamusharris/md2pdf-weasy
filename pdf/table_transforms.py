@@ -820,7 +820,10 @@ def _classify_column(header, cells):
         # (+176, −293) stays `stat` and shares the ladder's stat group.
         max_digits = max(len(re.sub(r'\D', '', v)) for v in vals)
         return 'stat' if max_digits <= 3 else 'num'
-    if every(_is_short_text):          # ≤3-char codes: W/L, H/A, ✓
+    if all(len(v) <= 2 for v in vals):
+        # 1-2 char result/side codes: W/L, H/A, ✓. Longer alphanumeric codes
+        # (15U, ABN, Mon) are labels, not stats — keeping them out of the
+        # numeric stat group stops their wider headers dragging it.
         return 'stat'
 
     maxlen = max(len(v) for v in vals)
@@ -896,7 +899,10 @@ def apply_default_table_widths(html, metadata=None):
             col_cells = [row[i] for row in body_rows if i < len(row)]
             types.append(_classify_column(header, col_cells))
 
-        # 2. per-column floor = max(widest cell, header) + box overhead
+        # 2. per-column floor = max(widest cell, own header) + box overhead.
+        #    Grouping keeps same-type columns uniform; correct typing (numeric
+        #    stats vs alphanumeric labels) keeps a wide-header label out of a
+        #    narrow numeric group.
         col_floor = []
         for i, header in enumerate(headers):
             cells = [_strip_tags(row[i]).strip()
@@ -906,7 +912,7 @@ def apply_default_table_widths(html, metadata=None):
                 max(widest, _header_em(header)) + _CELL_OVERHEAD_EM + _SAFETY_EM
             )
 
-        # 3. resolve one rung per token type-group (canonical, floored, snapped)
+        # 3. one shared rung per token type-group (canonical, floored, snapped)
         group_rung = {}
         for t in set(types):
             if t in _FLEX_TYPES or t == '_explicit':

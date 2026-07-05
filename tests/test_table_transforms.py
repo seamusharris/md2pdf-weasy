@@ -348,7 +348,8 @@ class TestTypedColumnWidths:
         assert _classify_column("Score", ["45-38", "6-24"]) == "score"
         assert _classify_column("Record", ["0W-2L-1D", "4W-0L"]) == "score"
         assert _classify_column("Team", ["Warrandyte Wallabies"]) == "text"
-        assert _classify_column("Day", ["Mon", "Tue"]) == "stat"    # <=3 chars
+        assert _classify_column("Side", ["H", "A"]) == "stat"       # 1-2 char codes
+        assert _classify_column("Age", ["15U", "17U"]) == "label"   # 3-char code -> label
         assert _classify_column("Status", ["Active", "Closed"]) == "label"
 
     def _classes(self, html):
