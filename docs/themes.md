@@ -9,7 +9,7 @@ loads `styles/<name>.css` after the base `style.css`.
 | Name | Aesthetic | What it adds |
 |---|---|---|
 | `alpine` | Outdoor / training-manual | Muted palette, session-type colour vars (recovery / strength / aerobic / long-hike), traffic-light status colours, `tr.tl-green/amber/red` row tinting |
-| `wnc` | Sports-club brand (Warrandyte Netball Club) | Brand red `#DC0032` anchor, navy links, Montserrat headings + Open Sans body, brand-red table headers, position/age/programme palettes as CSS vars |
+| `wnc` | Sports-club brand (Warrandyte Netball Club) | Brand red `#DC0032` anchor, navy links, Montserrat headings + Open Sans body, brand-red table headers, position/age palettes as CSS vars |
 | `regrading` | Dense data analysis | Tighter table padding, restated highlight/verdict row styling for clarity at the theme level |
 | `neutral` | Minimal | Placeholder — uses bundled defaults with no overrides |
 | `compact` | Smaller tables only | Orthogonal to the above; can stack via per-doc CSS, but the front-matter `theme:` field accepts only one name |

@@ -71,13 +71,28 @@ Topic-based reference docs in [`docs/`](docs/):
 
 ## CLI
 
+Installed as both `python -m pdf` and the `md2pdf` console script (from
+`pyproject.toml`'s `[project.scripts]`). The two are equivalent.
+
 ```
-python -m pdf input.md [output.pdf]
-    --output-dir DIR    output to a directory instead of next to the input
-    --style PATH        optional CSS overlay loaded after the base style
-    --base-style PATH   replace the bundled base style.css (default: bundled)
-    --html              emit styled HTML instead of PDF
+python -m pdf input.md [output.pdf]        # or: md2pdf input.md [output.pdf]
+    -o, --output-dir DIR    output to a directory instead of next to the input
+    -s, --style PATH        optional CSS overlay loaded after the base style
+    -b, --base-style PATH   replace the bundled base style.css (default: bundled)
+        --html              emit styled HTML instead of PDF
 ```
+
+Batch mode: pass multiple markdown files (or a glob) to convert each one
+beside its source (or into `--output-dir`):
+
+```bash
+python -m pdf *.md
+python -m pdf report.md schedule.md --output-dir out/
+```
+
+The explicit-output form (`input.md output.pdf`) applies only when exactly
+two arguments are given and the second ends in the output extension
+(`.pdf`, or `.html` with `--html`).
 
 ## Python API
 

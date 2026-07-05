@@ -77,14 +77,44 @@ These exist whether or not you use the markers above:
   heading doesn't end up isolated at the bottom of a page
 - `h2 + table`, `h3 + table`, `h4 + table` have `break-before: avoid` so
   a heading and its following table stay together
-- The first `h2` inside `.content` has `break-before: auto` so it doesn't
-  push to a new page when `h2_page_break: true` is on (the title would
-  otherwise be alone)
 - `orphans: 3` and `widows: 3` on body to avoid lone lines at page edges
+
+The "first `h2` stays on the title page" rule is **not** part of the
+unconditional bundled CSS. It (`.content > h2:first-child { break-before:
+auto; }`, plus `h1 + h2 { break-before: auto; }`) is injected by
+`render.py` only when `h2_page_break: true` is set and there is no TOC —
+see [front-matter.md](front-matter.md).
+
+## Source normalisation for generated markdown
+
+Machine-generated markdown often omits the blank lines python-markdown
+needs to start a new block. Before conversion, `render.py` repairs two
+common cases (`_separate_generated_blocks`):
+
+- **Lists glued to a paragraph** — a list marker (`- `, `* `, `+ `, or
+  `1. `) that starts on the line right after a non-blank line gets a blank
+  line inserted before it, so it renders as a list rather than being
+  swallowed into the preceding paragraph. Consecutive list items are left
+  untouched, so genuinely tight lists stay tight.
+- **Runs of bold-label field lines** — consecutive lines of the form
+  `**Label:** value` (or `**Label**: value`) each get a blank line before
+  them, so each field becomes its own paragraph instead of collapsing into
+  one run-together block.
+
+A blank is only inserted when a line is glued to a preceding non-blank
+line, so already-separated content is never given a double blank.
+
+Both this repair and the typographic conversion run on **raw markdown**,
+so fenced code blocks (```` ``` ````/`~~~`) and inline code spans
+(`` `...` ``) are stashed behind placeholders first and restored
+afterward. Code samples therefore keep their literal `->`, quotes, digit
+ranges, and line spacing untouched.
 
 ## Where this lives in code
 
 - Typographic conversion: `pdf/typography.py`
+- Source normalisation (block separation + code protection):
+  `pdf/render.py` (`_separate_generated_blocks`, `_protect_code`)
 - Page-break markers: `pdf/postprocess.py:convert_page_breaks`
 - Heading binding CSS: `pdf/styles/style.css` "Heading + content binding"
   section

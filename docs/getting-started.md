@@ -54,6 +54,57 @@ theme is loaded via the front-matter `theme:` key, and you get a PDF.
 5. CSS is concatenated (base + theme + front-matter-driven rules)
 6. WeasyPrint renders HTML + CSS → PDF
 
+## Python API
+
+The high-level entry points live in `pdf.render`:
+
+```python
+from pdf.render import build_pdf, build_html
+
+# markdown file → PDF file (returns the output path)
+build_pdf("report.md", "report.pdf")
+
+# same pipeline, but emit self-contained HTML (CSS inlined in <style>)
+build_html("report.md", "report.html")
+```
+
+Both accept the same optional keyword arguments as the CLI flags:
+
+```python
+build_pdf(
+    "report.md",
+    output_path="out/report.pdf",   # defaults to input with .pdf/.html
+    style_path="overlay.css",        # optional overlay (== --style)
+    base_style_path="style.css",     # base CSS (== --base-style; defaults to bundled)
+)
+```
+
+If `output_path` is omitted it defaults to the input path with the
+extension swapped.
+
+### Lower-level pipeline
+
+The stages `build_pdf` runs are exposed individually if you need to
+intercept the HTML or metadata:
+
+```python
+from pdf.render import parse_front_matter, md_to_html
+from pdf.postprocess import postprocess
+
+content = open("report.md", encoding="utf-8").read()
+metadata, body = parse_front_matter(content)   # (dict, remaining_markdown)
+html = md_to_html(body, metadata)              # full HTML document string
+```
+
+- `parse_front_matter(content)` → `(metadata, body)`; also warns on
+  unknown/mistyped front-matter keys.
+- `md_to_html(body, metadata)` runs typographic conversion, source
+  normalisation, markdown→HTML, and post-processing, returning a complete
+  HTML document.
+- `postprocess(html, metadata=…)` (in `pdf.postprocess`) is the HTML
+  transform pass on its own — table layouts, callout classes, row
+  highlighting, page-break markers — if you produce HTML by other means.
+
 ## What to explore next
 
 - [front-matter.md](front-matter.md) — every supported field

@@ -59,8 +59,8 @@ The bundled `style.css` wires the normal-width families to elements by
 default:
 
 ```css
-body { font-family: "Minion Pro", "AntSerif", "Georgia", serif; }
-table { font-family: "Minion Caption", "Minion Pro", "Georgia", serif; }
+body  { font-family: "Minion Pro", "AntSerif", "Georgia", "Times New Roman", serif; }
+table { font-family: "Minion Caption", "Minion Pro", "AntSerif", "Georgia", serif; }
 ```
 
 ## Myriad Pro — weights × widths
