@@ -406,3 +406,60 @@ class TestTypedColumnWidths:
     def test_explicit_width_override(self):
         result = apply_default_table_widths(self._ladder(), {"columns": {"Team": "12em"}})
         assert 'style="width:12em"' in result
+
+
+class TestFlexAllocation:
+    """Category detection + water-fill flex-column allocation."""
+
+    def test_is_category_column(self):
+        from pdf.table_transforms import _is_category_column
+        cat = ["15U Champ Pool A", "17U Reserve Pool B", "Open"] * 4  # 12 rows, 3 distinct
+        assert _is_category_column("Division", cat) is True
+        # A name-ish header is never demoted, even if values repeat.
+        assert _is_category_column("Home", cat) is False
+        # Too few rows for cardinality to mean anything.
+        assert _is_category_column("Division", ["A", "B"]) is False
+        # Mostly-unique values are a name column, not a category.
+        assert _is_category_column("Team", [f"Team {i}" for i in range(20)]) is False
+
+    def _schedule(self):
+        homes = ["Manningham 15U Champ", "Frankston District 17U Champ",
+                 "Lilydale & Yarra Valley 17U Champ", "Kingston 17U Res",
+                 "Bayside District 15U Res", "Casey 15U Res", "Yarra 15U Champ",
+                 "Chelsea District 17U Champ", "Manningham 17U Res", "Melbourne East"]
+        aways = ["Mornington Peninsula 15U Champ", "Nepean 15U Res", "Stonnington City",
+                 "Whitehorse 15U Champ", "Springvale 15U Res", "Boroondara 17U Champ",
+                 "Ariels VCNA 17U Champ", "Waverley 17U Res", "Dandenong District 15U",
+                 "Outer East FNL 15U Champ"]
+        divs = ["15U Champ Pool A", "17U Reserve Pool B"] * 5
+        rows = "".join(
+            f"<tr><td>{9+i}:00</td><td>{i%11+1}</td><td>{i%9+1}</td>"
+            f"<td>{divs[i]}</td><td>{homes[i]}</td><td>{aways[i]}</td></tr>"
+            for i in range(10)
+        )
+        return (
+            "<table><thead><tr><th>Time</th><th>Ct</th><th>Rd</th>"
+            "<th>Division</th><th>Home</th><th>Away</th></tr></thead>"
+            f"<tbody>{rows}</tbody></table>"
+        )
+
+    def _colmap(self, html):
+        import re
+        cg = re.search(r"<colgroup>(.*?)</colgroup>", html, re.DOTALL).group(1)
+        out = []
+        for c in re.findall(r"<col([^>]*)>", cg):
+            m = re.search(r'class="(w\d)"', c) or re.search(r'width:([\d.]+em)', c)
+            out.append(m.group(1) if m else "BARE")
+        return out
+
+    def test_bounded_category_is_pinned_names_stay_flex(self):
+        result = apply_default_table_widths(self._schedule())
+        cols = dict(zip(["Time", "Ct", "Rd", "Division", "Home", "Away"],
+                        self._colmap(result)))
+        # Division (low cardinality) is pinned to an em width, not flexed.
+        assert cols["Division"].endswith("em")
+        # The two name columns both stay bare so they split the remainder evenly.
+        assert cols["Home"] == "BARE"
+        assert cols["Away"] == "BARE"
+        # Court/Round stay narrow token columns.
+        assert cols["Ct"].startswith("w") and cols["Rd"].startswith("w")

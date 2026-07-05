@@ -844,6 +844,77 @@ def _snap_up_rung(target_em):
     return len(_LADDER_EM) - 1
 
 
+# --- Flex-column allocation --------------------------------------------------
+
+import functools
+
+# A4 portrait content width (210mm − 2×18mm margins) in 9pt-table em. Only used
+# to decide WHICH flex columns to cap; the bare column absorbs the true
+# remainder, so an off estimate (theme/landscape) degrades gracefully.
+_PAGE_CONTENT_EM = 54.8
+# Headers that name an open-ended entity — never demote these to a fixed
+# category width even if their values happen to repeat.
+_NAME_HINTS = frozenset({'team', 'home', 'away', 'opponent', 'club', 'name',
+                         'player'})
+_BODY_FONT_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'fonts', 'MinionPro-Capt.otf')
+_HEADER_FONT_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'fonts', 'MyriadPro-Semibold.otf')
+
+
+@functools.lru_cache(maxsize=None)
+def _glyph_advances(font_path):
+    """char -> advance width (em) from a bundled OTF, or None if unavailable."""
+    try:
+        from fontTools.ttLib import TTFont
+        if not os.path.exists(font_path):
+            return None
+        font = TTFont(font_path)
+        upm = font['head'].unitsPerEm
+        hmtx = font['hmtx']
+        return {chr(code): hmtx[g][0] / upm
+                for code, g in font.getBestCmap().items()}
+    except Exception:
+        return None
+
+
+def _measure_em(text, header=False):
+    """Rendered width of a string in table em, from the real bundled-font glyph
+    advances (falls back to the per-class averages if fontTools/the font is
+    unavailable). More accurate than the averages for proportional names, which
+    matters for flex caps — under fixed layout a too-tight cap wraps."""
+    adv = _glyph_advances(_HEADER_FONT_PATH if header else _BODY_FONT_PATH)
+    if adv is None:
+        return _header_em(text) if header else _text_em(text)
+    src = text.upper() if header else text
+    fallback = 0.6 if header else 0.5
+    total = sum(adv.get(c, fallback) for c in src)
+    if header:                    # header is 8.5pt in a 9pt table + 0.03em tracking
+        total = (total + 0.03 * len(src)) * _HEADER_EM_SCALE
+    return total
+
+
+def _flex_natural_em(header, cells):
+    """Width a flex column needs to hold its widest cell/header without wrapping."""
+    widest = max((_measure_em(c) for c in cells), default=0.0)
+    return max(widest, _measure_em(header, header=True)) \
+        + _CELL_OVERHEAD_EM + _SAFETY_EM
+
+
+def _is_category_column(header, values):
+    """A bounded *category* column (few values that repeat) is a fixed label,
+    not a name column that should flex. Thresholds validated on real reports:
+    enough rows for cardinality to mean something, few distinct values that
+    genuinely repeat, and not a name-ish header."""
+    n = len(values)
+    if n < 8:
+        return False
+    distinct = len(set(values))
+    if distinct > 12 or distinct / n > 0.30:
+        return False
+    return not (set(_normalise_header(header).split()) & _NAME_HINTS)
+
+
 def apply_default_table_widths(html, metadata=None):
     """Give every colgroup-less table typed, content-consistent column widths.
 
@@ -921,15 +992,64 @@ def apply_default_table_widths(html, metadata=None):
             group_floor = max(col_floor[i] for i, tt in enumerate(types) if tt == t)
             group_rung[t] = _snap_up_rung(max(canonical, group_floor))
 
-        # 4. emit the colgroup; flex columns stay width-less
+        # 4. allocate flex-column widths (water-fill). WeasyPrint fixed layout
+        #    splits width-less columns EQUALLY, so a narrow flex column (a
+        #    bounded category like Division) would steal an equal share from the
+        #    real name columns and wrap them. Instead: pin bounded/narrow flex
+        #    columns at their natural width and leave only genuinely-hungry
+        #    columns bare to absorb the remainder.
+        flex_idx = [i for i, t in enumerate(types) if t in _FLEX_TYPES]
+        pinned = {}   # column index -> fixed width em
+        nat = {}
+        for i in flex_idx:
+            cells = [c for c in (_strip_tags(row[i]).strip()
+                                 for row in body_rows if i < len(row)) if c]
+            nat[i] = _flex_natural_em(headers[i], cells)
+            # Low-cardinality category columns are fixed regardless of width.
+            if _is_category_column(headers[i], cells):
+                pinned[i] = nat[i]
+
+        elastic = [i for i in flex_idx if i not in pinned]
+        if elastic:
+            fixed_em = 0.0
+            for i, t in enumerate(types):
+                if i in pinned:
+                    fixed_em += pinned[i]
+                elif t == '_explicit':
+                    v = explicit[i]
+                    fixed_em += float(v[:-2]) if v.endswith('em') else 10.0
+                elif t not in _FLEX_TYPES:
+                    fixed_em += _LADDER_EM[group_rung[t]]
+            avail = max(_PAGE_CONTENT_EM - fixed_em, 0.0)
+
+            widest = max(elastic, key=lambda j: nat[j])
+            capped = {}
+            unsat = set(elastic)
+            while len(unsat) > 1:
+                fair = (avail - sum(capped.values())) / len(unsat)
+                # Pin a column only if it fits its fair share AND is clearly
+                # narrower than the widest (< 75%), so near-equal paired names
+                # (Home/Away) stay bare and split evenly — category detection
+                # already handles the genuine outliers.
+                cand = [i for i in unsat
+                        if i != widest and nat[i] <= fair
+                        and nat[i] < nat[widest] * 0.75]
+                if not cand:
+                    break
+                i = min(cand, key=lambda j: nat[j])
+                capped[i] = nat[i]
+                unsat.discard(i)
+            pinned.update(capped)
+
+        # 5. emit the colgroup
         cols = []
-        has_flex = False
         for i, t in enumerate(types):
-            if t == '_explicit':
+            if i in pinned:
+                cols.append(f'<col style="width:{pinned[i]:.2f}em">')
+            elif t == '_explicit':
                 cols.append(f'<col style="width:{explicit[i]}">')
             elif t in _FLEX_TYPES:
-                has_flex = True
-                cols.append('<col>')
+                cols.append('<col>')            # bare — absorbs the remainder
             else:
                 cols.append(f'<col class="w{group_rung[t] + 1}">')
         colgroup = '<colgroup>' + ''.join(cols) + '</colgroup>'
@@ -938,9 +1058,12 @@ def apply_default_table_widths(html, metadata=None):
                         lambda m: f'{m.group(0)}\n{colgroup}',
                         table_html, count=1)
 
-        # 5. all-token tables must shrink to fit, not stretch to 100% (which
-        #    fixed layout would redistribute back into the columns)
-        if not has_flex:
+        # 6. no bare flex column (all-token, or every flex pinned) → shrink to
+        #    fit rather than stretch to 100% (fixed layout would smear the slack
+        #    back into the fixed columns).
+        bare_exists = any(t in _FLEX_TYPES and i not in pinned
+                          for i, t in enumerate(types))
+        if not bare_exists:
             def _add_fit(m):
                 tag = m.group(0)
                 if 'class="' in tag:
