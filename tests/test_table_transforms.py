@@ -467,6 +467,20 @@ class TestDocLevelWidths:
         assert cols["Ct"].startswith("w") and cols["Rd"].startswith("w")
         assert 'class="fit"' in result
 
+    def test_page_width_controls_overflow_scaling(self):
+        import re
+        sched = self._schedule()
+        # A narrow page forces the wide columns to scale down; a wide page (or
+        # landscape) lets them keep their full document-wide width.
+        narrow = apply_default_table_widths(sched, {"page_width_em": 40})
+        wide = apply_default_table_widths(sched, {"page_width_em": 90})
+        nw = max(float(x) for x in re.findall(r"width:([\d.]+)em", narrow))
+        ww = max(float(x) for x in re.findall(r"width:([\d.]+)em", wide))
+        assert ww > nw
+        # orientation: landscape selects a wider budget than portrait.
+        from pdf.table_transforms import _page_content_em
+        assert _page_content_em({"orientation": "landscape"}) > _page_content_em({})
+
     def test_identity_width_shared_across_tables(self):
         # A team column in a second, separate table gets the SAME width as the
         # widest team name anywhere in the document.

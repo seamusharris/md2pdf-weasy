@@ -97,6 +97,8 @@ _FRONT_MATTER_SCHEMA = {
     'auto_highlight_bold_rows': bool,
     'table_widths': (bool, str),      # false/'off' disables the typed-width pass
     'columns': dict,                  # Header -> type name or explicit width
+    'orientation': str,               # 'landscape' for wide tables
+    'page_width_em': (int, float),    # override the table-fit content width
     'toc': bool,
     'toc_depth': int,
     'h2_page_break': bool,
@@ -392,6 +394,8 @@ def _front_matter_css(metadata):
         # break normally — the TOC fills the title page.
         if not metadata.get('toc'):
             rules.append('.content > h2:first-child { break-before: auto; }')
+    if str(metadata.get('orientation', '')).lower() == 'landscape':
+        rules.append('@page { size: A4 landscape; }')
     return '\n'.join(rules)
 
 

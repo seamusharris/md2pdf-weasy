@@ -853,9 +853,25 @@ def _snap_up_rung(target_em):
 
 import functools
 
-# A4 portrait content width (210mm − 2×18mm margins) in 9pt-table em. A table
-# whose fixed columns would exceed this is scaled down to fit.
+# Content width in 9pt-table em for A4 with the bundled 18mm side margins:
+# portrait 210mm−36mm = 174mm ≈ 54.8em; landscape 297mm−36mm = 261mm ≈ 82.2em.
+# A table whose fixed columns exceed the page width is scaled down to fit.
 _PAGE_CONTENT_EM = 54.8
+_PAGE_CONTENT_EM_LANDSCAPE = 82.2
+
+
+def _page_content_em(metadata):
+    """Usable content width (em) for the overflow guard, from front matter.
+
+    ``page_width_em`` overrides everything; otherwise ``orientation: landscape``
+    selects the wider A4 landscape width. Defaults to A4 portrait."""
+    metadata = metadata or {}
+    override = metadata.get('page_width_em')
+    if isinstance(override, (int, float)) and override > 0:
+        return float(override)
+    if str(metadata.get('orientation', '')).lower() == 'landscape':
+        return _PAGE_CONTENT_EM_LANDSCAPE
+    return _PAGE_CONTENT_EM
 # Headers naming a team/entity share one "@team" identity, so Team, Home and
 # Away all get a single width across the whole document.
 _NAME_HINTS = frozenset({'team', 'home', 'away', 'opponent', 'club', 'name',
@@ -973,16 +989,16 @@ def _analyze_table_for_widths(table_html, overrides):
             'group_rung': group_rung, 'nat': nat}
 
 
-def _emit_table_widths(table_html, a, identity_width):
+def _emit_table_widths(table_html, a, identity_width, page_em):
     """Second pass: inject the colgroup. Numeric columns take their ladder rung;
     wide columns take their identity's document-wide width (so the same kind of
     column is the same width in every table).
 
-    If the fixed columns fit the page, the table shrinks to fit (never
+    If the fixed columns fit ``page_em``, the table shrinks to fit (never
     stretches one column). If they overflow (e.g. two long team columns at the
     doc-wide width), the wide columns are scaled down just enough to fit — the
     only case the shared width is not honoured exactly, in exchange for the
-    table staying on the page."""
+    table staying on the page. Returns ``(html, natural_total_em)``."""
     # Target width per column; token columns keep their ladder em.
     wide_em = {}       # index -> doc-wide em (scalable)
     token_em = 0.0
@@ -998,20 +1014,20 @@ def _emit_table_widths(table_html, a, identity_width):
 
     wide_total = sum(wide_em.values())
     total = token_em + wide_total
-    overflow = total > _PAGE_CONTENT_EM and wide_total > 0
+    overflow = total > page_em and wide_total > 0
     if overflow:
         # Take the deficit from the WIDEST wide columns first (proportional to
         # each column's excess over the narrowest), so a already-tight column
         # like Division isn't shrunk into wrapping while roomy team columns
         # have slack.
-        deficit = total - _PAGE_CONTENT_EM
+        deficit = total - page_em
         w_min = min(wide_em.values())
         excess = sum(w - w_min for w in wide_em.values())
         if excess > deficit:
             for i in wide_em:
                 wide_em[i] -= deficit * (wide_em[i] - w_min) / excess
         else:                       # even flattening to w_min isn't enough
-            f = max((_PAGE_CONTENT_EM - token_em) / wide_total, 0.1)
+            f = max((page_em - token_em) / wide_total, 0.1)
             for i in wide_em:
                 wide_em[i] *= f
 
@@ -1035,7 +1051,7 @@ def _emit_table_widths(table_html, a, identity_width):
                 return re.sub(r'class="', 'class="fit ', tag, count=1)
             return tag[:-1] + ' class="fit">'
         result = re.sub(r'<table\b[^>]*>', _add_fit, result, count=1)
-    return result
+    return result, total
 
 
 def apply_default_table_widths(html, metadata=None):
@@ -1069,6 +1085,7 @@ def apply_default_table_widths(html, metadata=None):
         _normalise_header(k): v
         for k, v in (metadata.get('columns') or {}).items()
     }
+    page_em = _page_content_em(metadata)
 
     # Pass 1: analyse every table, accumulate the widest natural width per
     # document-level column identity.
@@ -1086,13 +1103,32 @@ def apply_default_table_widths(html, metadata=None):
     # Pass 2: rebuild the document, emitting each table's colgroup.
     out = []
     last = 0
+    overwide = []
     for start, end, a in spans:
         out.append(html[last:start])
         table_html = html[start:end]
-        out.append(table_html if a is None
-                   else _emit_table_widths(table_html, a, identity_width))
+        if a is None:
+            out.append(table_html)
+        else:
+            emitted, natural = _emit_table_widths(
+                table_html, a, identity_width, page_em)
+            out.append(emitted)
+            if natural > page_em:
+                overwide.append(natural)
         last = end
     out.append(html[last:])
+
+    # Suggest landscape when tables had to be scaled to fit the page.
+    is_landscape = str(metadata.get('orientation', '')).lower() == 'landscape'
+    if overwide and not is_landscape:
+        _log.info(
+            "%d table(s) are wider than the page (widest ~%.0fem vs %.0fem "
+            "available) and were scaled to fit; consider 'orientation: "
+            "landscape' in the front matter for %d-column tables.",
+            len(overwide), max(overwide), page_em,
+            max(len(a['types']) for _, _, a in spans if a),
+        )
+
     return ''.join(out)
 
 

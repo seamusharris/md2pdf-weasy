@@ -47,6 +47,10 @@ Slashes, backslashes, and `..` are rejected for safety; only bare names.
 | `tables_include` | str | — | Path to a shared YAML file of layouts. Resolved cwd-relative first, then relative to the markdown file. Per-doc `tables` overrides shared layouts by key. |
 | `auto_align_columns` | bool | true | When true (default), auto-align columns by content: all-numeric columns get `class="num"` (right-aligned) and all-short (≤3-char) columns get `class="ctr"` (centred). Set false to disable. See [tables.md](tables.md). |
 | `auto_highlight_bold_rows` | bool | false | When true, any table row containing a cell that is wholly wrapped in `**bold**` (inner text longer than 3 characters) gets `<tr class="highlight">`, and the bold markup on that cell is removed (the row CSS re-bolds it). Opt-in for retrospective reports. |
+| `table_widths` | bool \| str | true | Automatic typed, document-consistent column widths for tables without a declared layout. Set `false`/`off` to disable. See [table-widths.md](table-widths.md). |
+| `columns` | dict | `{}` | Per-column overrides for the automatic width pass, keyed by header: a type name (`stat`/`num`/`label`/`text`/…) or an explicit width (a number → em, or any CSS length). See [table-widths.md](table-widths.md). |
+| `orientation` | str | portrait | `landscape` renders the document on A4 landscape (injects `@page { size: A4 landscape }`) and widens the content width used to fit tables. The width pass logs a suggestion to switch when a table has to be scaled to fit portrait. |
+| `page_width_em` | number | — | Override the content width (in table em) used by the table-fit/overflow logic — for non-standard page sizes or margins. |
 
 ## Callouts
 
