@@ -1,0 +1,15 @@
+{
+  "blockedBy": [
+    "T-021"
+  ],
+  "completedDate": null,
+  "createdDate": "2026-08-02",
+  "description": "Validate authorized consumers against the approved private tag while preserving v0.1.0 and opt-out rollback instructions. Record regressions as issues without importing proprietary consumer content. Close the release phase only after adoption and rollback evidence is captured.",
+  "displayId": "T-022",
+  "id": "T-022",
+  "order": 40,
+  "phase": "release",
+  "status": "open",
+  "title": "Confirm downstream adoption and rollback",
+  "type": "chore"
+}

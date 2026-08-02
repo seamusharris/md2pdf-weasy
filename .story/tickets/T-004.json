@@ -1,0 +1,15 @@
+{
+  "blockedBy": [
+    "T-003"
+  ],
+  "completedDate": null,
+  "createdDate": "2026-08-02",
+  "description": "Make malformed columns, orientation, page_width_em, and table_widths values obey the documented warn-and-continue contract. Normalize or reject invalid values, prevent the confirmed columns AttributeError, and continue with documented safe defaults. Cover booleans, non-positive and non-finite numbers, case variants, malformed structures, and injection-like strings without narrowing established valid inputs unexpectedly.",
+  "displayId": "T-004",
+  "id": "T-004",
+  "order": 20,
+  "phase": "contract",
+  "status": "open",
+  "title": "Remediate unsafe front-matter width controls",
+  "type": "task"
+}

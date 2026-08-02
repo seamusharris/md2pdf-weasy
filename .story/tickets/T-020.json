@@ -1,0 +1,16 @@
+{
+  "blockedBy": [
+    "T-013",
+    "T-019"
+  ],
+  "completedDate": null,
+  "createdDate": "2026-08-02",
+  "description": "After separate explicit authorization, perform the approved integration and every release-content change, including the version and final documentation, before testing. Run all release gates again on that exact immutable release-candidate commit in environments authorized for the bundled fonts. Do not tag if the tested SHA changes or if any gate fails.",
+  "displayId": "T-020",
+  "id": "T-020",
+  "order": 20,
+  "phase": "release",
+  "status": "open",
+  "title": "Prepare final release commit and test exact SHA",
+  "type": "chore"
+}

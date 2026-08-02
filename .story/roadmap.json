@@ -1,0 +1,43 @@
+{
+  "blockers": [],
+  "date": "2026-08-02",
+  "phases": [
+    {
+      "description": "Established v0.1.0 behavior, private distribution constraints, and the evidence describing the unfinished feature stack.",
+      "id": "baseline",
+      "label": "PHASE 0",
+      "name": "Preserved baseline"
+    },
+    {
+      "description": "Ratify and stabilize automatic table-width behavior before integration.",
+      "id": "contract",
+      "label": "PHASE 1",
+      "name": "Table-width contract and correctness"
+    },
+    {
+      "description": "Make font sizing deterministic and validate rendered and legacy-compatible output.",
+      "id": "rendering",
+      "label": "PHASE 2",
+      "name": "Rendering validation"
+    },
+    {
+      "description": "Protect public APIs, supported environments, proprietary assets, and authorized downstream consumers.",
+      "id": "compatibility",
+      "label": "PHASE 3",
+      "name": "Platform, API, and downstream safety"
+    },
+    {
+      "description": "Audit an immutable candidate and complete clean-install, consumer, documentation, and go/no-go gates.",
+      "id": "integration",
+      "label": "PHASE 4",
+      "name": "Integration and merge readiness"
+    },
+    {
+      "description": "Version, test, tag, and adopt a private release without publication or licensing changes.",
+      "id": "release",
+      "label": "PHASE 5",
+      "name": "Private release readiness"
+    }
+  ],
+  "title": "md2pdf-weasy"
+}

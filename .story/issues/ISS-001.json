@@ -1,0 +1,25 @@
+{
+  "components": [
+    "tests",
+    "weasyprint",
+    "native-libraries"
+  ],
+  "createdBy": "Codex repository audit",
+  "dedupeKey": "setup-audit:native-suite-crash",
+  "discoveredDate": "2026-08-02",
+  "displayId": "ISS-001",
+  "id": "ISS-001",
+  "impact": "The standard single-command suite exits with a segmentation fault during WeasyPrint, Pango, and Harfbuzz cleanup in the current Python 3.14 environment, so release validation is not trustworthy. All 118 tests pass when files run in isolated processes, suggesting an environment or teardown interaction rather than a known assertion failure. Python 3.14 support and the reliable release-gate command remain unresolved.",
+  "location": [
+    "tests/"
+  ],
+  "phase": "compatibility",
+  "relatedTickets": [
+    "T-012"
+  ],
+  "resolution": "Resolved by establishing an evidence-based compatibility bound rather than retaining an unsafe native-state workaround. On macOS arm64 with WeasyPrint 68.1 and Pango 1.58.0, Python 3.14.6 had 2 abnormal exits in 10 fresh full-suite processes and 2 abnormal exits in 20 fresh tests/test_themes.py processes. The same project revision and native stack on Python 3.13.13 completed 10/10 fresh full-suite processes and 20/20 fresh theme-suite processes with exit code 0, plus a final unsplit run of 118 tests. Project metadata now requires Python >=3.11,<3.14, both install guides document the bound, standard pip rejects Python 3.14.6, and a clean Python 3.13 editable install succeeds. The tentative shared FontConfiguration/render-lock patch was removed because PLAN_REVIEW found cross-style contamination risk and unbounded keyed-cache memory growth. Final CODE_REVIEW lenses approved with full core coverage and zero findings.",
+  "resolvedDate": "2026-08-02",
+  "severity": "high",
+  "status": "resolved",
+  "title": "Combined pytest crashes during native teardown on Python 3.14"
+}

@@ -1,0 +1,13 @@
+{
+  "blockedBy": [],
+  "completedDate": "2026-08-02",
+  "createdDate": "2026-08-02",
+  "description": "Reproduce the combined-suite crash in clean environments across candidate Python, WeasyPrint, Pango, Harfbuzz, and related native-library versions. Distinguish a renderer defect from environment teardown behavior and set evidence-based compatibility bounds. Establish one trustworthy full-suite command as a release gate rather than permanently hiding the crash by splitting the suite.",
+  "displayId": "T-012",
+  "id": "T-012",
+  "order": 20,
+  "phase": "compatibility",
+  "status": "complete",
+  "title": "Resolve Python and WeasyPrint native-suite stability",
+  "type": "task"
+}

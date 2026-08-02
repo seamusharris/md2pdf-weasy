@@ -13,6 +13,11 @@ dist/
 # Test artefacts
 .pytest_cache/
 
+# Storybloq runtime artefacts (project ledger remains tracked)
+.story/snapshots/
+.story/sessions/
+.story/status.json
+
 # Visual-review example PDFs (regenerated via `make examples`)
 examples/**/*.pdf
 

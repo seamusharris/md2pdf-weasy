@@ -1,0 +1,17 @@
+{
+  "blockedBy": [
+    "T-013",
+    "T-014",
+    "T-016"
+  ],
+  "completedDate": null,
+  "createdDate": "2026-08-02",
+  "description": "Have each authorized private consumer test the exact immutable candidate SHA after local gates pass. Record results without importing private consumer content and test rollback to v0.1.0 or table_widths false where applicable. Any transfer or installation remains conditional on the proprietary-distribution entitlement decision.",
+  "displayId": "T-017",
+  "id": "T-017",
+  "order": 30,
+  "phase": "integration",
+  "status": "open",
+  "title": "Run authorized downstream canaries on candidate SHA",
+  "type": "task"
+}

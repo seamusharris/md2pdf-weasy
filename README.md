@@ -20,7 +20,9 @@ pip install -e ~/Repos/md2pdf-weasy
 pip install "md2pdf-weasy @ git+ssh://git@github.com/seamusharris/md2pdf-weasy.git@v0.1.0"
 ```
 
-Requires Python 3.11+ and WeasyPrint's system libraries (Cairo + Pango).
+Requires Python 3.11–3.13 and WeasyPrint's system libraries (Cairo +
+Pango). Python 3.14 is currently excluded because the validated macOS
+native stack can crash intermittently during Pango/Fontconfig teardown.
 On macOS: `brew install pango`.
 
 ## Development

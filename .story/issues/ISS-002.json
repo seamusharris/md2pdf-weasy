@@ -1,0 +1,24 @@
+{
+  "components": [
+    "front-matter",
+    "table-widths",
+    "renderer"
+  ],
+  "createdBy": "Codex repository audit",
+  "dedupeKey": "setup-audit:columns-type-crash",
+  "discoveredDate": "2026-08-02",
+  "id": "ISS-002",
+  "impact": "A nonempty list or string supplied as front-matter columns produces the documented type warning but later raises AttributeError when automatic widths call items. Rendering aborts instead of following the documented warn-and-continue behavior. Invalid metadata must fall back safely without changing established valid mappings.",
+  "location": [
+    "pdf/table_transforms.py:1084"
+  ],
+  "phase": "contract",
+  "relatedTickets": [
+    "T-004"
+  ],
+  "resolution": null,
+  "resolvedDate": null,
+  "severity": "high",
+  "status": "open",
+  "title": "Mistyped columns metadata warns and then crashes"
+}

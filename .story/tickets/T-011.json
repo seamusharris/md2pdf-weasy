@@ -1,0 +1,15 @@
+{
+  "blockedBy": [
+    "T-003"
+  ],
+  "completedDate": null,
+  "createdDate": "2026-08-02",
+  "description": "Inventory build_pdf, build_html, md_to_html, parse_front_matter, postprocess, both CLI entry points, and deprecated aliases as the supported surface. Confirm that the trailing optional build_pdf base_url parameter is source-compatible and decide intentionally whether build_html or the CLI should expose corresponding behavior. Document decisions without opportunistic API expansion.",
+  "displayId": "T-011",
+  "id": "T-011",
+  "order": 10,
+  "phase": "compatibility",
+  "status": "open",
+  "title": "Ratify the public Python and CLI API",
+  "type": "task"
+}

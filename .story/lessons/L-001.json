@@ -1,0 +1,20 @@
+{
+  "content": "When an intermittent CFFI/native teardown crash appears after successful assertions, do not retain mutable document-scoped native objects process-wide without proving isolation and bounded memory. Compare clean interpreter/native matrices first and use an explicit compatibility bound when the safe candidate is stable.",
+  "context": "ISS-001/T-012: PLAN_REVIEW rejected a shared WeasyPrint FontConfiguration because @font-face mutates it and rejected a per-style lifetime cache because native memory would grow without bound. Python 3.13.13 passed 10 full-suite and 20 theme-suite fresh processes on the same WeasyPrint 68.1/Pango 1.58 stack where Python 3.14.6 had intermittent abnormal exits.",
+  "createdDate": "2026-08-02",
+  "id": "L-001",
+  "lastValidated": "2026-08-02",
+  "reinforcements": 0,
+  "source": "review",
+  "status": "active",
+  "supersedes": null,
+  "tags": [
+    "weasyprint",
+    "native-libraries",
+    "compatibility",
+    "validation",
+    "review-lenses"
+  ],
+  "title": "Prefer compatibility bounds over unsafe native lifetime caches",
+  "updatedDate": "2026-08-02"
+}

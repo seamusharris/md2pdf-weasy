@@ -1,0 +1,16 @@
+{
+  "blockedBy": [
+    "T-013",
+    "T-015"
+  ],
+  "completedDate": null,
+  "createdDate": "2026-08-02",
+  "description": "Within an environment authorized to contain the bundled fonts, run the reliable full suite, approved visual review, local package build, wheel and sdist content inspection, clean-venv installation, both CLI entry points, and PDF and HTML smoke renders. Keep artifacts ephemeral and local and verify proprietary assets neither leak nor become publicly distributable. Treat native crashes, missing dependencies, package-data errors, or consumer-facing regressions as blockers.",
+  "displayId": "T-016",
+  "id": "T-016",
+  "order": 20,
+  "phase": "integration",
+  "status": "open",
+  "title": "Run clean-install and local packaging gates",
+  "type": "task"
+}

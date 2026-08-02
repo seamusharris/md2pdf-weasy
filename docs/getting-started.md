@@ -15,7 +15,10 @@ For a stable pinned version:
 pip install "md2pdf-weasy @ git+ssh://git@github.com/seamusharris/md2pdf-weasy.git@v0.1.0"
 ```
 
-WeasyPrint needs Pango + Cairo on the system. On macOS: `brew install pango`.
+Python 3.11–3.13 is supported. Python 3.14 is currently excluded because
+the validated macOS native stack can crash intermittently during
+Pango/Fontconfig teardown. WeasyPrint also needs Pango + Cairo on the
+system. On macOS: `brew install pango`.
 
 ## First render
 

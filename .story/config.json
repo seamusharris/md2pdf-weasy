@@ -1,0 +1,22 @@
+{
+  "features": {
+    "handovers": true,
+    "issues": true,
+    "reviews": true,
+    "roadmap": true,
+    "tickets": true
+  },
+  "language": "python",
+  "project": "md2pdf-weasy",
+  "schemaVersion": 2,
+  "type": "pip",
+  "version": 2,
+  "recipeOverrides": {
+    "stages": {
+      "TEST": {
+        "enabled": true,
+        "command": "make test"
+      }
+    }
+  }
+}
