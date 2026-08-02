@@ -39,6 +39,26 @@ def test_normalisation_is_idempotent_and_copies_nested_columns():
     assert warnings == second_warnings == []
 
 
+def test_em_string_normalisation_is_lossless_and_idempotent_at_float_precision():
+    large_decimal = "1" + "0" * 308 + "em"
+    metadata = {
+        "columns": {
+            "Precise": "1.23456789em",
+            "Large": large_decimal,
+        }
+    }
+
+    first, warnings = normalise_width_metadata(metadata)
+    second, second_warnings = normalise_width_metadata(first)
+
+    assert first["columns"] == {
+        "precise": "1.23456789em",
+        "large": large_decimal,
+    }
+    assert second == first
+    assert warnings == second_warnings == []
+
+
 @pytest.mark.parametrize("value", [True, False, 0, -1, math.inf, -math.inf, math.nan])
 def test_page_width_rejects_booleans_and_non_positive_or_non_finite_values(value):
     result, warnings = normalise_width_metadata({"page_width_em": value})

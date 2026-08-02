@@ -4,6 +4,7 @@ import math
 import numbers
 import re
 from collections.abc import Mapping
+from decimal import Decimal
 
 
 KNOWN_COLUMN_TYPES = frozenset({
@@ -45,7 +46,13 @@ def _normalise_column_value(value):
     width = float(normalized[:-2])
     if not math.isfinite(width) or width <= 0:
         return None
-    return f"{width:g}em"
+    # ``repr`` keeps enough precision to round-trip the fitted float. Expanding
+    # it through Decimal avoids exponent notation, so our own normalized value
+    # remains valid under the deliberately decimal-only em grammar.
+    canonical = format(Decimal(repr(width)), "f")
+    if "." in canonical:
+        canonical = canonical.rstrip("0").rstrip(".")
+    return f"{canonical}em"
 
 
 def normalise_width_metadata(metadata):

@@ -4,8 +4,11 @@ Alignment, highlighting, layout, coloring, section-row detection, and TOC
 generation. All transforms operate on HTML strings using regex.
 """
 
+import math
 import os
 import re
+from dataclasses import dataclass
+from decimal import Decimal, ROUND_DOWN
 
 import yaml
 
@@ -949,7 +952,8 @@ def _analyze_table_for_widths(table_html, overrides):
 
     Returns a dict (headers, types, explicit, group_rung, nat) or None if the
     table should be left alone (already has a colgroup, no header row, or a
-    colspan/ragged shape a fixed colgroup would misrender)."""
+    colspan/ragged shape a fixed colgroup would misrender). Explicit widths are
+    stored as numeric em values; callers must pass normalized overrides."""
     if '<colgroup' in table_html:
         return None
     headers = _extract_headers(table_html)
@@ -968,7 +972,7 @@ def _analyze_table_for_widths(table_html, overrides):
             if isinstance(ov, str) and ov.lower() in _KNOWN_TYPES:
                 types.append(ov.lower())
                 continue
-            explicit[i] = f'{ov}em' if isinstance(ov, (int, float)) else str(ov)
+            explicit[i] = float(ov[:-2]) if isinstance(ov, str) else float(ov)
             types.append('_explicit')
             continue
         col_cells = [row[i] for row in body_rows if i < len(row)]
@@ -1001,6 +1005,101 @@ def _analyze_table_for_widths(table_html, overrides):
             'group_rung': group_rung, 'nat': nat}
 
 
+@dataclass(frozen=True)
+class _TableFitResult:
+    """Pure fitting outcome consumed by HTML emission and diagnostics."""
+
+    explicit_em: dict
+    wide_em: dict
+    natural_total_em: float
+    emitted_total_em: float
+    outcome: str
+
+
+_WIDE_EM_QUANTUM = Decimal('0.01')
+
+
+def _wide_em_for_css(value, *, round_down=False):
+    """Return the exact numeric value emitted by the two-decimal CSS format."""
+    if round_down:
+        return float(Decimal(str(value)).quantize(
+            _WIDE_EM_QUANTUM, rounding=ROUND_DOWN
+        ))
+    return float(f'{value:.2f}')
+
+
+def _explicit_em_for_css(value):
+    """Return a shortest CSS number that round-trips to the fitted float."""
+    text = repr(float(value))
+    return text[:-2] if text.endswith('.0') else text
+
+
+def _width_sum(values):
+    """Sum positive em values, treating an unrepresentable total as infinity."""
+    try:
+        return math.fsum(values)
+    except OverflowError:
+        return math.inf
+
+
+def _scale_wide_em(wide_em, fixed_em, natural_total, page_em):
+    """Reduce automatic wide columns and quantize to their emitted precision."""
+    wide_total = _width_sum(wide_em.values())
+    deficit = natural_total - page_em
+    w_min = min(wide_em.values())
+    excess = _width_sum(width - w_min for width in wide_em.values())
+    if excess > deficit:
+        for i in wide_em:
+            wide_em[i] -= deficit * (wide_em[i] - w_min) / excess
+    else:
+        factor = (
+            max((page_em - fixed_em) / wide_total, 0.0)
+            if fixed_em <= page_em else 0.1
+        )
+        for i in wide_em:
+            wide_em[i] *= factor
+    return {
+        i: _wide_em_for_css(width, round_down=True)
+        for i, width in wide_em.items()
+    }
+
+
+def _fit_table_widths(analysis, identity_width, page_em):
+    """Calculate exact em widths and classify the table fitting outcome."""
+    explicit_em = dict(analysis['explicit'])
+    wide_em = {
+        i: _wide_em_for_css(identity_width.get(
+            _column_identity(analysis['headers'][i]), analysis['nat'][i]
+        ))
+        for i, t in enumerate(analysis['types']) if t in _WIDE_TYPES
+    }
+    fixed_em = _width_sum([
+        *explicit_em.values(),
+        *(
+            _LADDER_EM[analysis['group_rung'][t]]
+            for t in analysis['types']
+            if t not in _WIDE_TYPES and t != '_explicit'
+        ),
+    ])
+    natural_total = _width_sum((fixed_em, *wide_em.values()))
+    if natural_total > page_em and wide_em:
+        wide_em = _scale_wide_em(wide_em, fixed_em, natural_total, page_em)
+    emitted_total = _width_sum((fixed_em, *wide_em.values()))
+    outcome = (
+        'fit' if natural_total <= page_em else
+        'scaled' if emitted_total <= page_em else
+        'unresolved_overflow'
+    )
+
+    return _TableFitResult(
+        explicit_em=explicit_em,
+        wide_em=wide_em,
+        natural_total_em=natural_total,
+        emitted_total_em=emitted_total,
+        outcome=outcome,
+    )
+
+
 def _emit_table_widths(table_html, a, identity_width, page_em):
     """Second pass: inject the colgroup. Numeric columns take their ladder rung;
     wide columns take their identity's document-wide width (so the same kind of
@@ -1010,45 +1109,17 @@ def _emit_table_widths(table_html, a, identity_width, page_em):
     stretches one column). If they overflow (e.g. two long team columns at the
     doc-wide width), the wide columns are scaled down just enough to fit — the
     only case the shared width is not honoured exactly, in exchange for the
-    table staying on the page. Returns ``(html, natural_total_em)``."""
-    # Target width per column; token columns keep their ladder em.
-    wide_em = {}       # index -> doc-wide em (scalable)
-    token_em = 0.0
-    for i, t in enumerate(a['types']):
-        if t in _WIDE_TYPES:
-            wide_em[i] = identity_width.get(
-                _column_identity(a['headers'][i]), a['nat'][i])
-        elif t != '_explicit':
-            token_em += _LADDER_EM[a['group_rung'][t]]
-        else:
-            v = a['explicit'][i]
-            token_em += float(v[:-2]) if v.endswith('em') else 10.0
-
-    wide_total = sum(wide_em.values())
-    total = token_em + wide_total
-    overflow = total > page_em and wide_total > 0
-    if overflow:
-        # Take the deficit from the WIDEST wide columns first (proportional to
-        # each column's excess over the narrowest), so a already-tight column
-        # like Division isn't shrunk into wrapping while roomy team columns
-        # have slack.
-        deficit = total - page_em
-        w_min = min(wide_em.values())
-        excess = sum(w - w_min for w in wide_em.values())
-        if excess > deficit:
-            for i in wide_em:
-                wide_em[i] -= deficit * (wide_em[i] - w_min) / excess
-        else:                       # even flattening to w_min isn't enough
-            f = max((page_em - token_em) / wide_total, 0.1)
-            for i in wide_em:
-                wide_em[i] *= f
+    table staying on the page. Returns ``(html, fit_result)``."""
+    fit = _fit_table_widths(a, identity_width, page_em)
 
     cols = []
     for i, t in enumerate(a['types']):
         if t == '_explicit':
-            cols.append(f'<col style="width:{a["explicit"][i]}">')
+            cols.append(
+                f'<col style="width:{_explicit_em_for_css(fit.explicit_em[i])}em">'
+            )
         elif t in _WIDE_TYPES:
-            cols.append(f'<col style="width:{wide_em[i]:.2f}em">')
+            cols.append(f'<col style="width:{fit.wide_em[i]:.2f}em">')
         else:
             cols.append(f'<col class="w{a["group_rung"][t] + 1}">')
     colgroup = '<colgroup>' + ''.join(cols) + '</colgroup>'
@@ -1056,14 +1127,14 @@ def _emit_table_widths(table_html, a, identity_width, page_em):
     result = re.sub(r'<table\b[^>]*>',
                     lambda m: f'{m.group(0)}\n{colgroup}', table_html, count=1)
 
-    if not overflow:            # fits — shrink to content (don't stretch to 100%)
+    if fit.outcome == 'fit':    # shrink to content (don't stretch to 100%)
         def _add_fit(m):
             tag = m.group(0)
             if 'class="' in tag:
                 return re.sub(r'class="', 'class="fit ', tag, count=1)
             return tag[:-1] + ' class="fit">'
         result = re.sub(r'<table\b[^>]*>', _add_fit, result, count=1)
-    return result, total
+    return result, fit
 
 
 def apply_default_table_widths(html, metadata=None):
@@ -1125,23 +1196,40 @@ def apply_default_table_widths(html, metadata=None):
         if a is None:
             out.append(table_html)
         else:
-            emitted, natural = _emit_table_widths(
+            emitted, fit = _emit_table_widths(
                 table_html, a, identity_width, page_em)
             out.append(emitted)
-            if natural > page_em:
-                overwide.append(natural)
+            if fit.natural_total_em > page_em:
+                overwide.append(fit)
         last = end
     out.append(html[last:])
 
-    # Suggest landscape when tables had to be scaled to fit the page.
+    # Report every overflow. Landscape advice applies only to the default
+    # portrait budget; it is not actionable for landscape or custom budgets.
     is_landscape = str(metadata.get('orientation', '')).lower() == 'landscape'
-    if overwide and not is_landscape:
+    if overwide:
+        unresolved = sum(
+            fit.emitted_total_em > page_em for fit in overwide
+        )
+        outcome_note = (
+            f"; fixed columns remain wider than the budget in {unresolved} "
+            "table(s)" if unresolved else
+            "; automatic wide columns were scaled to fit"
+        )
+        advice = ""
+        if not is_landscape and 'page_width_em' not in metadata:
+            advice = (
+                "; consider 'orientation: landscape' in the front matter for "
+                f"{max(len(a['types']) for _, _, a in spans if a)}-column tables"
+            )
         _log.info(
-            "%d table(s) are wider than the page (widest ~%.0fem vs %.0fem "
-            "available) and were scaled to fit; consider 'orientation: "
-            "landscape' in the front matter for %d-column tables.",
-            len(overwide), max(overwide), page_em,
-            max(len(a['types']) for _, _, a in spans if a),
+            "%d table(s) are wider than the fitting budget (widest ~%.0fem "
+            "vs %.0fem available)%s%s.",
+            len(overwide),
+            max(fit.natural_total_em for fit in overwide),
+            page_em,
+            outcome_note,
+            advice,
         )
 
     return ''.join(out)

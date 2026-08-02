@@ -448,6 +448,238 @@ class TestTypedColumnWidths:
         ]
 
 
+class TestExactWidthFitting:
+    """Accepted explicit widths participate exactly in page-fit accounting."""
+
+    @staticmethod
+    def _table(headers, cells):
+        th = "".join(f"<th>{header}</th>" for header in headers)
+        td = "".join(f"<td>{cell}</td>" for cell in cells)
+        return (
+            f"<table><thead><tr>{th}</tr></thead>"
+            f"<tbody><tr>{td}</tr></tbody></table>"
+        )
+
+    @staticmethod
+    def _em_total(html):
+        import re
+
+        rung_em = {"w1": 2.5, "w2": 3, "w3": 3.5, "w4": 4.5, "w5": 5.5}
+        colgroup = re.search(r"<colgroup>(.*?)</colgroup>", html).group(1)
+        total = 0.0
+        for attrs in re.findall(r"<col([^>]*)>", colgroup):
+            width = re.search(r"width:([+\-.\deE]+)em", attrs)
+            rung = re.search(r'class="(w\d)"', attrs)
+            total += float(width.group(1)) if width else rung_em[rung.group(1)]
+        return total
+
+    def test_numeric_and_em_widths_use_the_exact_boundary_total(self):
+        html = self._table(["Numeric", "String"], ["A", "B"])
+        metadata = {"columns": {"Numeric": 7.5, "String": "10.5em"}}
+
+        boundary = apply_default_table_widths(
+            html, {**metadata, "page_width_em": 18}
+        )
+        overflow = apply_default_table_widths(
+            html, {**metadata, "page_width_em": 17.99}
+        )
+
+        assert 'style="width:7.5em"' in boundary
+        assert 'style="width:10.5em"' in boundary
+        assert 'class="fit"' in boundary
+        assert 'class="fit"' not in overflow
+
+    @pytest.mark.parametrize("override", [1.23456789, "1.23456789em"])
+    def test_high_precision_width_round_trips_to_emitted_css(self, override):
+        html = self._table(["Pinned"], ["x"])
+        width = 1.23456789
+
+        result = apply_default_table_widths(
+            html,
+            {"columns": {"Pinned": override}, "page_width_em": width},
+        )
+
+        assert 'class="fit"' in result
+        assert 'style="width:1.23456789em"' in result
+        assert self._em_total(result) == width
+
+    def test_individually_finite_widths_with_infinite_total_do_not_crash(
+        self, caplog
+    ):
+        html = self._table(["A", "B"], ["x", "y"])
+
+        with caplog.at_level("INFO", logger="pdf.table_transforms"):
+            result = apply_default_table_widths(
+                html,
+                {"columns": {"A": 1e308, "B": 1e308},
+                 "page_width_em": 50},
+            )
+
+        assert result.count('style="width:1e+308em"') == 2
+        assert 'class="fit"' not in result
+        assert "widest ~infem vs 50em available" in caplog.text
+        assert "fixed columns remain wider than the budget" in caplog.text
+
+    def test_public_pass_accepts_an_already_normalized_large_em_string(self):
+        from pdf.width_metadata import normalise_width_metadata
+
+        html = self._table(["Pinned"], ["x"])
+        metadata, warnings = normalise_width_metadata({
+            "columns": {"Pinned": "1" + "0" * 308 + "em"},
+            "page_width_em": 50,
+        })
+
+        result = apply_default_table_widths(html, metadata)
+
+        assert warnings == []
+        assert 'style="width:1e+308em"' in result
+        assert 'class="fit"' not in result
+
+    def test_mixed_explicit_typed_and_wide_columns_share_one_exact_total(
+        self, caplog
+    ):
+        from pdf.table_transforms import (
+            _analyze_table_for_widths,
+            _column_identity,
+            _fit_table_widths,
+        )
+
+        html = self._table(
+            ["Name", "W", "Pinned"], ["Warrandyte Wallabies", "12", "x"]
+        )
+        analysis = _analyze_table_for_widths(html, {"pinned": "7.25em"})
+        identities = {
+            _column_identity(analysis["headers"][index]): width
+            for index, width in analysis["nat"].items()
+        }
+        unconstrained = _fit_table_widths(analysis, identities, float("inf"))
+
+        assert unconstrained.outcome == "fit"
+        assert unconstrained.emitted_total_em == unconstrained.natural_total_em
+        boundary = apply_default_table_widths(
+            html,
+            {"columns": {"Pinned": "7.25em"},
+             "page_width_em": unconstrained.natural_total_em},
+        )
+        overflow_budget = unconstrained.natural_total_em - 0.01
+        with caplog.at_level("INFO", logger="pdf.table_transforms"):
+            overflow = apply_default_table_widths(
+                html,
+                {"columns": {"Pinned": "7.25em"},
+                 "page_width_em": overflow_budget},
+            )
+
+        assert 'class="fit"' in boundary
+        assert 'class="fit"' not in overflow
+        assert self._em_total(boundary) == pytest.approx(
+            unconstrained.natural_total_em
+        )
+        assert self._em_total(overflow) <= overflow_budget
+        assert 'style="width:7.25em"' in boundary
+        assert 'style="width:7.25em"' in overflow
+        assert boundary.count('class="w') == overflow.count('class="w') == 1
+        assert "automatic wide columns were scaled to fit" in caplog.text
+
+    def test_widest_automatic_column_gives_up_space_first(self):
+        from pdf.table_transforms import _fit_table_widths
+
+        analysis = {
+            "headers": ["Description", "Division"],
+            "types": ["text", "text"],
+            "explicit": {},
+            "group_rung": {},
+            "nat": {0: 20, 1: 10},
+        }
+        fit = _fit_table_widths(
+            analysis,
+            {"description": 20, "division": 10},
+            page_em=29,
+        )
+
+        assert fit.outcome == "scaled"
+        assert fit.wide_em == {0: 19, 1: 10}
+        assert fit.emitted_total_em == 29
+
+    def test_wide_column_cannot_hide_fixed_column_overflow(self, caplog):
+        html = self._table(["Pinned", "Name"], ["x", "Casey"])
+
+        with caplog.at_level("INFO", logger="pdf.table_transforms"):
+            result = apply_default_table_widths(
+                html,
+                {"columns": {"Pinned": "60em"}, "page_width_em": 50},
+            )
+
+        assert 'style="width:60em"' in result
+        assert 'class="fit"' not in result
+        assert self._em_total(result) > 50
+        assert "fixed columns remain wider than the budget" in caplog.text
+
+    def test_fixed_only_overflow_preserves_widths_and_is_not_fit(self, caplog):
+        html = self._table(["A", "B"], ["x", "y"])
+        metadata = {
+            "columns": {"A": "30em", "B": 30},
+            "page_width_em": 50,
+        }
+
+        with caplog.at_level("INFO", logger="pdf.table_transforms"):
+            result = apply_default_table_widths(html, metadata)
+
+        assert 'style="width:30em"' in result
+        assert result.count('style="width:30em"') == 2
+        assert 'class="fit"' not in result
+        assert (
+            "1 table(s) are wider than the fitting budget "
+            "(widest ~60em vs 50em available)" in caplog.text
+        )
+        assert "fixed columns remain wider than the budget in 1 table(s)" \
+            in caplog.text
+        assert "consider 'orientation: landscape'" not in caplog.text
+
+    def test_orientation_budget_changes_the_same_fixed_table_outcome(self):
+        html = self._table(["Pinned"], ["x"])
+        columns = {"Pinned": "60em"}
+
+        portrait = apply_default_table_widths(html, {"columns": columns})
+        landscape = apply_default_table_widths(
+            html, {"columns": columns, "orientation": "landscape"}
+        )
+
+        assert 'class="fit"' not in portrait
+        assert 'class="fit"' in landscape
+
+    def test_landscape_overflow_is_reported_without_portrait_advice(self, caplog):
+        html = self._table(["Pinned"], ["x"])
+
+        with caplog.at_level("INFO", logger="pdf.table_transforms"):
+            result = apply_default_table_widths(
+                html,
+                {"columns": {"Pinned": "90em"},
+                 "orientation": "landscape"},
+            )
+
+        assert 'class="fit"' not in result
+        assert (
+            "1 table(s) are wider than the fitting budget "
+            "(widest ~90em vs 82em available)" in caplog.text
+        )
+        assert "fixed columns remain wider than the budget in 1 table(s)" \
+            in caplog.text
+        assert "consider 'orientation: landscape'" not in caplog.text
+
+    def test_default_portrait_scaling_suggests_landscape(self, caplog):
+        html = self._table(
+            ["Home", "Division"],
+            ["Very Long Team Name " * 5, "Very Long Division Name " * 5],
+        )
+
+        with caplog.at_level("INFO", logger="pdf.table_transforms"):
+            result = apply_default_table_widths(html)
+
+        assert 'class="fit"' not in result
+        assert "automatic wide columns were scaled to fit" in caplog.text
+        assert "consider 'orientation: landscape'" in caplog.text
+
+
 class TestDocLevelWidths:
     """Document-level width grouping for wide columns."""
 
