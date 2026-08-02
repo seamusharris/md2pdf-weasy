@@ -1,0 +1,16 @@
+{
+  "components": [
+    "autonomous"
+  ],
+  "discoveredDate": "2026-08-02",
+  "id": "ISS-017",
+  "impact": "`_rasterize` is 58 lines and combines Poppler invocation, output discovery, filename parsing, page-order validation, image integrity checks, pixel-budget accounting, artifact installation, and temporary-directory cleanup. Changing raster output validation or installation semantics requires editing multiple lifecycle stages together. I read the complete function and grepped generation and attestation callers; no helper separates page collection, validation, or installation.",
+  "location": [],
+  "phase": null,
+  "relatedTickets": [],
+  "resolution": null,
+  "resolvedDate": null,
+  "severity": "medium",
+  "status": "open",
+  "title": "[long-function] `_rasterize` is 58 lines and combines Poppler invocation, output discovery, file"
+}

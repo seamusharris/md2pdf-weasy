@@ -26,6 +26,10 @@ dependencies = [
     # Width fitting reads bundled OTF metrics directly. Keep this explicit
     # rather than relying on WeasyPrint's transitive dependency.
     "fonttools>=4.59.2",
+    # Visual acceptance opens and verifies every Poppler PNG directly.
+    "pillow>=10",
+    # Visual acceptance rejects active/embedded PDF objects before Poppler.
+    "pypdf>=5",
 ]
 
 [project.optional-dependencies]

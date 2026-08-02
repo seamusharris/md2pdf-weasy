@@ -12,6 +12,7 @@ dist/
 
 # Test artefacts
 .pytest_cache/
+output/pdf/visual-acceptance/
 
 # Storybloq runtime artefacts (project ledger remains tracked)
 .story/snapshots/

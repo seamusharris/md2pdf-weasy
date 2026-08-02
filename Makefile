@@ -13,7 +13,7 @@
 PY := .venv/bin/python
 PIP := .venv/bin/pip
 
-.PHONY: setup test examples clean
+.PHONY: setup test examples visual-acceptance visual-acceptance-prune clean
 
 setup:
 	python3 -m venv .venv
@@ -25,6 +25,13 @@ test:
 examples:
 	$(PY) tools/render-examples.py
 
+visual-acceptance:
+	$(PY) tools/visual_acceptance.py generate
+
+visual-acceptance-prune:
+	$(PY) tools/visual_acceptance.py prune --apply
+
 clean:
 	rm -f examples/*/*.pdf
 	rm -rf .pytest_cache/ build/ *.egg-info pdf/__pycache__ tests/__pycache__ tools/__pycache__
+	$(PY) tools/visual_acceptance.py prune --apply

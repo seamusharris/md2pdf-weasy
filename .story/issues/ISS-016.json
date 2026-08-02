@@ -1,0 +1,16 @@
+{
+  "components": [
+    "autonomous"
+  ],
+  "discoveredDate": "2026-08-02",
+  "id": "ISS-016",
+  "impact": "`_run_checked` is 72 lines and combines process startup, nonblocking multiplexed capture, output bounding, deadline handling, process-group termination, stream draining, and error translation. Modifying timeout or capture behavior requires reasoning through several intertwined lifecycle states. I read the full function and grepped all callers; they rely on the same monolithic implementation without lifecycle helpers.",
+  "location": [],
+  "phase": null,
+  "relatedTickets": [],
+  "resolution": null,
+  "resolvedDate": null,
+  "severity": "medium",
+  "status": "open",
+  "title": "[long-function] `_run_checked` is 72 lines and combines process startup, nonblocking multiplexed"
+}

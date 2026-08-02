@@ -1,0 +1,16 @@
+{
+  "components": [
+    "autonomous"
+  ],
+  "discoveredDate": "2026-08-02",
+  "id": "ISS-011",
+  "impact": "`_generate_locked` is 134 lines and handles per-case rendering, semantic validation, raster budgeting, contact sheets, artifact records, transient cleanup, manifest construction, source revalidation, final validation, and failure cleanup. Changing one case-stage or diagnostic format can affect both the success and exception paths in the same large function. I read the entire function and its sole production caller; the surrounding `generate` wrapper does not decompose these stages.",
+  "location": [],
+  "phase": null,
+  "relatedTickets": [],
+  "resolution": null,
+  "resolvedDate": null,
+  "severity": "medium",
+  "status": "open",
+  "title": "[long-function] `_generate_locked` is 134 lines and handles per-case rendering, semantic validat"
+}

@@ -1,0 +1,16 @@
+{
+  "components": [
+    "autonomous"
+  ],
+  "discoveredDate": "2026-08-02",
+  "id": "ISS-010",
+  "impact": "`_pdf_object_evidence` is 145 lines and combines descriptor safety, PDF parsing, recursive canonicalization, dangerous-content detection, stream accounting, structure-ID normalization, graph hashing, and page-box extraction. Adding a PDF rule requires modifying a nested closure sharing mutable counters and collections with the parser workflow. I read the full function and grepped generation and attestation callers; no helper separates these concerns.",
+  "location": [],
+  "phase": null,
+  "relatedTickets": [],
+  "resolution": null,
+  "resolvedDate": null,
+  "severity": "medium",
+  "status": "open",
+  "title": "[long-function] `_pdf_object_evidence` is 145 lines and combines descriptor safety, PDF parsing,"
+}

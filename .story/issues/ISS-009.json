@@ -1,0 +1,16 @@
+{
+  "components": [
+    "autonomous"
+  ],
+  "discoveredDate": "2026-08-02",
+  "id": "ISS-009",
+  "impact": "`_validate_manifest_shape` is 188 lines and interleaves source identity, case/check records, page geometry, environment, artifact, byte, and pixel validation. When a schema field or artifact kind changes, multiple distant branches must be updated consistently, risking partial schema acceptance. I read the complete function and all production callers; no schema-specific helpers encapsulate these sections.",
+  "location": [],
+  "phase": null,
+  "relatedTickets": [],
+  "resolution": null,
+  "resolvedDate": null,
+  "severity": "medium",
+  "status": "open",
+  "title": "[long-function] `_validate_manifest_shape` is 188 lines and interleaves source identity, case/ch"
+}

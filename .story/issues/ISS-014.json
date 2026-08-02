@@ -1,0 +1,16 @@
+{
+  "components": [
+    "autonomous"
+  ],
+  "discoveredDate": "2026-08-02",
+  "id": "ISS-014",
+  "impact": "`_run_worker` is 90 lines and combines request-file creation, subprocess invocation, result decoding, schema validation, geometry/check validation, timing validation, and on-disk PDF verification. Adding a worker payload field requires modifying transport and validation logic interleaved in one function. I read the full function and grepped generation and attestation callers; no result-decoding helper isolates the protocol.",
+  "location": [],
+  "phase": null,
+  "relatedTickets": [],
+  "resolution": null,
+  "resolvedDate": null,
+  "severity": "medium",
+  "status": "open",
+  "title": "[long-function] `_run_worker` is 90 lines and combines request-file creation, subprocess invocat"
+}

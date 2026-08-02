@@ -1,5 +1,6 @@
 """Tests for front-matter parsing, includes, and the tracked_rows alias."""
 
+import inspect
 import tempfile
 from pathlib import Path
 
@@ -27,9 +28,13 @@ def test_build_pdf_forwards_html_base_url(tmp_path, monkeypatch):
             captured["html"] = string
             captured["base_url"] = base_url
 
-        def write_pdf(self, output_path, *, stylesheets, pdf_variant=None):
-            captured["output_path"] = output_path
+        def render(self, *, stylesheets):
             captured["stylesheets"] = stylesheets
+            return FakeDocument()
+
+    class FakeDocument:
+        def write_pdf(self, output_path, *, pdf_variant=None):
+            captured["output_path"] = output_path
             captured["pdf_variant"] = pdf_variant
 
     class FakeCSS:
@@ -54,6 +59,88 @@ def test_build_pdf_forwards_html_base_url(tmp_path, monkeypatch):
     assert captured["output_path"] == str(output)
     assert len(captured["stylesheets"]) == 1
     assert captured["pdf_variant"] == "pdf/ua-1"
+
+
+def test_build_pdf_public_signature_and_default_output_are_compatible(
+    tmp_path, monkeypatch,
+):
+    from pdf.render import build_pdf
+
+    assert list(inspect.signature(build_pdf).parameters) == [
+        "md_path", "output_path", "style_path", "base_style_path", "base_url",
+    ]
+    markdown = tmp_path / "input.md"
+    markdown.write_text("# Test", encoding="utf-8")
+    captured = {}
+
+    class FakeDocument:
+        def write_pdf(self, output_path, *, pdf_variant=None):
+            captured["output_path"] = output_path
+            captured["pdf_variant"] = pdf_variant
+
+    monkeypatch.setattr("pdf.render._render_document", lambda prepared: FakeDocument())
+    result = build_pdf(str(markdown))
+    assert result == str(markdown.with_suffix(".pdf"))
+    assert captured == {"output_path": result, "pdf_variant": "pdf/ua-1"}
+
+
+def test_build_html_uses_prepared_theme_css_and_output_paths(tmp_path):
+    from pdf.render import build_html
+
+    markdown = tmp_path / "themed.md"
+    markdown.write_text(
+        "---\ntheme: compact\ntitle: HTML contract\n---\n\n# HTML contract\n",
+        encoding="utf-8",
+    )
+    default_result = build_html(str(markdown))
+    default_html = Path(default_result).read_text(encoding="utf-8")
+    assert default_result == str(markdown.with_suffix(".html"))
+    assert default_html.count("<style>") == 1
+    assert default_html.count("</style>") == 1
+    assert "HTML contract" in default_html
+    assert "Dense table layout for data-heavy reports" in default_html
+    assert default_html.index("<style>") < default_html.index("</head>")
+
+    explicit = tmp_path / "explicit.html"
+    assert build_html(str(markdown), str(explicit)) == str(explicit)
+    assert explicit.read_text(encoding="utf-8") == default_html
+
+
+def test_custom_base_and_overlay_css_reach_pdf_and_html_in_order(
+    tmp_path, monkeypatch,
+):
+    from pdf.render import build_html, build_pdf
+
+    markdown = tmp_path / "custom.md"
+    base = tmp_path / "base.css"
+    overlay = tmp_path / "overlay.css"
+    markdown.write_text("# Custom styles\n", encoding="utf-8")
+    base.write_text("body { --layer: base; }", encoding="utf-8")
+    overlay.write_text("body { --layer: overlay; }", encoding="utf-8")
+    captured = {}
+
+    class FakeDocument:
+        def write_pdf(self, output_path, *, pdf_variant=None):
+            captured["output_path"] = output_path
+
+    def render(prepared):
+        captured["pdf_css"] = prepared.css
+        return FakeDocument()
+
+    monkeypatch.setattr("pdf.render._render_document", render)
+    build_pdf(
+        str(markdown), str(tmp_path / "custom.pdf"),
+        style_path=str(overlay), base_style_path=str(base),
+    )
+    pdf_css = captured["pdf_css"]
+    assert pdf_css.index("--layer: base") < pdf_css.index("--layer: overlay")
+
+    html_path = build_html(
+        str(markdown), str(tmp_path / "custom.html"),
+        style_path=str(overlay), base_style_path=str(base),
+    )
+    html = Path(html_path).read_text(encoding="utf-8")
+    assert html.index("--layer: base") < html.index("--layer: overlay")
 
 
 class TestTrackedRowsAlias:

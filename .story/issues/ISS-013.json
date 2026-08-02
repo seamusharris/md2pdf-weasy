@@ -1,0 +1,16 @@
+{
+  "components": [
+    "autonomous"
+  ],
+  "discoveredDate": "2026-08-02",
+  "id": "ISS-013",
+  "impact": "`prune_candidates` is 91 lines with five nested resource-management levels and combines registry locking, candidate discovery, lease acquisition, metadata collection, retention selection, quarantine validation, deletion, and reporting. Changing retention limits or deletion mechanics requires editing tightly nested unrelated stages. I read the complete function and its CLI caller; no helper separates inventory, policy, or application.",
+  "location": [],
+  "phase": null,
+  "relatedTickets": [],
+  "resolution": null,
+  "resolvedDate": null,
+  "severity": "medium",
+  "status": "open",
+  "title": "[long-function] `prune_candidates` is 91 lines with five nested resource-management levels and c"
+}

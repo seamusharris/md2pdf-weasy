@@ -1,0 +1,16 @@
+{
+  "components": [
+    "autonomous"
+  ],
+  "discoveredDate": "2026-08-02",
+  "id": "ISS-022",
+  "impact": "If a command forks a descendant that inherits stdout/stderr and the direct child exits, capture remains open until the deadline, but `terminate` sees the direct child has exited and skips `killpg`. The call raises a timeout while the descendant remains alive and can continue consuming resources or touching files. I read the full subprocess supervisor, grepped all production callers, and checked the direct-child timeout/interrupt tests; none provides outer cleanup or covers an exited leader with a live descendant. The trigger depends on an external command or configured git helper forking, so confidence is reduced.",
+  "location": [],
+  "phase": null,
+  "relatedTickets": [],
+  "resolution": null,
+  "resolvedDate": null,
+  "severity": "medium",
+  "status": "open",
+  "title": "[missing-subprocess-cleanup] If a command forks a descendant that inherits stdout/stderr and the direct child"
+}

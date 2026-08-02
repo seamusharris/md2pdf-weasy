@@ -33,6 +33,7 @@ import os
 import re
 import sys
 import argparse
+from dataclasses import dataclass
 
 import yaml
 import markdown
@@ -432,34 +433,34 @@ def _front_matter_css(metadata):
     return '\n'.join(rules)
 
 
-def build_pdf(md_path: str, output_path: str | None = None, style_path: str | None = None, base_style_path: str | None = None, base_url: str | None = None) -> str:
-    """Convert a markdown file to PDF.
+@dataclass(frozen=True)
+class _PreparedRender:
+    """Private, complete input to one WeasyPrint render.
 
-    Args:
-        md_path: Path to input markdown file.
-        output_path: Path for output PDF. Defaults to input with .pdf extension.
-        base_style_path: Path to base CSS. Defaults to the bundled style.css
-            (DEFAULT_STYLE) so consumers don't need to know the install path.
-        style_path: Optional CSS overlay loaded after the base style.
-        base_url: Optional base URL used to resolve relative URLs in generated
-            HTML. Defaults to WeasyPrint's no-base behavior.
+    Keeping preparation behind one value lets acceptance tooling inspect the
+    exact same rendered ``Document`` that writes the PDF without changing the
+    public ``build_pdf`` contract.
     """
-    from weasyprint import HTML, CSS
 
+    html: str
+    css: str
+    html_base_url: str | None
+    css_base_url: str
+
+
+def _prepare_render(md_path: str, style_path: str | None = None,
+                    base_style_path: str | None = None,
+                    base_url: str | None = None) -> _PreparedRender:
+    """Prepare HTML and CSS for one render without invoking WeasyPrint."""
     if base_style_path is None:
         base_style_path = DEFAULT_STYLE
 
-    if output_path is None:
-        output_path = os.path.splitext(md_path)[0] + ".pdf"
-
-    # Read markdown and parse front matter
     with open(md_path, "r", encoding="utf-8") as f:
         content = f.read()
 
     metadata, body = parse_front_matter(content)
     metadata = resolve_tables_include(metadata, md_path)
 
-    # Read CSS (base + optional overlay + theme + front-matter-driven rules)
     css_parts = []
     with open(base_style_path, "r", encoding="utf-8") as f:
         css_parts.append(f.read())
@@ -467,7 +468,6 @@ def build_pdf(md_path: str, output_path: str | None = None, style_path: str | No
         with open(style_path, "r", encoding="utf-8") as f:
             css_parts.append(f.read())
 
-    # Theme overlay from front matter (e.g. theme: compact)
     theme = metadata.get('theme')
     if theme:
         if not isinstance(theme, str) or '/' in theme or '\\' in theme or '..' in theme:
@@ -481,25 +481,50 @@ def build_pdf(md_path: str, output_path: str | None = None, style_path: str | No
         else:
             log.warning("theme '%s' not found (%s)", theme, theme_path)
 
-    # Front-matter-driven CSS injections
     fm_css = _front_matter_css(metadata)
     if fm_css:
         css_parts.append(fm_css)
 
-    css_content = "\n\n".join(css_parts)
-
-    # Convert and render
-    html = md_to_html(body, metadata)
-
-    # Render PDF. base_url on the CSS lets relative URLs in the
-    # stylesheet (e.g. @font-face src: url("../fonts/...")) resolve
-    # against the styles directory, which is where the bundled CSS
-    # and the @font-face declarations live.
-    HTML(string=html, base_url=base_url).write_pdf(
-        output_path,
-        stylesheets=[CSS(string=css_content, base_url=_STYLES_DIR + "/")],
-        pdf_variant="pdf/ua-1",
+    return _PreparedRender(
+        html=md_to_html(body, metadata),
+        css="\n\n".join(css_parts),
+        html_base_url=base_url,
+        css_base_url=_STYLES_DIR + "/",
     )
+
+
+def _render_document(prepared: _PreparedRender):
+    """Render a prepared input once and return the private Weasy Document."""
+    from weasyprint import HTML, CSS
+
+    return HTML(
+        string=prepared.html,
+        base_url=prepared.html_base_url,
+    ).render(stylesheets=[CSS(string=prepared.css, base_url=prepared.css_base_url)])
+
+
+def build_pdf(md_path: str, output_path: str | None = None, style_path: str | None = None, base_style_path: str | None = None, base_url: str | None = None) -> str:
+    """Convert a markdown file to PDF.
+
+    Args:
+        md_path: Path to input markdown file.
+        output_path: Path for output PDF. Defaults to input with .pdf extension.
+        base_style_path: Path to base CSS. Defaults to the bundled style.css
+            (DEFAULT_STYLE) so consumers don't need to know the install path.
+        style_path: Optional CSS overlay loaded after the base style.
+        base_url: Optional base URL used to resolve relative URLs in generated
+            HTML. Defaults to WeasyPrint's no-base behavior.
+    """
+    if output_path is None:
+        output_path = os.path.splitext(md_path)[0] + ".pdf"
+
+    prepared = _prepare_render(
+        md_path,
+        style_path=style_path,
+        base_style_path=base_style_path,
+        base_url=base_url,
+    )
+    _render_document(prepared).write_pdf(output_path, pdf_variant="pdf/ua-1")
 
     print(f"Created: {output_path}")
     return output_path
@@ -519,50 +544,15 @@ def build_html(md_path: str, output_path: str | None = None,
         base_style_path: Path to base CSS. Defaults to the bundled style.css.
         style_path: Optional CSS overlay loaded after the base style.
     """
-    if base_style_path is None:
-        base_style_path = DEFAULT_STYLE
-
     if output_path is None:
         output_path = os.path.splitext(md_path)[0] + ".html"
-
-    with open(md_path, "r", encoding="utf-8") as f:
-        content = f.read()
-
-    metadata, body = parse_front_matter(content)
-    metadata = resolve_tables_include(metadata, md_path)
-
-    # Read CSS
-    css_parts = []
-    with open(base_style_path, "r", encoding="utf-8") as f:
-        css_parts.append(f.read())
-    if style_path:
-        with open(style_path, "r", encoding="utf-8") as f:
-            css_parts.append(f.read())
-
-    theme = metadata.get('theme')
-    if theme:
-        if not isinstance(theme, str) or '/' in theme or '\\' in theme or '..' in theme:
-            log.warning("invalid theme name: %r", theme)
-            theme = None
-    if theme:
-        theme_path = get_style_path(f'{theme}.css')
-        if os.path.exists(theme_path):
-            with open(theme_path, "r", encoding="utf-8") as f:
-                css_parts.append(f.read())
-        else:
-            log.warning("theme '%s' not found (%s)", theme, theme_path)
-
-    fm_css = _front_matter_css(metadata)
-    if fm_css:
-        css_parts.append(fm_css)
-
-    css_content = "\n\n".join(css_parts)
-
-    html = md_to_html(body, metadata)
+    prepared = _prepare_render(
+        md_path, style_path=style_path, base_style_path=base_style_path,
+    )
 
     # Inject CSS into <head>
-    style_tag = f'<style>\n{css_content}\n</style>'
-    html = html.replace('</head>', f'{style_tag}\n</head>', 1)
+    style_tag = f'<style>\n{prepared.css}\n</style>'
+    html = prepared.html.replace('</head>', f'{style_tag}\n</head>', 1)
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)

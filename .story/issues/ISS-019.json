@@ -1,0 +1,16 @@
+{
+  "components": [
+    "autonomous"
+  ],
+  "discoveredDate": "2026-08-02",
+  "id": "ISS-019",
+  "impact": "`_pdf_semantic_evidence` is 54 lines and combines two external extraction commands with tag discovery, header counting, sentinel ordering, caption ownership, structure-tree text ownership, and construction of six check results. Adding a semantic invariant or changing extraction transport requires modifying unrelated acquisition and evaluation logic together. I read the full function and grepped its wrapper and attestation callers; only the caption text traversal is delegated.",
+  "location": [],
+  "phase": null,
+  "relatedTickets": [],
+  "resolution": null,
+  "resolvedDate": null,
+  "severity": "medium",
+  "status": "open",
+  "title": "[long-function] `_pdf_semantic_evidence` is 54 lines and combines two external extraction comman"
+}

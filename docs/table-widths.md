@@ -52,6 +52,7 @@ into the current behaviour:
 | Structural preservation | One shared guard leaves empty, spanning, ragged, and existing-colgroup tables alone across declared and automatic layouts. Captions stay first, all body groups participate in analysis, semantic attributes are preserved, and repeat passes are idempotent. | Implemented by T-006 |
 | Classification and overrides | All semantic types, mixed/empty/long content, normalized headers and identities, precedence, opt-outs, and repeat processing are covered at the emitted-HTML contract. | Implemented by T-007 |
 | Font metrics | Directly required fontTools reads the packaged body/header fonts with closed resources and cached results. Missing or unreadable resources warn before using deterministic estimates; distribution tests cover every shipped style and referenced font. | Implemented by T-008 |
+| Visual PDF evidence | A wholly synthetic nine-case matrix covers every bundled theme plus declared, legacy, portrait-stress, and landscape variants. Deterministic geometry, wrapping, orientation, tagged-PDF, content-order, raster, manifest, promotion, and retention checks accompany full-page human review. | Implemented by T-009; see [visual acceptance evidence](visual-acceptance/README.md) |
 
 ### Activation and precedence
 

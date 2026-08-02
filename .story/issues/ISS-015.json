@@ -1,0 +1,16 @@
+{
+  "components": [
+    "autonomous"
+  ],
+  "discoveredDate": "2026-08-02",
+  "id": "ISS-015",
+  "impact": "`_ensure_approved_version_at` is 87 lines and combines existing-version validation, staging-tree creation and identity recovery, artifact copying, durability flushing, atomic installation, cancellation-safe rollback, and post-install validation. A change to the approved layout or cleanup policy must modify installation and recovery logic in one function. I read the complete function and its promotion caller; no helper separates these phases.",
+  "location": [],
+  "phase": null,
+  "relatedTickets": [],
+  "resolution": null,
+  "resolvedDate": null,
+  "severity": "medium",
+  "status": "open",
+  "title": "[long-function] `_ensure_approved_version_at` is 87 lines and combines existing-version validati"
+}

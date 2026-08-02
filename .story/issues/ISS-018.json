@@ -1,0 +1,16 @@
+{
+  "components": [
+    "autonomous"
+  ],
+  "discoveredDate": "2026-08-02",
+  "id": "ISS-018",
+  "impact": "`generate` is 55 lines and handles coordinator freshness, storage preparation, registry locking, source identity, candidate naming/creation, root-identity checks, input snapshotting, candidate leasing, generation dispatch, and pre-generation rollback. A change to candidate allocation or startup cleanup requires reasoning across storage, locking, and rendering setup in one function. I read the full function and its CLI caller; `_generate_locked` only handles the later evidence workflow and does not isolate these setup phases.",
+  "location": [],
+  "phase": null,
+  "relatedTickets": [],
+  "resolution": null,
+  "resolvedDate": null,
+  "severity": "medium",
+  "status": "open",
+  "title": "[long-function] `generate` is 55 lines and handles coordinator freshness, storage preparation, r"
+}
