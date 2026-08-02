@@ -1,12 +1,13 @@
 {
   "blockedBy": [],
-  "completedDate": null,
+  "completedDate": "2026-08-02",
   "createdDate": "2026-08-02",
   "description": "Define the acceptance contract for default-on automatic widths before further implementation. Cover opt-out aliases, content classification, document-wide identity grouping, declared-layout and author-colgroup precedence, overflow fitting, page orientation, page width, alignment independence, and diagnostic logging. Produce representative examples so every later correctness and compatibility ticket is judged against the same behavior.",
+  "displayId": "T-003",
   "id": "T-003",
   "order": 10,
   "phase": "contract",
-  "status": "open",
+  "status": "complete",
   "title": "Ratify automatic table-width contract",
   "type": "task"
 }

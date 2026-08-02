@@ -48,16 +48,24 @@ Slashes, backslashes, and `..` are rejected for safety; only bare names.
 
 ## Tables
 
+The table-width rows below state the ratified acceptance contract. At this
+revision, type validation and the malformed whole-`columns` fallback are
+implemented, but semantic hardening is still tracked: T-004 covers normalised
+aliases and invalid `table_widths`/`orientation`/`page_width_em` values, while
+T-005 covers the em-only exact-width grammar and accounting. Until those land,
+the affected warnings and safe fallbacks are target behaviour rather than a
+claim about every current runtime path.
+
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `tables` | dict | `{}` | Per-document table layouts. See [tables.md](tables.md). |
 | `tables_include` | str | — | Path to a shared YAML file of layouts. Resolved cwd-relative first, then relative to the markdown file. Per-doc `tables` overrides shared layouts by key. |
 | `auto_align_columns` | bool | true | When true (default), auto-align columns by content: all-numeric columns get `class="num"` (right-aligned) and all-short (≤3-char) columns get `class="ctr"` (centred). Set false to disable. See [tables.md](tables.md). |
 | `auto_highlight_bold_rows` | bool | false | When true, any table row containing a cell that is wholly wrapped in `**bold**` (inner text longer than 3 characters) gets `<tr class="highlight">`, and the bold markup on that cell is removed (the row CSS re-bolds it). Opt-in for retrospective reports. |
-| `table_widths` | bool \| str | true | Automatic typed, document-consistent column widths for tables without a declared layout. Set `false`/`off` to disable. See [table-widths.md](table-widths.md). |
-| `columns` | dict | `{}` | Per-column overrides for the automatic width pass, keyed by header: a type name (`stat`/`num`/`label`/`text`/…) or an explicit width (a number → em, or any CSS length). See [table-widths.md](table-widths.md). |
-| `orientation` | str | portrait | `landscape` renders the document on A4 landscape (injects `@page { size: A4 landscape }`) and widens the content width used to fit tables. The width pass logs a suggestion to switch when a table has to be scaled to fit portrait. |
-| `page_width_em` | number | — | Override the content width (in table em) used by the table-fit/overflow logic — for non-standard page sizes or margins. |
+| `table_widths` | bool \| str | true | Automatic typed, document-consistent widths for tables without a declared or author colgroup. The boolean `false`, or `off`/`none`/`legacy` ignoring case and surrounding whitespace, disables the pass. Other invalid values warn and leave it enabled. See [table-widths.md](table-widths.md). |
+| `columns` | dict | `{}` | Per-column overrides keyed by normalised header: a known type (`stat`/`num`/`label`/`text`/…) or an exact width. Positive finite numbers mean em; strings must be a positive finite decimal followed by `em`. Invalid entries warn and fall back to automatic classification. See [table-widths.md](table-widths.md). |
+| `orientation` | str | portrait | `landscape` (case-insensitive) renders A4 landscape and widens the fitting budget. Any other value warns and uses portrait. The width pass suggests landscape when a portrait table has to be scaled. |
+| `page_width_em` | number | — | Positive finite override for the fitting budget in table em. It takes precedence over the orientation-derived budget but does not change physical page size. Invalid values warn and use the orientation default. |
 
 ## Callouts
 

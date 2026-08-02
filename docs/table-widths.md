@@ -32,6 +32,151 @@ team columns (`Team`/`Home`/`Away`) share one width. Every column is fixed, so a
 table **sizes to its content** instead of stretching one column to fill the
 page. The result: the same kind of column is the same width in every table.
 
+## Acceptance contract
+
+This section is the normative contract for the automatic-width pass. Later
+correctness work is accepted against these rules; where an implementation gap
+exists, the rule here is the intended behaviour.
+
+### Implementation status
+
+The core classification, grouping, declared-layout/colgroup precedence, basic
+em fitting, portrait/landscape budgets, and document-wide identities are
+implemented. The remaining gaps are intentionally visible rather than blurred
+into the current behaviour:
+
+| Area | Current revision | Contract work |
+|---|---|---|
+| Invalid controls | Python types are validated, and a non-mapping `columns` value warns and falls back. Alias normalisation and other semantic checks are incomplete. | T-004 |
+| Exact widths | Numeric and string values are currently emitted; non-em strings are approximated during fitting. | T-005 / ISS-003 |
+| Structural preservation | Existing colgroups, colspans, and common ragged rows are skipped. Rowspans, caption placement, semantic attributes, and repeat-pass cases need complete coverage. | T-006 |
+| Font metrics | Real bundled-font metrics are used when available, with an estimated fallback. Dependency and package-data determinism remains to be proved. | T-008 |
+
+### Activation and precedence
+
+- Automatic widths are on when `table_widths` is absent or `true`.
+- The YAML boolean `false` disables them. The string aliases `off`, `none`, and
+  `legacy` also disable them after trimming whitespace and ignoring case.
+- Any other malformed control value logs a warning and uses the safe default:
+  automatic widths remain on.
+- A matching layout declared under `tables:` runs first and wins. An
+  author-supplied `<colgroup>` also wins. The automatic pass must not replace,
+  append to, or reinterpret either colgroup.
+- `columns:` overrides apply only to tables still eligible for automatic
+  widths. Header keys are matched case-insensitively with whitespace
+  normalised.
+- Headerless or empty tables, and tables whose colspan, rowspan, or ragged row
+  shape cannot be represented by one fixed column per header, pass through
+  unchanged. Running the pass again is a no-op for a table it already handled.
+
+Width processing is presentational. It may add a `<colgroup>` and a `fit` class,
+but must preserve captions, header and body groups, header cells and their
+`scope`/`id`/`headers` associations, row and cell order, and existing HTML or
+ARIA attributes. In particular, inserting a colgroup must not move an existing
+caption from its semantic first-child position.
+
+### Classification and grouping
+
+- Classification is content-first. Every non-empty body cell must match a
+  specialised type; the header may break a tie or set a minimum width, but must
+  not override contradictory content.
+- Numeric types use the shared em ladder. Within each table, every column of
+  the same numeric type uses the widest required rung for that type.
+- `label`, `text`, and `prose` are wide types. Their natural width is grouped by
+  normalised header across the whole document. Headers containing a team/entity
+  word (`Team`, `Home`, `Away`, `Opponent`, `Club`, `Name`, or `Player`) share
+  the single team identity.
+- A valid `columns:` entry may select a known type or an exact width. A numeric
+  exact width means em. A string exact width is supported only when it is a
+  positive finite decimal followed by `em` (for example `12em`). Booleans,
+  zero, negative or non-finite numbers, other CSS units, expressions, and
+  arbitrary strings warn and fall back to automatic classification. Restricting
+  exact widths to table em keeps page-fit accounting deterministic.
+- A malformed `columns:` value warns and behaves as `{}`; one malformed entry
+  must not discard other valid entries.
+
+### Fitting and page model
+
+- The fitting budget defaults to about `54.8em` for A4 portrait and `82.2em`
+  for A4 landscape, matching the bundled 18 mm side margins and 9 pt tables.
+- `page_width_em` takes precedence over that default only when it is a positive,
+  finite number. Invalid values warn and use the orientation-derived budget.
+- Natural width is the exact sum of token rungs, explicit em widths, and wide
+  identity widths. A table at or below the budget shrinks to that content width
+  rather than stretching across the page.
+- When the natural width exceeds the budget, explicit widths and numeric ladder
+  widths remain fixed. Automatically sized wide columns give up space, with the
+  widest columns reduced first. If the fixed columns alone cannot fit, the pass
+  preserves them and reports that the table still exceeds the budget.
+- `orientation: landscape` changes both the rendered A4 page and the fitting
+  budget. Matching is case-insensitive. Any other value warns and uses
+  portrait. A valid `page_width_em` changes only the fitting budget; it does not
+  change the physical page size.
+
+### Alignment and diagnostics
+
+Width and alignment are independent passes. Disabling `auto_align_columns`
+must not disable widths, and disabling widths must not disable alignment.
+Declared-layout alignment remains authoritative.
+
+Normal width assignment is silent. Invalid width controls produce a warning
+that names the field and safe fallback without echoing document content. If an
+otherwise valid portrait table is scaled, one document-level info message
+reports the number of affected tables, widest natural width, available budget,
+and suggests landscape. Landscape or custom-width overflow is still reported,
+but does not repeat an inapplicable landscape suggestion.
+
+### Representative acceptance examples
+
+With no width front matter, these two tables share one document-wide team
+identity: `Team`, `Home`, and `Away` receive the same natural width, while the
+stat columns share a ladder rung within their own table.
+
+```markdown
+| Team | W | L |
+|---|---:|---:|
+| Warrandyte Wallabies | 12 | 2 |
+
+| Home | Away | Score |
+|---|---|---:|
+| Donvale Devils | Warrandyte Wallabies | 38-45 |
+```
+
+An explicit layout or author colgroup takes precedence; the remaining table is
+automatic. The `Venue` override is exact because it uses the supported em
+grammar.
+
+```yaml
+---
+tables:
+  ladder:
+    columns:
+      - {name: Team, width: 40}
+      - {name: W, width: 10}
+columns:
+  Venue: 12em
+---
+```
+
+These controls are equivalent opt-outs:
+
+```yaml
+table_widths: false
+# or: table_widths: OFF
+# or: table_widths: none
+# or: table_widths: legacy
+```
+
+For a genuinely wide document, landscape changes the PDF page and its default
+budget. A custom positive budget overrides only the fitting calculation:
+
+```yaml
+---
+orientation: landscape
+page_width_em: 76
+---
+```
+
 ## Column types
 
 A column's type comes from what's *in* it, not its header name — so `W`,
@@ -120,11 +265,12 @@ An all-numeric table (no wide column) simply shrinks to the sum of its rungs:
 
 ### When a table is too wide
 
-If a table's columns would exceed the page (e.g. two long team columns at the
-document-wide width), the **widest** columns are scaled down just enough to fit
-— a tight column like `Division` is left alone, and the table fills the page
-exactly. When this happens the pipeline logs a suggestion to switch the document
-to landscape (see below).
+If a table's natural width exceeds the fitting budget, automatically sized wide
+columns give up space, with the widest reduced first. Numeric ladder widths and
+explicit author widths stay fixed, so a table made too wide by fixed columns can
+still exceed the budget. A scaled portrait table produces the landscape
+suggestion described in the contract; landscape and custom-budget diagnostics
+do not repeat that suggestion when it is inapplicable.
 
 ## Page orientation
 
@@ -138,14 +284,17 @@ orientation: landscape
 ---
 ```
 
-`page_width_em: <number>` overrides the content width directly if you use a
-non-standard page or margins.
+A positive, finite `page_width_em: <number>` overrides the fitting budget
+directly if you use a non-standard page or margins. It does not change the
+physical PDF page size.
 
-## Specifying and overriding
+## Quick configuration recipes
 
-Nothing is required for good defaults. When you want to override:
+Nothing is required for good defaults. These recipes use the valid forms from
+the [acceptance contract](#acceptance-contract):
 
-- **Disable for a document** — front matter `table_widths: false`.
+- **Disable for a document** — front matter `table_widths: false`, or the
+  case-insensitive string alias `off`, `none`, or `legacy`.
 - **Force a column's type** — front matter maps header → type:
 
   ```yaml
@@ -154,7 +303,8 @@ Nothing is required for good defaults. When you want to override:
     Assessment: prose   # treat as a prose column
   ```
 
-- **Pin an exact width** — give a value instead of a type:
+- **Pin an exact width** — give a positive finite number (interpreted as em) or
+  a positive decimal `em` string instead of a type:
 
   ```yaml
   columns:
@@ -169,8 +319,11 @@ Overrides are keyed on the header name (case- and whitespace-insensitive).
 
 ## Notes and guards
 
-- Tables with **colspans** or ragged rows are left on auto layout (a fixed
-  colgroup would misrender them).
+- Tables with **colspans**, **rowspans**, or ragged rows are left on auto layout
+  (a fixed colgroup would misrender them).
+- Captions, table structure, header associations, reading order, and existing
+  HTML/ARIA attributes are preserved; the pass adds only presentational width
+  markup.
 - Long tokens and URLs **wrap inside** their column rather than bleeding over
   the neighbour.
 - Column **alignment** (numbers right, short codes centred) is applied
