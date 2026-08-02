@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from decimal import Decimal, ROUND_DOWN
 
 import yaml
+from fontTools.ttLib import TTFont, TTLibError
 
 from pdf.width_metadata import KNOWN_COLUMN_TYPES, normalise_width_metadata
 
@@ -985,17 +986,33 @@ _HEADER_FONT_PATH = os.path.join(
 
 @functools.lru_cache(maxsize=None)
 def _glyph_advances(font_path):
-    """char -> advance width (em) from a bundled OTF, or None if unavailable."""
+    """Return character advances from a bundled OTF, or a warned fallback."""
+    font_name = os.path.basename(font_path)
+    if not os.path.exists(font_path):
+        _log.warning(
+            "font metrics: bundled font %s is unavailable; "
+            "using estimated widths",
+            font_name,
+        )
+        return None
+
     try:
-        from fontTools.ttLib import TTFont
-        if not os.path.exists(font_path):
-            return None
-        font = TTFont(font_path)
-        upm = font['head'].unitsPerEm
-        hmtx = font['hmtx']
-        return {chr(code): hmtx[g][0] / upm
-                for code, g in font.getBestCmap().items()}
-    except Exception:
+        with TTFont(font_path) as font:
+            upm = font['head'].unitsPerEm
+            hmtx = font['hmtx']
+            cmap = font.getBestCmap()
+            if not cmap or upm <= 0:
+                raise TTLibError("font has no usable Unicode metrics")
+            return {
+                chr(code): hmtx[glyph][0] / upm
+                for code, glyph in cmap.items()
+            }
+    except (OSError, TTLibError, KeyError):
+        _log.warning(
+            "font metrics: bundled font %s is unreadable; "
+            "using estimated widths",
+            font_name,
+        )
         return None
 
 

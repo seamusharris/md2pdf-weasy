@@ -51,7 +51,7 @@ into the current behaviour:
 | Exact widths | Numeric and em-string values are normalized, emitted, and fitted from one exact em value. Boundary totals, mixed columns, orientation budgets, and fixed-only overflow are covered. | Implemented by T-005 / ISS-003 |
 | Structural preservation | One shared guard leaves empty, spanning, ragged, and existing-colgroup tables alone across declared and automatic layouts. Captions stay first, all body groups participate in analysis, semantic attributes are preserved, and repeat passes are idempotent. | Implemented by T-006 |
 | Classification and overrides | All semantic types, mixed/empty/long content, normalized headers and identities, precedence, opt-outs, and repeat processing are covered at the emitted-HTML contract. | Implemented by T-007 |
-| Font metrics | Real bundled-font metrics are used when available, with an estimated fallback. Dependency and package-data determinism remains to be proved. | T-008 |
+| Font metrics | Directly required fontTools reads the packaged body/header fonts with closed resources and cached results. Missing or unreadable resources warn before using deterministic estimates; distribution tests cover every shipped style and referenced font. | Implemented by T-008 |
 
 ### Activation and precedence
 

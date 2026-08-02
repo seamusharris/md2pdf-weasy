@@ -23,6 +23,9 @@ dependencies = [
     "markdown>=3.4",
     "pymdown-extensions>=10.0",
     "pyyaml>=6.0",
+    # Width fitting reads bundled OTF metrics directly. Keep this explicit
+    # rather than relying on WeasyPrint's transitive dependency.
+    "fonttools>=4.59.2",
 ]
 
 [project.optional-dependencies]
