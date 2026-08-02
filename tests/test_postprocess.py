@@ -55,6 +55,32 @@ def test_table_postprocessing_is_repeat_safe_for_risk_classes():
     assert once.count('risk-high') == 1
 
 
+def test_classification_matrix_postprocessing_is_repeat_safe():
+    html = (
+        '<table><thead><tr><th><span> Team </span></th><th>Count</th>'
+        '<th>Risk</th><th>Notes</th></tr></thead><tbody>'
+        '<tr><td>Falcons</td><td>1234</td><td>58%</td>'
+        '<td>Longer explanatory prose remains unchanged here</td></tr>'
+        '</tbody></table>'
+    )
+    metadata = {
+        'columns': {
+            ' TEAM ': 'text',
+            'Count': 'num',
+            'Risk': 'pct',
+            'Notes': 'prose',
+        },
+        'auto_align_columns': True,
+    }
+
+    once = postprocess(html, metadata)
+
+    assert postprocess(once, metadata) == once
+    assert once.count('<colgroup>') == 1
+    assert once.count('class="num"') == 2
+    assert '<span> Team </span>' in once
+
+
 class TestConvertPageBreaks:
     """HTML-comment markers in markdown become CSS-driven page breaks."""
 

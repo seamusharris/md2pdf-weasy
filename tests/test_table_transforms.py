@@ -1,5 +1,8 @@
 """Tests for table layout, column widths, alignment, and section detection."""
 
+import re
+from pathlib import Path
+
 import pytest
 
 from pdf.table_transforms import (
@@ -17,6 +20,27 @@ from pdf.table_transforms import (
     colour_risk_cells,
     detect_table_section_rows,
 )
+
+
+def _contract_table(headers, rows, table_attrs=""):
+    """Build a compact semantic table for public width-contract assertions."""
+    head = "".join(f"<th>{header}</th>" for header in headers)
+    body = "".join(
+        "<tr>" + "".join(f"<td>{cell}</td>" for cell in row) + "</tr>"
+        for row in rows
+    )
+    attrs = f" {table_attrs}" if table_attrs else ""
+    return (
+        f"<table{attrs}><thead><tr>{head}</tr></thead>"
+        f"<tbody>{body}</tbody></table>"
+    )
+
+
+def _contract_cols(html):
+    """Return emitted col tags without exposing classifier implementation."""
+    colgroup = re.search(r"<colgroup>(.*?)</colgroup>", html, re.DOTALL)
+    assert colgroup, "expected automatic width markup"
+    return re.findall(r"<col(?:\s[^>]*)?>", colgroup.group(1))
 
 
 class TestColumnWidth:
@@ -599,6 +623,174 @@ class TestTypedColumnWidths:
         assert caplog.messages == [
             "front matter: expected a mapping; using empty metadata"
         ]
+
+
+class TestClassificationAndOverrideContract:
+    """Observable regression matrix for T-007's accepted width behavior."""
+
+    def test_all_semantic_types_emit_their_documented_width_families(self):
+        headers = ["S", "N", "P", "T", "D", "R", "L", "Name", "Notes"]
+        html = _contract_table(headers, [
+            [
+                "12", "1234", "58%", "9:00", "14 Jun", "45-38", "Final",
+                "Warrandyte Wallabies",
+                "This prose sentence has enough words to require wrapping",
+            ],
+            ["", "", "", "", "", "", "Active", "Park Orchards", ""],
+        ])
+
+        result = apply_default_table_widths(html, {"page_width_em": 200})
+        cols = dict(zip(headers, _contract_cols(result)))
+
+        expected_ladders = {
+            "S": "w2",      # stat
+            "N": "w3",      # num
+            "P": "w4",      # pct
+            "T": "w3",      # time
+            "D": "w4",      # date
+            "R": "w4",      # score
+        }
+        for header, css_class in expected_ladders.items():
+            assert f'class="{css_class}"' in cols[header]
+        for header in ("L", "Name", "Notes"):  # label, text, prose
+            assert re.search(r'style="width:[\d.]+em"', cols[header])
+        assert 'class="fit"' in result
+
+    def test_empty_values_do_not_defeat_a_consistent_type(self):
+        html = _contract_table(["Pct"], [["58%"], [""], ["0%"]])
+        col = _contract_cols(apply_default_table_widths(html))[0]
+        assert 'class="w4"' in col
+
+    def test_mixed_values_ignore_a_misleading_header(self):
+        html = _contract_table(["Risk%"], [["58%"], ["Pending"]])
+        result = apply_default_table_widths(html)
+        assert re.search(r'<col style="width:[\d.]+em">', result)
+        assert "58%" in result and "Pending" in result
+
+    def test_long_tokens_and_linked_urls_are_preserved_and_bounded(self):
+        token = "A" * 100
+        url = "https://example.com/" + "path" * 25
+        link = f'<a href="{url}">{url}</a>'
+        html = _contract_table(["Reference"], [[token], [link]])
+
+        result = apply_default_table_widths(
+            html, {"page_width_em": 20}
+        )
+        width = float(re.search(r'width:([\d.]+)em', result).group(1))
+        css = (
+            Path(__file__).parents[1] / "pdf" / "styles" / "style.css"
+        ).read_text(encoding="utf-8")
+
+        assert width <= 20
+        assert token in result
+        assert link in result
+        assert re.search(
+            r"th,\s*td\s*\{[^}]*overflow-wrap:\s*break-word",
+            css,
+            re.DOTALL,
+        )
+
+    def test_normalised_headers_share_document_identities(self):
+        html = "\n".join([
+            _contract_table(["Home"], [["Very Long Warrandyte Team Name"]]),
+            _contract_table(["<span> TEAM </span>"], [["Alpha"]]),
+            _contract_table(["Division"], [["Open Championship Division"]]),
+            _contract_table([" division "], [["Short"]]),
+            _contract_table(["Venue"], [["Court"]]),
+        ])
+
+        result = apply_default_table_widths(html, {"page_width_em": 200})
+        table_widths = [
+            re.search(r'width:([\d.]+)em', table).group(1)
+            for table in re.findall(
+                r"<table\b[^>]*>.*?</table>", result, re.DOTALL
+            )
+        ]
+
+        assert table_widths[0] == table_widths[1]
+        assert table_widths[2] == table_widths[3]
+        assert table_widths[4] not in {table_widths[0], table_widths[2]}
+
+    @pytest.mark.parametrize(
+        ("forced_type", "expected_kind"),
+        [
+            ("stat", "ladder"), ("num", "ladder"), ("pct", "ladder"),
+            ("time", "ladder"), ("date", "ladder"), ("score", "ladder"),
+            ("label", "em"), ("text", "em"), ("prose", "em"),
+        ],
+    )
+    def test_every_known_type_override_is_accepted(
+        self, forced_type, expected_kind, caplog
+    ):
+        html = _contract_table(["Value"], [["Alpha"]])
+        col = _contract_cols(apply_default_table_widths(
+            html, {"columns": {"Value": forced_type}}
+        ))[0]
+
+        if expected_kind == "ladder":
+            assert re.search(r'class="w\d"', col)
+        else:
+            assert re.search(r'style="width:[\d.]+em"', col)
+        assert caplog.messages == []
+
+    @pytest.mark.parametrize(
+        ("override", "emitted"),
+        [(7.25, "7.25em"), ("8.50em", "8.5em")],
+    )
+    def test_exact_widths_override_automatic_typing(self, override, emitted):
+        html = _contract_table(["Value"], [["1234"]])
+        result = apply_default_table_widths(
+            html, {"columns": {"Value": override}}
+        )
+        assert f'style="width:{emitted}"' in result
+
+    def test_declared_layout_wins_over_column_override(self):
+        html = _contract_table(["Value"], [["1234"]])
+        metadata = {
+            "tables": {
+                "declared": {
+                    "columns": [{"name": "Value", "width": 1}],
+                }
+            },
+            "columns": {"Value": "99em"},
+        }
+        result = apply_table_layouts(html, metadata)
+        result = apply_default_table_widths(result, metadata)
+
+        assert "width:100.0%" in result
+        assert "99em" not in result
+        assert result.count("<colgroup>") == 1
+
+    def test_author_colgroup_wins_over_column_override(self):
+        html = (
+            '<table><colgroup><col style="width:7em"></colgroup>'
+            '<thead><tr><th>Value</th></tr></thead>'
+            '<tbody><tr><td>1234</td></tr></tbody></table>'
+        )
+        assert apply_default_table_widths(
+            html, {"columns": {"Value": "99em"}}
+        ) == html
+
+    def test_invalid_override_does_not_discard_valid_sibling(self, caplog):
+        html = _contract_table(["Good", "Bad"], [["Alpha", "1234"]])
+        result = apply_default_table_widths(html, {
+            "columns": {"Good": "7em", "Bad": "calc(12em)"}
+        })
+
+        assert 'style="width:7em"' in result
+        assert 'class="w3"' in result
+        assert caplog.messages == [
+            "front matter 'columns': ignored entry with invalid width"
+        ]
+
+    @pytest.mark.parametrize("opt_out", [False, "off", " NONE ", "Legacy"])
+    def test_opt_out_preserves_independent_alignment(self, opt_out):
+        from pdf.postprocess import postprocess
+
+        html = _contract_table(["Team", "Wins"], [["Falcons", "12"]])
+        result = postprocess(html, {"table_widths": opt_out})
+        assert "<colgroup>" not in result
+        assert 'class="num"' in result
 
 
 class TestExactWidthFitting:
