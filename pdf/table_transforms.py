@@ -1081,9 +1081,12 @@ def apply_default_table_widths(html, metadata=None):
     if metadata.get('table_widths') in (False, 'off', 'none', 'legacy'):
         return html
 
+    raw_overrides = metadata.get('columns')
+    if not isinstance(raw_overrides, dict):
+        raw_overrides = {}
     overrides = {
         _normalise_header(k): v
-        for k, v in (metadata.get('columns') or {}).items()
+        for k, v in raw_overrides.items()
     }
     page_em = _page_content_em(metadata)
 

@@ -1,5 +1,7 @@
 """Tests for table layout, column widths, alignment, and section detection."""
 
+import pytest
+
 from pdf.table_transforms import (
     _column_width,
     _classify_column,
@@ -390,6 +392,12 @@ class TestTypedColumnWidths:
     def test_disabled_by_front_matter(self):
         result = apply_default_table_widths(self._ladder(), {"table_widths": False})
         assert "<colgroup>" not in result
+
+    @pytest.mark.parametrize("columns", [["Team"], "Team", True, 7])
+    def test_invalid_column_overrides_fall_back_to_defaults(self, columns):
+        html = self._ladder()
+        assert apply_default_table_widths(html, {"columns": columns}) == \
+            apply_default_table_widths(html)
 
     def test_existing_colgroup_is_left_alone(self):
         html = "<table><colgroup><col></colgroup><thead><tr><th>W</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>"

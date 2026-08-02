@@ -7,6 +7,7 @@
   "createdBy": "Codex repository audit",
   "dedupeKey": "setup-audit:columns-type-crash",
   "discoveredDate": "2026-08-02",
+  "displayId": "ISS-002",
   "id": "ISS-002",
   "impact": "A nonempty list or string supplied as front-matter columns produces the documented type warning but later raises AttributeError when automatic widths call items. Rendering aborts instead of following the documented warn-and-continue behavior. Invalid metadata must fall back safely without changing established valid mappings.",
   "location": [
@@ -16,9 +17,9 @@
   "relatedTickets": [
     "T-004"
   ],
-  "resolution": null,
-  "resolvedDate": null,
+  "resolution": "Resolved by normalizing front-matter columns overrides at the automatic-width consumer boundary: apply_default_table_widths now accepts the value only when it is a dict and otherwise uses the established empty-override default. A parametrized regression matrix covers nonempty list, string, boolean, and integer values and proves output equals the no-override path. Existing integrated coverage verifies YAML parsing emits the documented warning and rendering continues with default widths; valid type and explicit-width mappings remain covered. Python 3.13 focused validation passed 76 tests, the full suite passed 125 tests, git diff --check passed, and final CODE_REVIEW lenses approved with full coverage and zero findings.",
+  "resolvedDate": "2026-08-02",
   "severity": "high",
-  "status": "open",
+  "status": "resolved",
   "title": "Mistyped columns metadata warns and then crashes"
 }
