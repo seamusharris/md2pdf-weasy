@@ -75,6 +75,27 @@ def _strip_tags(text):
     return re.sub(r"<[^>]+>", "", text).strip()
 
 
+def _add_class_token(tag, token):
+    """Add one class token to an opening tag without duplicating it."""
+    class_attr = re.search(r'(\bclass\s*=\s*)(["\'])(.*?)\2', tag,
+                           flags=re.DOTALL)
+    if class_attr:
+        tokens = class_attr.group(3).split()
+        if token in tokens:
+            return tag
+        value = ' '.join([token, *tokens])
+        start, end = class_attr.span(3)
+        return tag[:start] + value + tag[end:]
+    return tag[:-1] + f' class="{token}">'
+
+
+def _has_class_token(tag, token):
+    """Return whether an opening tag's class list contains one token."""
+    class_attr = re.search(r'(\bclass\s*=\s*)(["\'])(.*?)\2', tag,
+                           flags=re.DOTALL)
+    return bool(class_attr and token in class_attr.group(3).split())
+
+
 def _is_numeric(text):
     """Check if text content is numeric (possibly with signs, decimals, %, en-dashes, fractions, W-L-D)."""
     clean = _strip_tags(text).strip()
@@ -159,10 +180,15 @@ def detect_table_section_rows(html):
         if len(cells) >= 2:
             non_empty = [c.strip() for c in cells if c.strip()]
             if len(non_empty) == 1 and cells[0].strip():
-                return row.replace("<tr>", '<tr class="table-section">', 1)
+                opening = re.match(r'<tr\b[^>]*>', row)
+                new_opening = _add_class_token(
+                    opening.group(0), 'table-section'
+                )
+                return new_opening + row[opening.end():]
         return row
 
-    return re.sub(r"<tr>.*?</tr>", process_row, html, flags=re.DOTALL)
+    return re.sub(r"<tr\b[^>]*>.*?</tr>", process_row, html,
+                  flags=re.DOTALL)
 
 
 # =============================================================================
@@ -238,11 +264,7 @@ def align_table_columns(html):
                 cell_index[0] += 1
                 cls = col_class.get(idx)
                 if cls:
-                    tag = td_match.group(0)
-                    if 'class="' in tag:
-                        return re.sub(r'class="', f'class="{cls} ', tag, count=1)
-                    else:
-                        return tag.replace("<td", f'<td class="{cls}"', 1)
+                    return _add_class_token(td_match.group(0), cls)
                 return td_match.group(0)
 
             return re.sub(r"<td[^>]*>", replace_td, row_html)
@@ -485,8 +507,10 @@ def colour_risk_cells(html, risk_tables=None):
 
     def process_table(match):
         table_html = match.group(0)
+        table_opening = re.match(r'<table\b[^>]*>', table_html)
         cols_mode = next(
-            (mode for cls, mode in specs.items() if f'class="{cls}"' in table_html),
+            (mode for cls, mode in specs.items()
+             if _has_class_token(table_opening.group(0), cls)),
             None,
         )
         if cols_mode is None:
@@ -510,10 +534,12 @@ def colour_risk_cells(html, risk_tables=None):
                 old_td = cell.group(0)
                 # Merge into any existing class (cells are already class="num"
                 # from auto-alignment) rather than emitting a second attribute.
-                if 'class="' in old_td:
-                    new_td = re.sub(r'class="', f'class="{cls} ', old_td, count=1)
-                else:
-                    new_td = old_td.replace('<td', f'<td class="{cls}"', 1)
+                new_td = re.sub(
+                    r'<td\b[^>]*>',
+                    lambda m: _add_class_token(m.group(0), cls),
+                    old_td,
+                    count=1,
+                )
                 result = result[:cell.start()] + new_td + result[cell.end():]
             return result
 
@@ -528,10 +554,31 @@ def colour_risk_cells(html, risk_tables=None):
 
 def _extract_headers(table_html):
     """Extract header cell texts from a table's <thead> or first <tr>."""
-    thead = re.search(r"<thead>(.*?)</thead>", table_html, re.DOTALL)
+    thead = re.search(r"<thead\b[^>]*>(.*?)</thead\s*>", table_html,
+                      flags=re.DOTALL | re.IGNORECASE)
     search_area = thead.group(1) if thead else table_html
-    headers = re.findall(r"<th[^>]*>(.*?)</th>", search_area, re.DOTALL)
+    first_row = re.search(r"<tr\b[^>]*>(.*?)</tr\s*>", search_area,
+                          flags=re.DOTALL | re.IGNORECASE)
+    if first_row:
+        search_area = first_row.group(1)
+    headers = re.findall(r"<th\b[^>]*>(.*?)</th\s*>", search_area,
+                         flags=re.DOTALL | re.IGNORECASE)
     return [_strip_tags(h).strip() for h in headers]
+
+
+def _insert_colgroup(table_html, colgroup):
+    """Insert a generated colgroup without displacing a leading caption."""
+    opening = re.search(r'<table\b[^>]*>', table_html, flags=re.IGNORECASE)
+    if not opening:
+        return table_html
+
+    insertion = opening.end()
+    after_opening = table_html[insertion:]
+    caption = re.match(r'\s*<caption\b[^>]*>.*?</caption\s*>', after_opening,
+                       flags=re.DOTALL | re.IGNORECASE)
+    if caption:
+        insertion += caption.end()
+    return table_html[:insertion] + '\n' + colgroup + table_html[insertion:]
 
 
 def _match_layout(header_texts, table_layouts):
@@ -643,33 +690,33 @@ def apply_table_layouts(html, metadata):
     def process_table(match):
         table_html = match.group(0)
 
-        headers = _extract_headers(table_html)
+        structure = _analyze_table_structure(table_html)
+        headers = list(structure.headers)
         _name, layout = _match_layout(headers, table_layouts)
 
         highlight_mode = None
-        if layout:
+        if layout and structure.eligible:
             columns = layout.get('columns', [])
 
-            # Inject colgroup right after the opening <table…> tag (which may
-            # carry attributes when the table came through md_in_html/attr_list).
+            # Preserve a semantic first-child caption when inserting widths.
             colgroup = _build_colgroup(columns)
-            table_html = re.sub(
-                r'<table\b[^>]*>',
-                lambda m: f'{m.group(0)}\n{colgroup}',
-                table_html, count=1,
-            )
+            table_html = _insert_colgroup(table_html, colgroup)
 
             # Apply alignment
             table_html = _apply_column_alignment(table_html, columns)
 
             # Add CSS class to table if declared, merging with any existing one.
             css_class = layout.get('css_class')
-            if css_class:
+            if css_class and not isinstance(css_class, str):
+                _log.warning(
+                    "table layout %s: css_class must be a string; skipping",
+                    _name,
+                )
+            elif css_class and css_class.strip():
+                css_class = css_class.strip()
+
                 def _add_table_class(m):
-                    tag = m.group(0)
-                    if 'class="' in tag:
-                        return re.sub(r'class="', f'class="{css_class} ', tag, count=1)
-                    return tag[:-1] + f' class="{css_class}">'
+                    return _add_class_token(m.group(0), css_class)
                 table_html = re.sub(r'<table\b[^>]*>', _add_table_class,
                                     table_html, count=1)
 
@@ -720,14 +767,53 @@ def _table_body_rows(table_html):
 
     Skips header rows. Used to infer a column's type from its content.
     """
-    tbody = re.search(r'<tbody>(.*?)</tbody>', table_html, re.DOTALL)
-    area = tbody.group(1) if tbody else table_html
+    bodies = re.findall(r'<tbody\b[^>]*>(.*?)</tbody\s*>', table_html,
+                        flags=re.DOTALL | re.IGNORECASE)
+    areas = bodies or [table_html]
     rows = []
-    for row in re.findall(r'<tr[^>]*>(.*?)</tr>', area, re.DOTALL):
-        if '<th' in row:
-            continue
-        rows.append(re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL))
+    for area in areas:
+        for row in re.findall(r'<tr\b[^>]*>(.*?)</tr\s*>', area,
+                              flags=re.DOTALL | re.IGNORECASE):
+            if re.search(r'<th\b', row, flags=re.IGNORECASE):
+                continue
+            rows.append(re.findall(r'<td\b[^>]*>(.*?)</td\s*>', row,
+                                   flags=re.DOTALL | re.IGNORECASE))
     return rows
+
+
+@dataclass(frozen=True)
+class _TableStructure:
+    """Semantic shape shared by declared and automatic width paths."""
+
+    headers: tuple
+    body_rows: tuple
+    ineligible_reason: str | None = None
+
+    @property
+    def eligible(self):
+        return self.ineligible_reason is None
+
+
+def _analyze_table_structure(table_html):
+    """Return a conservative one-column-per-header eligibility decision."""
+    headers = tuple(_extract_headers(table_html))
+    body_rows = tuple(tuple(row) for row in _table_body_rows(table_html))
+
+    if re.search(r'<colgroup\b', table_html, flags=re.IGNORECASE):
+        reason = 'existing-colgroup'
+    elif not headers:
+        reason = 'no-headers'
+    elif not body_rows:
+        reason = 'no-body-rows'
+    elif re.search(r'<t[dh]\b[^>]*\b(?:colspan|rowspan)\b', table_html,
+                   flags=re.IGNORECASE):
+        reason = 'spanning-cells'
+    elif any(len(row) != len(headers) for row in body_rows):
+        reason = 'ragged-rows'
+    else:
+        reason = None
+
+    return _TableStructure(headers, body_rows, reason)
 
 
 # --- Typed-column width model -------------------------------------------------
@@ -951,17 +1037,15 @@ def _analyze_table_for_widths(table_html, overrides):
     """First pass: classify a table's columns and compute the widths it needs.
 
     Returns a dict (headers, types, explicit, group_rung, nat) or None if the
-    table should be left alone (already has a colgroup, no header row, or a
-    colspan/ragged shape a fixed colgroup would misrender). Explicit widths are
-    stored as numeric em values; callers must pass normalized overrides."""
-    if '<colgroup' in table_html:
+    table should be left alone (already has a colgroup, has no header/body data,
+    or has a spanning/ragged shape a fixed colgroup would misrender). Explicit
+    widths are stored as numeric em values; callers must pass normalized
+    overrides."""
+    structure = _analyze_table_structure(table_html)
+    if not structure.eligible:
         return None
-    headers = _extract_headers(table_html)
-    if not headers:
-        return None
-    body_rows = _table_body_rows(table_html)
-    if 'colspan' in table_html or any(len(r) != len(headers) for r in body_rows):
-        return None
+    headers = list(structure.headers)
+    body_rows = [list(row) for row in structure.body_rows]
 
     # Type each column (respecting overrides).
     types = []
@@ -1124,15 +1208,11 @@ def _emit_table_widths(table_html, a, identity_width, page_em):
             cols.append(f'<col class="w{a["group_rung"][t] + 1}">')
     colgroup = '<colgroup>' + ''.join(cols) + '</colgroup>'
 
-    result = re.sub(r'<table\b[^>]*>',
-                    lambda m: f'{m.group(0)}\n{colgroup}', table_html, count=1)
+    result = _insert_colgroup(table_html, colgroup)
 
     if fit.outcome == 'fit':    # shrink to content (don't stretch to 100%)
         def _add_fit(m):
-            tag = m.group(0)
-            if 'class="' in tag:
-                return re.sub(r'class="', 'class="fit ', tag, count=1)
-            return tag[:-1] + ' class="fit">'
+            return _add_class_token(m.group(0), 'fit')
         result = re.sub(r'<table\b[^>]*>', _add_fit, result, count=1)
     return result, fit
 

@@ -75,6 +75,14 @@ class TestExtractHeaders:
         """
         assert _extract_headers(html) == ['Day', 'Session', 'Duration']
 
+    def test_extracts_normalised_repeated_headers_with_inline_markup(self):
+        html = (
+            '<table><thead data-kind="main"><tr>'
+            '<th><span> Team </span></th><th>Team</th>'
+            '</tr></thead><tbody><tr><td>A</td><td>B</td></tr></tbody></table>'
+        )
+        assert _extract_headers(html) == ['Team', 'Team']
+
 
 class TestMatchLayout:
 
@@ -406,6 +414,151 @@ class TestTypedColumnWidths:
     def test_colspan_table_skipped(self):
         html = '<table><thead><tr><th>A</th><th>B</th></tr></thead><tbody><tr><td colspan="2">x</td></tr></tbody></table>'
         assert "<colgroup>" not in apply_default_table_widths(html)
+
+    @pytest.mark.parametrize("html", [
+        '<table><tbody><tr><td>1</td></tr></tbody></table>',
+        '<table aria-label="empty"></table>',
+        '<table><thead><tr><th>A</th></tr></thead><tbody></tbody></table>',
+        ('<table><thead><tr><th>A</th><th>B</th></tr></thead><tbody>'
+         '<tr><td colspan="2">x</td></tr></tbody></table>'),
+        ('<table><thead><tr><th>A</th><th>B</th></tr></thead><tbody>'
+         '<tr><td rowspan="2">x</td><td>1</td></tr>'
+         '<tr><td>y</td><td>2</td></tr></tbody></table>'),
+        ('<table><thead><tr><th>A</th><th>B</th></tr></thead><tbody>'
+         '<tr><td>x</td></tr></tbody></table>'),
+        ('<table><colgroup><col></colgroup><thead><tr><th>A</th></tr></thead>'
+         '<tbody><tr><td>x</td></tr></tbody></table>'),
+    ])
+    def test_ineligible_structures_pass_through_byte_for_byte(self, html):
+        assert apply_default_table_widths(html) == html
+
+    def test_all_tbody_groups_participate_in_analysis_and_are_preserved(self):
+        html = (
+            '<table aria-describedby="note"><thead><tr><th>Value</th></tr></thead>'
+            '<tbody id="time"><tr><td>9:00</td></tr></tbody>'
+            '<tbody id="date"><tr><td>14 Jun</td></tr></tbody>'
+            '</table>'
+        )
+
+        result = apply_default_table_widths(html)
+
+        assert '<col style="width:' in result
+        assert result.index('id="time"') < result.index('id="date"')
+        assert '>9:00<' in result
+        assert '>14 Jun<' in result
+        assert 'aria-describedby="note"' in result
+
+    def test_ragged_later_tbody_makes_the_whole_table_ineligible(self):
+        html = (
+            '<table><thead><tr><th>A</th><th>B</th></tr></thead>'
+            '<tbody><tr><td>1</td><td>2</td></tr></tbody>'
+            '<tbody><tr><td>3</td></tr></tbody></table>'
+        )
+        assert apply_default_table_widths(html) == html
+
+    def test_normalised_repeated_headers_share_the_same_override(self):
+        html = (
+            '<table><thead><tr><th><span> Team </span></th><th>Team</th></tr>'
+            '</thead><tbody><tr><td>A</td><td>B</td></tr></tbody></table>'
+        )
+        result = apply_default_table_widths(
+            html, {"columns": {"  TEAM  ": "12em"}}
+        )
+        assert result.count('style="width:12em"') == 2
+
+    def test_section_rows_remain_in_place_with_their_attributes(self):
+        html = (
+            '<table><thead><tr><th>Division</th><th>Team</th></tr></thead>'
+            '<tbody><tr data-kind="section"><td>Open</td><td></td></tr>'
+            '<tr><td>Open</td><td>Falcons</td></tr></tbody></table>'
+        )
+        marked = detect_table_section_rows(html)
+        result = apply_default_table_widths(marked)
+        assert 'class="table-section"' in result
+        assert 'data-kind="section"' in result
+        assert result.index('>Open</td><td></td>') < result.index('>Falcons</td>')
+
+    def test_caption_and_semantic_associations_are_preserved(self):
+        html = (
+            '<table aria-label="results"><caption id="cap">Results</caption>'
+            '<thead id="head"><tr><th id="team" scope="col"><em>Team</em></th>'
+            '<th id="won" scope="col">W</th></tr></thead>'
+            '<tbody id="body"><tr data-row="1"><td headers="team">Falcons</td>'
+            '<td headers="won" aria-label="wins">8</td></tr></tbody></table>'
+        )
+
+        result = apply_default_table_widths(html)
+
+        assert result.index('<caption') < result.index('<colgroup>')
+        assert result.index('<colgroup>') < result.index('<thead')
+        for preserved in (
+            'aria-label="results"', '<caption id="cap">Results</caption>',
+            '<thead id="head">', 'id="team" scope="col"',
+            'id="won" scope="col"', '<tbody id="body">', 'data-row="1"',
+            'headers="team"', 'headers="won" aria-label="wins"',
+            '<em>Team</em>', 'Falcons',
+        ):
+            assert preserved in result
+
+    def test_declared_layout_uses_the_same_structural_guard(self):
+        unsafe = (
+            '<table><thead><tr><th>A</th><th>B</th></tr></thead><tbody>'
+            '<tr><td rowspan="2">x</td><td>1</td></tr>'
+            '<tr><td>y</td><td>2</td></tr></tbody></table>'
+        )
+        metadata = {
+            'tables': {'unsafe': {'columns': [
+                {'name': 'A', 'width': 50}, {'name': 'B', 'width': 50}
+            ]}}
+        }
+        assert apply_table_layouts(unsafe, metadata) == unsafe
+
+    def test_declared_layout_does_not_append_to_an_author_colgroup(self):
+        html = (
+            '<table data-owner="author"><colgroup><col style="width:7em">'
+            '</colgroup><thead><tr><th>A</th></tr></thead>'
+            '<tbody><tr><td>x</td></tr></tbody></table>'
+        )
+        metadata = {
+            'tables': {'authored': {
+                'css_class': 'declared',
+                'columns': [{'name': 'A', 'width': 1}],
+            }}
+        }
+        assert apply_table_layouts(html, metadata) == html
+
+    def test_declared_layout_preserves_caption_first_child_position(self):
+        html = (
+            '<table><caption data-title="x">Title</caption><thead><tr>'
+            '<th>A</th></tr></thead><tbody><tr><td>x</td></tr></tbody></table>'
+        )
+        metadata = {
+            'tables': {'captioned': {'columns': [{'name': 'A', 'width': 1}]}}
+        }
+        result = apply_table_layouts(html, metadata)
+        assert result.index('<caption') < result.index('<colgroup>')
+        assert result.index('<colgroup>') < result.index('<thead')
+
+    @pytest.mark.parametrize("table_open", [
+        '<table>', '<table class="author">',
+    ])
+    def test_declared_layout_skips_non_string_css_class(self, table_open, caplog):
+        html = (
+            f'{table_open}<thead><tr><th>A</th></tr></thead>'
+            '<tbody><tr><td>x</td></tr></tbody></table>'
+        )
+        metadata = {
+            'tables': {'invalid-class': {
+                'css_class': 5,
+                'columns': [{'name': 'A', 'width': 1}],
+            }}
+        }
+        result = apply_table_layouts(html, metadata)
+        assert '<colgroup>' in result
+        assert 'class="5"' not in result
+        assert caplog.messages == [
+            'table layout invalid-class: css_class must be a string; skipping'
+        ]
 
     def test_column_type_override(self):
         # Force Team to a label — still a wide column, so it gets an em width.

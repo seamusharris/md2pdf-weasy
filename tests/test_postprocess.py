@@ -1,5 +1,7 @@
 """Tests for HTML post-processing (page-break markers, etc.)."""
 
+import re
+
 from pdf.postprocess import convert_page_breaks, postprocess
 
 
@@ -8,6 +10,49 @@ def test_postprocess_falsey_non_mapping_metadata_warns_and_continues(caplog):
     assert caplog.messages == [
         "front matter: expected a mapping; using empty metadata"
     ]
+
+
+def test_table_postprocessing_is_repeat_safe_for_automatic_widths():
+    html = (
+        '<table aria-label="results"><caption>Results</caption>'
+        '<thead><tr><th scope="col">Team</th><th scope="col">W</th></tr></thead>'
+        '<tbody><tr><td>Falcons</td><td headers="wins">8</td></tr></tbody>'
+        '</table>'
+    )
+    once = postprocess(html)
+    assert postprocess(once) == once
+    assert once.count('<colgroup>') == 1
+
+
+def test_table_postprocessing_is_repeat_safe_for_declared_layouts():
+    html = (
+        '<table><caption>Schedule</caption><thead><tr><th>Day</th><th>Count</th>'
+        '</tr></thead><tbody><tr><td>Mon</td><td>2</td></tr></tbody></table>'
+    )
+    metadata = {
+        'tables': {'schedule': {
+            'css_class': 'schedule',
+            'columns': [
+                {'name': 'Day', 'width': 2},
+                {'name': 'Count', 'width': 1, 'align': 'right'},
+            ],
+        }},
+    }
+    once = postprocess(html, metadata)
+    assert postprocess(once, metadata) == once
+    assert once.count('<colgroup>') == 1
+    assert len(re.findall(r'\bclass="schedule(?:\s|\")', once)) == 1
+
+
+def test_table_postprocessing_is_repeat_safe_for_risk_classes():
+    html = (
+        '<table class="risk"><thead><tr><th>Team</th><th>Risk</th></tr></thead>'
+        '<tbody><tr><td>Falcons</td><td>67%</td></tr></tbody></table>'
+    )
+    metadata = {'risk_tables': ['risk']}
+    once = postprocess(html, metadata)
+    assert postprocess(once, metadata) == once
+    assert once.count('risk-high') == 1
 
 
 class TestConvertPageBreaks:
