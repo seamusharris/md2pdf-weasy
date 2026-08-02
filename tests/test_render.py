@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+import weasyprint
 import yaml
 
 from pdf.render import (
@@ -13,6 +14,44 @@ from pdf.render import (
     resolve_tables_include,
     validate_front_matter,
 )
+
+
+def test_build_pdf_forwards_html_base_url(tmp_path, monkeypatch):
+    markdown = tmp_path / "source.md"
+    output = tmp_path / "output.pdf"
+    markdown.write_text("![diagram](diagrams/example.svg)\n", encoding="utf-8")
+    captured = {}
+
+    class FakeHTML:
+        def __init__(self, *, string, base_url):
+            captured["html"] = string
+            captured["base_url"] = base_url
+
+        def write_pdf(self, output_path, *, stylesheets):
+            captured["output_path"] = output_path
+            captured["stylesheets"] = stylesheets
+
+    class FakeCSS:
+        def __init__(self, *, string, base_url):
+            self.string = string
+            self.base_url = base_url
+
+    monkeypatch.setattr(weasyprint, "HTML", FakeHTML)
+    monkeypatch.setattr(weasyprint, "CSS", FakeCSS)
+
+    from pdf.render import build_pdf
+
+    result = build_pdf(
+        str(markdown),
+        str(output),
+        base_url=markdown.parent.as_uri() + "/",
+    )
+
+    assert result == str(output)
+    assert captured["base_url"] == markdown.parent.as_uri() + "/"
+    assert "diagrams/example.svg" in captured["html"]
+    assert captured["output_path"] == str(output)
+    assert len(captured["stylesheets"]) == 1
 
 
 class TestTrackedRowsAlias:

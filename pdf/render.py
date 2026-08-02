@@ -399,7 +399,7 @@ def _front_matter_css(metadata):
     return '\n'.join(rules)
 
 
-def build_pdf(md_path: str, output_path: str | None = None, style_path: str | None = None, base_style_path: str | None = None) -> str:
+def build_pdf(md_path: str, output_path: str | None = None, style_path: str | None = None, base_style_path: str | None = None, base_url: str | None = None) -> str:
     """Convert a markdown file to PDF.
 
     Args:
@@ -408,6 +408,8 @@ def build_pdf(md_path: str, output_path: str | None = None, style_path: str | No
         base_style_path: Path to base CSS. Defaults to the bundled style.css
             (DEFAULT_STYLE) so consumers don't need to know the install path.
         style_path: Optional CSS overlay loaded after the base style.
+        base_url: Optional base URL used to resolve relative URLs in generated
+            HTML. Defaults to WeasyPrint's no-base behavior.
     """
     from weasyprint import HTML, CSS
 
@@ -460,7 +462,7 @@ def build_pdf(md_path: str, output_path: str | None = None, style_path: str | No
     # stylesheet (e.g. @font-face src: url("../fonts/...")) resolve
     # against the styles directory, which is where the bundled CSS
     # and the @font-face declarations live.
-    HTML(string=html).write_pdf(
+    HTML(string=html, base_url=base_url).write_pdf(
         output_path,
         stylesheets=[CSS(string=css_content, base_url=_STYLES_DIR + "/")],
     )

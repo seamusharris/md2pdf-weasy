@@ -101,6 +101,9 @@ from pdf.render import build_pdf
 
 # Full pipeline: markdown file → PDF file
 build_pdf("input.md", "output.pdf")
+
+# Resolve relative Markdown images/links from an explicit source directory
+build_pdf("input.md", "output.pdf", base_url="/absolute/source/directory/")
 ```
 
 See [docs/getting-started.md](docs/getting-started.md) for the lower-level
