@@ -6,6 +6,7 @@
   "createdBy": "Codex repository audit",
   "dedupeKey": "setup-audit:explicit-width-accounting",
   "discoveredDate": "2026-08-02",
+  "displayId": "ISS-003",
   "id": "ISS-003",
   "impact": "Explicit CSS width strings are emitted unchanged, but every non-em value is approximated as ten em during overflow and fit calculations. The resulting colgroup can receive an incorrect fit class or page-scaling decision even though CSS-length inputs are documented as supported. Supported units and accounting need one deterministic contract.",
   "location": [
@@ -15,9 +16,9 @@
   "relatedTickets": [
     "T-005"
   ],
-  "resolution": null,
-  "resolvedDate": null,
+  "resolution": "Resolved by T-005 (ee1d390). Explicit automatic-width overrides now use the ratified positive finite numeric/decimal-em grammar, normalize idempotently without precision loss at float accounting precision, and are fitted and emitted from the same em values. The obsolete non-em ten-em fallback was removed; exact boundary, mixed-column, orientation, aggregate-overflow, and fixed-only overflow behavior is covered by the passing test suite.",
+  "resolvedDate": "2026-08-02",
   "severity": "medium",
-  "status": "open",
+  "status": "resolved",
   "title": "Non-em explicit widths use incorrect overflow accounting"
 }
