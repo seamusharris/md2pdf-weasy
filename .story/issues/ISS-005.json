@@ -1,13 +1,19 @@
 {
   "components": [
-    "autonomous"
+    "table-widths",
+    "architecture"
   ],
   "discoveredDate": "2026-08-02",
+  "displayId": "ISS-005",
   "id": "ISS-005",
   "impact": "The automatic-width subsystem remains embedded in the large multi-purpose table_transforms module; extracting it is valid architectural cleanup but outside T-005's bounded correctness scope.",
-  "location": [],
-  "phase": null,
-  "relatedTickets": [],
+  "location": [
+    "pdf/table_transforms.py"
+  ],
+  "phase": "contract",
+  "relatedTickets": [
+    "T-005"
+  ],
   "resolution": null,
   "resolvedDate": null,
   "severity": "high",
