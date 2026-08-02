@@ -6,11 +6,20 @@ from pdf.postprocess import convert_page_breaks
 class TestConvertPageBreaks:
     """HTML-comment markers in markdown become CSS-driven page breaks."""
 
-    def test_page_break_comment_becomes_break_before_div(self):
+    def test_page_break_comment_applies_to_the_following_element(self):
         html = "<p>before</p>\n<!-- page-break -->\n<p>after</p>"
         result = convert_page_breaks(html)
         assert 'break-before: page' in result
         assert '<!-- page-break -->' not in result
+        assert '<div' not in result
+        assert '<p style="break-before: page;">after</p>' in result
+
+    def test_page_break_merges_into_existing_style(self):
+        html = '<!-- page-break -->\n<h2 style="color:red">Section</h2>'
+        result = convert_page_breaks(html)
+        assert result.count('style=') == 1
+        assert 'break-before: page' in result
+        assert 'color:red' in result
 
     def test_no_page_break_marker_does_nothing_alone(self):
         # The no-page-break marker only activates when followed by a heading

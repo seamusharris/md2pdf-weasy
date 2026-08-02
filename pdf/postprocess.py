@@ -121,6 +121,23 @@ def convert_page_breaks(html):
       <!-- page-break -->     — force a page break at this point
       <!-- no-page-break -->  — suppress automatic break on the next heading
     """
+    def _set_break(tag, value):
+        if 'break-before' in tag:
+            return tag
+        if 'style="' in tag:
+            return tag.replace('style="', f'style="break-before: {value}; ', 1)
+        return tag[:-1] + f' style="break-before: {value};">'
+
+    # Put the break on the content that follows. An empty break-only div can
+    # itself land at the top of a page and force the real content onto the
+    # next page, producing a blank sheet.
+    html = re.sub(
+        r'<!--\s*page-break\s*-->\s*(<[^!/][^>]*>)',
+        lambda match: _set_break(match.group(1), 'page'),
+        html,
+    )
+    # A marker at end of input has nothing to attach to. Keep the established
+    # harmless fallback so the marker is still consumed deterministically.
     html = re.sub(
         r'<!--\s*page-break\s*-->',
         '<div style="break-before: page;"></div>',
@@ -130,11 +147,7 @@ def convert_page_breaks(html):
     # merging into any existing style rather than emitting a second attribute.
     def _suppress_break(match):
         tag = match.group(1)
-        if 'break-before' in tag:
-            return tag
-        if 'style="' in tag:
-            return tag.replace('style="', 'style="break-before: auto; ', 1)
-        return tag[:-1] + ' style="break-before: auto;">'
+        return _set_break(tag, 'auto')
 
     html = re.sub(
         r'<!--\s*no-page-break\s*-->\s*(<h[1-6][^>]*>)',

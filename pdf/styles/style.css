@@ -320,7 +320,7 @@ body {
 
 .toc {
     margin-bottom: var(--space-lg);
-    break-inside: avoid;
+    break-inside: auto;
 }
 
 .toc-title {
@@ -341,6 +341,7 @@ body {
     margin: 0;
     line-height: 1.6;
     font-feature-settings: "kern", "liga", "lnum";
+    break-inside: auto;
 }
 
 .toc ul ul {
@@ -496,12 +497,13 @@ ul, ol {
     margin-top: var(--space-xs);
     margin-bottom: var(--space-sm);
     padding-left: 8mm;
-    break-inside: avoid;
+    break-inside: auto;
 }
 
 li {
     margin-bottom: var(--space-xs);
     padding-left: 1mm;
+    break-inside: avoid;
 }
 
 

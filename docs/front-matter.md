@@ -21,6 +21,13 @@ Unknown or mistyped keys log a warning at render time but don't fail.
 |---|---|---|---|
 | `title` | str | — | Rendered as `<h1>` at the top of the document |
 | `subtitle` | str | — | Rendered as `<p class="doc-subtitle">` below the title |
+| `author` | str | — | PDF author metadata. |
+| `subject` | str | — | PDF subject/description metadata. |
+| `keywords` | str \| list[str] | — | PDF keywords, either comma-separated or a YAML list. |
+| `lang` | str | `en` | BCP 47 document language used by HTML and the tagged PDF. |
+
+PDF output is tagged and conforms to the WeasyPrint `pdf/ua-1` variant by
+default. Source images therefore need meaningful alternative text.
 
 ## Theming
 

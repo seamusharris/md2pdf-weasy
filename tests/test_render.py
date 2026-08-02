@@ -27,9 +27,10 @@ def test_build_pdf_forwards_html_base_url(tmp_path, monkeypatch):
             captured["html"] = string
             captured["base_url"] = base_url
 
-        def write_pdf(self, output_path, *, stylesheets):
+        def write_pdf(self, output_path, *, stylesheets, pdf_variant=None):
             captured["output_path"] = output_path
             captured["stylesheets"] = stylesheets
+            captured["pdf_variant"] = pdf_variant
 
     class FakeCSS:
         def __init__(self, *, string, base_url):
@@ -52,6 +53,7 @@ def test_build_pdf_forwards_html_base_url(tmp_path, monkeypatch):
     assert "diagrams/example.svg" in captured["html"]
     assert captured["output_path"] == str(output)
     assert len(captured["stylesheets"]) == 1
+    assert captured["pdf_variant"] == "pdf/ua-1"
 
 
 class TestTrackedRowsAlias:
@@ -143,6 +145,21 @@ class TestMdToHtmlCodeProtection:
         html = md_to_html('body', {'title': 'Q&A <live>'})
         assert '<h1>Q&amp;A &lt;live&gt;</h1>' in html
 
+    def test_document_metadata_is_exposed_to_html_and_pdf(self):
+        html = md_to_html('body', {
+            'title': 'Training & Review',
+            'author': 'Netball Coaching',
+            'subject': 'Private coaching reference',
+            'keywords': ['netball', 'coaching'],
+            'lang': 'en-AU',
+        })
+
+        assert '<html lang="en-AU">' in html
+        assert '<meta name="author" content="Netball Coaching">' in html
+        assert '<meta name="description" content="Private coaching reference">' in html
+        assert '<meta name="keywords" content="netball, coaching">' in html
+        assert '<title>Training &amp; Review</title>' in html
+
     def test_consecutive_bold_label_lines_become_separate_paragraphs(self):
         # Generated field summaries glue **Label:** lines together; they must
         # not collapse into one run-together paragraph.
@@ -188,6 +205,23 @@ class TestValidateFrontMatter:
         warnings = validate_front_matter({'h2_page_break': 'should-be-bool'})
         assert len(warnings) == 1
         assert 'h2_page_break' in warnings[0]
+
+    def test_mistyped_columns_warns_and_uses_default_widths(self, caplog):
+        content = """---
+columns:
+  - Team
+---
+| Team | W |
+|------|---|
+| Warrandyte | 4 |
+"""
+        metadata, body = parse_front_matter(content)
+
+        assert any(
+            "front matter 'columns': expected dict, got list" in message
+            for message in caplog.messages
+        )
+        assert md_to_html(body, metadata) == md_to_html(body, {})
 
 
 class TestResolveTablesInclude:

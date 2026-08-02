@@ -86,6 +86,10 @@ def check_font() -> bool:
 _FRONT_MATTER_SCHEMA = {
     'title': str,
     'subtitle': str,
+    'author': str,
+    'subject': str,
+    'keywords': (str, list),
+    'lang': str,
     'tables': dict,
     'tables_include': str,
     'tracked_rows': list,
@@ -363,12 +367,28 @@ def md_to_html(md_content: str, metadata: dict) -> str:
         title_html += f'<p class="doc-subtitle">{safe_subtitle}</p>\n'
 
     title_text = _html.escape(str(metadata.get("title", "Document")), quote=False)
+    lang = _html.escape(str(metadata.get("lang", "en")), quote=True)
+    head_metadata = []
+    for field, html_name in (
+        ("author", "author"),
+        ("subject", "description"),
+        ("keywords", "keywords"),
+    ):
+        value = metadata.get(field)
+        if isinstance(value, list):
+            value = ", ".join(str(item) for item in value)
+        if value:
+            escaped = _html.escape(str(value), quote=True)
+            head_metadata.append(
+                f'    <meta name="{html_name}" content="{escaped}">\n'
+            )
 
     return (
         '<!DOCTYPE html>\n'
-        '<html lang="en">\n'
+        f'<html lang="{lang}">\n'
         '<head>\n'
         '    <meta charset="utf-8">\n'
+        f'{"".join(head_metadata)}'
         f'    <title>{title_text}</title>\n'
         '</head>\n'
         '<body>\n'
@@ -465,6 +485,7 @@ def build_pdf(md_path: str, output_path: str | None = None, style_path: str | No
     HTML(string=html, base_url=base_url).write_pdf(
         output_path,
         stylesheets=[CSS(string=css_content, base_url=_STYLES_DIR + "/")],
+        pdf_variant="pdf/ua-1",
     )
 
     print(f"Created: {output_path}")
