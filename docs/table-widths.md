@@ -47,8 +47,8 @@ into the current behaviour:
 
 | Area | Current revision | Contract work |
 |---|---|---|
-| Invalid controls | Python types are validated, and a non-mapping `columns` value warns and falls back. Alias normalisation and other semantic checks are incomplete. | T-004 |
-| Exact widths | Numeric and string values are currently emitted; non-em strings are approximated during fitting. | T-005 / ISS-003 |
+| Invalid controls | Type and semantic validation share one non-mutating normalizer. Invalid parsed or direct-call values warn and use the documented fallback. | Implemented by T-004 |
+| Exact widths | Numeric and em-string values are normalized and accounted in em. The obsolete unreachable non-em approximation path still needs removal and boundary fitting proof. | T-005 / ISS-003 |
 | Structural preservation | Existing colgroups, colspans, and common ragged rows are skipped. Rowspans, caption placement, semantic attributes, and repeat-pass cases need complete coverage. | T-006 |
 | Font metrics | Real bundled-font metrics are used when available, with an estimated fallback. Dependency and package-data determinism remains to be proved. | T-008 |
 

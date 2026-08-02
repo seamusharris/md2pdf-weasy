@@ -4,12 +4,12 @@
   ],
   "completedDate": null,
   "createdDate": "2026-08-02",
-  "description": "Decide and document the supported grammar for explicit column-width overrides. Implement exact page-fit accounting for supported units or reject unsupported units deterministically with a warning and safe fallback, resolving the confirmed ten-em approximation defect. Cover mixed explicit, typed, and wide columns across portrait, landscape, malformed, and injection-like inputs.",
+  "description": "Use the ratified em-only explicit-width grammar implemented by T-004. Remove the confirmed ten-em approximation path and prove exact page-fit accounting for accepted numeric and em-string widths. Cover mixed explicit, typed, and wide columns across portrait and landscape, including boundary totals and overflow where fixed columns alone cannot fit. Resolve ISS-003 without broadening the accepted grammar.",
   "displayId": "T-005",
   "id": "T-005",
   "order": 30,
   "phase": "contract",
   "status": "open",
-  "title": "Implement deterministic explicit-width semantics",
+  "title": "Verify deterministic explicit-width fitting",
   "type": "task"
 }

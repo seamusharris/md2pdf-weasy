@@ -223,6 +223,40 @@ columns:
         )
         assert md_to_html(body, metadata) == md_to_html(body, {})
 
+    def test_semantically_invalid_width_controls_warn_once_and_normalise(self, caplog):
+        content = """---
+table_widths: SOMETIMES
+orientation: sideways
+page_width_em: -10
+columns:
+  Team: 12px
+---
+| Team | W |
+|------|---|
+| Warrandyte | 4 |
+"""
+        metadata, body = parse_front_matter(content)
+
+        assert metadata == {
+            "table_widths": True,
+            "orientation": "portrait",
+            "columns": {},
+        }
+        assert len(caplog.messages) == 4
+        assert all("12px" not in message for message in caplog.messages)
+
+        caplog.clear()
+        md_to_html(body, metadata)
+        assert caplog.messages == []
+
+    def test_direct_md_to_html_non_mapping_metadata_warns_and_continues(self, caplog):
+        html = md_to_html("| Team | W |\n|---|---|\n| A | 1 |", [])
+
+        assert "<table" in html
+        assert caplog.messages == [
+            "front matter: expected a mapping; using empty metadata"
+        ]
+
 
 class TestResolveTablesInclude:
 

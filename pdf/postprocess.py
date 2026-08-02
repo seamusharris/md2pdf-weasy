@@ -43,6 +43,7 @@ from pdf.table_transforms import (  # noqa: F401
     _apply_column_alignment,
     apply_table_layouts,
     apply_default_table_widths,
+    _validated_width_metadata,
     generate_toc,
 )
 
@@ -171,6 +172,8 @@ def postprocess(html, metadata=None):
                   layouts (column widths, alignment, CSS classes, row
                   highlighting).
     """
+    metadata = _validated_width_metadata(metadata)
+
     # General-purpose transforms (always run)
     html = split_merged_blockquotes(html)
     extra_kw = metadata.get('extra_callout_keywords') if metadata else None

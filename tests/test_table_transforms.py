@@ -419,6 +419,34 @@ class TestTypedColumnWidths:
         result = apply_default_table_widths(self._ladder(), {"columns": {"Team": "12em"}})
         assert 'style="width:12em"' in result
 
+    def test_direct_invalid_metadata_warns_and_uses_safe_defaults(self, caplog):
+        html = self._ladder()
+        invalid = {
+            "table_widths": "sometimes",
+            "orientation": "sideways",
+            "page_width_em": False,
+            "columns": {"Team": '12em";color:red'},
+        }
+
+        assert apply_default_table_widths(html, invalid) == \
+            apply_default_table_widths(html, {})
+        assert len(caplog.messages) == 4
+        assert all("color:red" not in message for message in caplog.messages)
+
+    @pytest.mark.parametrize("alias", [False, "off", " OFF ", "none", "Legacy"])
+    def test_all_table_width_opt_out_aliases_are_supported(self, alias):
+        assert apply_default_table_widths(
+            self._ladder(), {"table_widths": alias}
+        ) == self._ladder()
+
+    @pytest.mark.parametrize("metadata", [[], "", 0, False])
+    def test_falsey_non_mapping_direct_metadata_warns(self, metadata, caplog):
+        assert apply_default_table_widths(self._ladder(), metadata) == \
+            apply_default_table_widths(self._ladder(), {})
+        assert caplog.messages == [
+            "front matter: expected a mapping; using empty metadata"
+        ]
+
 
 class TestDocLevelWidths:
     """Document-level width grouping for wide columns."""

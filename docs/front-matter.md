@@ -48,13 +48,9 @@ Slashes, backslashes, and `..` are rejected for safety; only bare names.
 
 ## Tables
 
-The table-width rows below state the ratified acceptance contract. At this
-revision, type validation and the malformed whole-`columns` fallback are
-implemented, but semantic hardening is still tracked: T-004 covers normalised
-aliases and invalid `table_widths`/`orientation`/`page_width_em` values, while
-T-005 covers the em-only exact-width grammar and accounting. Until those land,
-the affected warnings and safe fallbacks are target behaviour rather than a
-claim about every current runtime path.
+The table-width rows below state the ratified contract and current accepted
+inputs. Parsed front matter and direct rendering calls use the same
+non-mutating normalizer; invalid controls warn and use the documented fallback.
 
 | Field | Type | Default | Description |
 |---|---|---|---|

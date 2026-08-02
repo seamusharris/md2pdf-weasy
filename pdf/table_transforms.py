@@ -9,6 +9,8 @@ import re
 
 import yaml
 
+from pdf.width_metadata import KNOWN_COLUMN_TYPES, normalise_width_metadata
+
 
 # =============================================================================
 # DEFAULT COLUMN WIDTHS
@@ -700,6 +702,16 @@ import logging as _logging
 _log = _logging.getLogger(__name__)
 
 
+def _validated_width_metadata(metadata):
+    """Normalize direct-call metadata and emit each resulting warning."""
+    normalized, warnings = normalise_width_metadata(
+        {} if metadata is None else metadata
+    )
+    for warning in warnings:
+        _log.warning("%s", warning)
+    return normalized
+
+
 def _table_body_rows(table_html):
     """Return the body rows of a table as lists of cell-HTML strings.
 
@@ -744,7 +756,7 @@ _TYPE_CANONICAL = {
     'label': 3,  # w4 4.5em — Sat / Home / Final (snaps up to fit)
 }
 _FLEX_TYPES = frozenset({'text', 'prose'})
-_KNOWN_TYPES = frozenset(_TYPE_CANONICAL) | _FLEX_TYPES
+_KNOWN_TYPES = KNOWN_COLUMN_TYPES
 # Numeric tokens use the shared em ladder (consistent by type across the doc).
 _LADDER_TYPES = frozenset(_TYPE_CANONICAL) - {'label'}
 # "Wide" columns (short labels, names, prose) get a width that is shared per
@@ -1077,7 +1089,7 @@ def apply_default_table_widths(html, metadata=None):
       columns: {Header: type|width}
                             — force a column's type or pin an explicit width.
     """
-    metadata = metadata or {}
+    metadata = _validated_width_metadata(metadata)
     if metadata.get('table_widths') in (False, 'off', 'none', 'legacy'):
         return html
 

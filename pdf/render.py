@@ -39,6 +39,7 @@ import markdown
 
 from .typography import typographic_convert
 from .postprocess import postprocess, generate_toc
+from .width_metadata import normalise_width_metadata
 
 log = logging.getLogger(__name__)
 
@@ -133,7 +134,10 @@ def validate_front_matter(metadata: dict) -> list[str]:
     Returns list of warning strings (empty if all valid).
     """
     warnings = []
+    width_fields = {"table_widths", "columns", "orientation", "page_width_em"}
     for key, value in metadata.items():
+        if key in width_fields:
+            continue
         if key not in _FRONT_MATTER_SCHEMA:
             warnings.append(f"unknown front matter key: '{key}'")
         else:
@@ -147,6 +151,8 @@ def validate_front_matter(metadata: dict) -> list[str]:
                     f"front matter '{key}': expected {expected_name}, "
                     f"got {type(value).__name__}"
                 )
+    _, width_warnings = normalise_width_metadata(metadata)
+    warnings.extend(width_warnings)
     return warnings
 
 
@@ -192,6 +198,7 @@ def parse_front_matter(content: str) -> tuple[dict, str]:
                 return {}, content
             for warning in validate_front_matter(meta):
                 log.warning("%s", warning)
+            meta, _ = normalise_width_metadata(meta)
             return meta, rest.strip()
     return {}, content
 
@@ -318,6 +325,12 @@ def md_to_html(md_content: str, metadata: dict) -> str:
     post-processing. Direction markers ({up}/{down}/{mod}) in bold cells
     are also handled during post-processing.
     """
+    metadata, width_warnings = normalise_width_metadata(
+        {} if metadata is None else metadata
+    )
+    for warning in width_warnings:
+        log.warning("%s", warning)
+
     # Protect code spans/fences from the source-level rewrites that follow.
     md_content, code_stash = _protect_code(md_content)
 

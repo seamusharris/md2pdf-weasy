@@ -1,6 +1,13 @@
 """Tests for HTML post-processing (page-break markers, etc.)."""
 
-from pdf.postprocess import convert_page_breaks
+from pdf.postprocess import convert_page_breaks, postprocess
+
+
+def test_postprocess_falsey_non_mapping_metadata_warns_and_continues(caplog):
+    assert postprocess("<p>ok</p>", []) == "<p>ok</p>"
+    assert caplog.messages == [
+        "front matter: expected a mapping; using empty metadata"
+    ]
 
 
 class TestConvertPageBreaks:
