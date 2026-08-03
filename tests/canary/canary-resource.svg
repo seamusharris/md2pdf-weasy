@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="24" viewBox="0 0 64 24" role="img" aria-labelledby="title">
+  <title id="title">Invented canary marker</title>
+  <rect width="64" height="24" rx="4" fill="#1f6f78"/>
+  <circle cx="14" cy="12" r="6" fill="#f5c451"/>
+  <path d="M28 8h26v3H28zm0 6h18v3H28z" fill="#fff"/>
+</svg>

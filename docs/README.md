@@ -18,6 +18,7 @@ landing page; this directory is for depth.
 | [domain-features.md](domain-features.md) | `tracked_rows`, `direction_markers`, `risk_tables`, verdict CSS classes |
 | [fonts.md](fonts.md) | Bundled font families, licences, adding more |
 | [distribution-entitlement.md](distribution-entitlement.md) | Fail-closed Adobe-font distribution decision, evidence, and preflight |
+| [downstream-canary.md](downstream-canary.md) | Authorized consumer-owned canary coverage and sanitized result contract |
 
 ## Conventions
 

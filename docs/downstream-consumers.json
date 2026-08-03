@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "decision": "no_authorized_consumers_recorded",
+  "reviewed_on": "2026-08-03",
+  "evidence_policy": {
+    "storage": "references_only",
+    "forbidden_content": [
+      "consumer_names",
+      "repository_urls",
+      "documents",
+      "credentials",
+      "licenses",
+      "attachments"
+    ]
+  },
+  "consumers": []
+}

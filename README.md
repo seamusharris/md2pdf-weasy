@@ -73,6 +73,7 @@ Topic-based reference docs in [`docs/`](docs/):
 - **[Domain features](docs/domain-features.md)** — `tracked_rows`, `direction_markers`, `risk_tables`, verdict CSS classes
 - **[Fonts](docs/fonts.md)** — bundled families, licences, adding more
 - **[Distribution entitlement](docs/distribution-entitlement.md)** — Adobe-font environment/recipient matrix and fail-closed preflight
+- **[Downstream canary](docs/downstream-canary.md)** — guarded consumer-owned API, resource, theme, opt-out, and rollback coverage
 
 ## CLI
 
