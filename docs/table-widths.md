@@ -319,6 +319,11 @@ the [acceptance contract](#acceptance-contract):
 
 Overrides are keyed on the header name (case- and whitespace-insensitive).
 
+For documents upgrading from the tagged renderer, see the
+[v0.1.0 rendering migration guide](v0.1.0-migration.md). It distinguishes the
+narrow automatic-width opt-out from a full rollback and records the synthetic
+legacy/current comparison evidence.
+
 ## Notes and guards
 
 - Tables with **colspans**, **rowspans**, or ragged rows are left on auto layout

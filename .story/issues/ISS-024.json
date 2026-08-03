@@ -1,0 +1,16 @@
+{
+  "components": [
+    "autonomous"
+  ],
+  "discoveredDate": "2026-08-03",
+  "id": "ISS-024",
+  "impact": "Hermetic publication test mocks both atomic persistence and the terminal rename, so it cannot detect incorrect pending-to-success behavior. Exercise the real filesystem commit.",
+  "location": [],
+  "phase": null,
+  "relatedTickets": [],
+  "resolution": null,
+  "resolvedDate": null,
+  "severity": "high",
+  "status": "open",
+  "title": "[over-mocking] Hermetic publication test mocks both atomic persistence and the terminal rename,"
+}

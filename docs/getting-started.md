@@ -15,6 +15,10 @@ For a stable pinned version:
 pip install "md2pdf-weasy @ git+ssh://git@github.com/seamusharris/md2pdf-weasy.git@v0.1.0"
 ```
 
+If upgrading an existing v0.1.0 document, follow the
+[rendering migration guide](v0.1.0-migration.md) for the automatic table-width
+fallback, compatibility evidence, and accessibility-aware rollback guidance.
+
 Python 3.11–3.13 is supported. Python 3.14 is currently excluded because
 the validated macOS native stack can crash intermittently during
 Pango/Fontconfig teardown. WeasyPrint also needs Pango + Cairo on the
@@ -112,5 +116,6 @@ html = md_to_html(body, metadata)              # full HTML document string
 
 - [front-matter.md](front-matter.md) — every supported field
 - [tables.md](tables.md) — table layouts and column widths
+- [v0.1.0-migration.md](v0.1.0-migration.md) — rendering compatibility and rollback
 - [themes.md](themes.md) — the four bundled themes and how to add your own
 - [callouts.md](callouts.md) — blockquote callout keywords

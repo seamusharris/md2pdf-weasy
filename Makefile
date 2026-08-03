@@ -13,7 +13,7 @@
 PY := .venv/bin/python
 PIP := .venv/bin/pip
 
-.PHONY: setup test examples visual-acceptance visual-acceptance-prune clean
+.PHONY: setup test examples visual-acceptance visual-acceptance-prune compatibility-v0.1 compatibility-v0.1-verify compatibility-v0.1-concurrency compatibility-v0.1-prune clean
 
 setup:
 	python3 -m venv .venv
@@ -31,7 +31,20 @@ visual-acceptance:
 visual-acceptance-prune:
 	$(PY) tools/visual_acceptance.py prune --apply
 
+compatibility-v0.1:
+	$(PY) tools/compatibility_v010.py generate
+
+compatibility-v0.1-verify:
+	$(PY) tools/compatibility_v010.py verify $(CANDIDATE)
+
+compatibility-v0.1-concurrency:
+	MD2PDF_COMPAT_REAL=1 $(PY) -m pytest -q tests/test_compatibility.py -k two_real_generators
+
+compatibility-v0.1-prune:
+	$(PY) tools/compatibility_v010.py prune --apply
+
 clean:
 	rm -f examples/*/*.pdf
 	rm -rf .pytest_cache/ build/ *.egg-info pdf/__pycache__ tests/__pycache__ tools/__pycache__
 	$(PY) tools/visual_acceptance.py prune --apply
+	$(PY) tools/compatibility_v010.py prune --apply

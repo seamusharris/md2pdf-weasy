@@ -66,6 +66,7 @@ Topic-based reference docs in [`docs/`](docs/):
 - **[Front matter](docs/front-matter.md)** — every supported field, with types and examples
 - **[Themes](docs/themes.md)** — the four named themes + how to add your own (per-theme style guides in `examples/styleguides/`)
 - **[Tables](docs/tables.md)** — layouts, default widths registry, alignment, highlight modes, section dividers
+- **[v0.1.0 rendering migration](docs/v0.1.0-migration.md)** — compatibility evidence, table-width controls, and rollback warnings
 - **[Callouts](docs/callouts.md)** — blockquote callouts, keyword detection, custom keywords
 - **[Typography](docs/typography.md)** — ASCII → Unicode conversions, embedded page-break markers
 - **[Domain features](docs/domain-features.md)** — `tracked_rows`, `direction_markers`, `risk_tables`, verdict CSS classes
