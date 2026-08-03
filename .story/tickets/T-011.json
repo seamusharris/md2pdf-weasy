@@ -2,14 +2,20 @@
   "blockedBy": [
     "T-003"
   ],
-  "completedDate": null,
+  "claim": {
+    "branch": "feature/table-widths",
+    "since": "2026-08-03T10:37:01.575Z",
+    "user": "seamusharris@users.noreply.github.com"
+  },
+  "claimedBySession": "385ffb67-742f-4071-b90a-58dbb92ce6a6",
+  "completedDate": "2026-08-03",
   "createdDate": "2026-08-02",
   "description": "Inventory build_pdf, build_html, md_to_html, parse_front_matter, postprocess, both CLI entry points, and deprecated aliases as the supported surface. Confirm that the trailing optional build_pdf base_url parameter is source-compatible and decide intentionally whether build_html or the CLI should expose corresponding behavior. Document decisions without opportunistic API expansion.",
   "displayId": "T-011",
   "id": "T-011",
   "order": 10,
   "phase": "compatibility",
-  "status": "open",
+  "status": "complete",
   "title": "Ratify the public Python and CLI API",
   "type": "task"
 }

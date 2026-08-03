@@ -75,7 +75,7 @@ build_pdf("report.md", "report.pdf")
 build_html("report.md", "report.html")
 ```
 
-Both accept the same optional keyword arguments as the CLI flags:
+The output and stylesheet arguments correspond to the CLI options:
 
 ```python
 build_pdf(
@@ -85,6 +85,13 @@ build_pdf(
     base_style_path="style.css",     # base CSS (== --base-style; defaults to bundled)
 )
 ```
+
+`build_pdf` also has a trailing optional `base_url` parameter for resolving
+relative URLs during WeasyPrint rendering. It is deliberately not exposed by
+`build_html` or the CLI: saved HTML needs a separately designed `<base>`/asset
+contract, while a CLI flag would be a new command-line API. See the
+[public API and CLI contract](public-api.md) for exact signatures and failure
+behavior.
 
 If `output_path` is omitted it defaults to the input path with the
 extension swapped.

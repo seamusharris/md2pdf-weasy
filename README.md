@@ -63,6 +63,7 @@ python -m pdf input.md output.pdf
 Topic-based reference docs in [`docs/`](docs/):
 
 - **[Getting started](docs/getting-started.md)** — install, first render, what the pipeline does
+- **[Public API and CLI](docs/public-api.md)** — supported callables, signatures, entry points, and failure behavior
 - **[Front matter](docs/front-matter.md)** — every supported field, with types and examples
 - **[Themes](docs/themes.md)** — the four named themes + how to add your own (per-theme style guides in `examples/styleguides/`)
 - **[Tables](docs/tables.md)** — layouts, default widths registry, alignment, highlight modes, section dividers
@@ -110,4 +111,5 @@ build_pdf("input.md", "output.pdf", base_url="/absolute/source/directory/")
 ```
 
 See [docs/getting-started.md](docs/getting-started.md) for the lower-level
-API (parse front matter / convert to HTML / post-process / render).
+pipeline, and [docs/public-api.md](docs/public-api.md) for the ratified API and
+CLI compatibility contract.

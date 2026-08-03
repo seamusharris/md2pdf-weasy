@@ -8,6 +8,7 @@ landing page; this directory is for depth.
 | Doc | What it covers |
 |---|---|
 | [getting-started.md](getting-started.md) | Install, first render, the minimum viable document |
+| [public-api.md](public-api.md) | Supported Python callables and CLI entry points, including failure behavior |
 | [front-matter.md](front-matter.md) | Every supported front-matter field, with types and examples |
 | [themes.md](themes.md) | The four named themes (alpine, wnc, regrading, neutral) + compact; how to add your own |
 | [tables.md](tables.md) | Per-document table layouts, `tables_include`, default widths registry, alignment, highlight modes, section dividers |
