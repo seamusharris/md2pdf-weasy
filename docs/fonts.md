@@ -31,6 +31,19 @@ implications:
 - If a third party needs to use the renderer, point them at the OFL
   fonts only.
 
+The repository does not contain the governing Adobe EULA, acquisition record,
+or per-environment/per-recipient evidence. Distribution entitlement is therefore
+**not verified**, including for package artifacts, consumer canaries, CI/shared
+runners, private registries, and source transfers. Do not treat a private repo,
+a recipient's Adobe subscription, or Adobe's generic PDF-embedding guidance as
+authorization to transfer these font files.
+
+See [Proprietary distribution entitlement](distribution-entitlement.md) for the
+decision matrix, required evidence, consumer-owned procedure, current official
+Adobe guidance, and the fail-closed preflight. Changing the matrix to authorize
+any operation requires separate explicit approval; do not attach licence
+documents or font files to the repository.
+
 The OFL fonts (AntSerif, Montserrat, Open Sans) can be freely
 redistributed.
 

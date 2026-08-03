@@ -2,18 +2,13 @@
 
 ## Install
 
-For local dev (changes in `~/Repos/md2pdf-weasy/` take effect immediately
-in any project whose venv has installed it):
-
-```bash
-pip install -e ~/Repos/md2pdf-weasy
-```
-
-For a stable pinned version:
-
-```bash
-pip install "md2pdf-weasy @ git+ssh://git@github.com/seamusharris/md2pdf-weasy.git@v0.1.0"
-```
+The package bundles non-redistributable Adobe font software. Distribution
+entitlement for new package artifacts, environments, and recipients is currently
+not verified, so this guide does not prescribe a clone or install command. An
+existing owner may continue using an already-installed checkout only in its
+already-authorized local environment. Before any new install/package workflow,
+follow the [distribution entitlement decision](distribution-entitlement.md) and
+obtain separate explicit approval for the exact environment and recipient.
 
 If upgrading an existing v0.1.0 document, follow the
 [rendering migration guide](v0.1.0-migration.md) for the automatic table-width

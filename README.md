@@ -7,18 +7,18 @@ sans companion, plus AntSerif, Montserrat, Open Sans) and four named
 themes.
 
 **Private package** — bundled Adobe fonts (Minion Pro, Myriad Pro) are
-personal-use licensed; do not redistribute. The OFL fonts (AntSerif,
-Montserrat, Open Sans) can be redistributed freely.
+personal-use licensed; do not redistribute. Distribution entitlement for a
+package artifact, another environment, or any recipient is currently **not
+verified**; see the [distribution decision and preflight](docs/distribution-entitlement.md).
+The OFL fonts (AntSerif, Montserrat, Open Sans) can be redistributed freely.
 
 ## Install
 
-```bash
-# editable, for local dev
-pip install -e ~/Repos/md2pdf-weasy
-
-# pinned, for reproducibility
-pip install "md2pdf-weasy @ git+ssh://git@github.com/seamusharris/md2pdf-weasy.git@v0.1.0"
-```
+The existing owner may use an already-installed checkout only inside its
+already-authorized local environment. Do not clone, install, package, or send
+this font-bearing source tree to another environment or recipient on the
+strength of this README. The current entitlement preflight rejects those
+operations until separately approved evidence is recorded.
 
 Requires Python 3.11–3.13 and WeasyPrint's system libraries (Cairo +
 Pango). Python 3.14 is currently excluded because the validated macOS
@@ -72,6 +72,7 @@ Topic-based reference docs in [`docs/`](docs/):
 - **[Typography](docs/typography.md)** — ASCII → Unicode conversions, embedded page-break markers
 - **[Domain features](docs/domain-features.md)** — `tracked_rows`, `direction_markers`, `risk_tables`, verdict CSS classes
 - **[Fonts](docs/fonts.md)** — bundled families, licences, adding more
+- **[Distribution entitlement](docs/distribution-entitlement.md)** — Adobe-font environment/recipient matrix and fail-closed preflight
 
 ## CLI
 

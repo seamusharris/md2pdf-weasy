@@ -4,6 +4,7 @@
 #   make setup      # one-time: create .venv/ and install package + test deps
 #   make test       # run the pytest suite (~80 tests, ~2s)
 #   make examples   # render every examples/**/*.md to PDF beside the source
+#   make distribution-preflight  # check an exact environment/recipient tuple
 #   make clean      # delete generated PDFs, .pytest_cache/, build artefacts
 #
 # All targets use .venv/bin/python so you don't need to activate the venv.
@@ -13,7 +14,7 @@
 PY := .venv/bin/python
 PIP := .venv/bin/pip
 
-.PHONY: setup test examples visual-acceptance visual-acceptance-prune compatibility-v0.1 compatibility-v0.1-verify compatibility-v0.1-concurrency compatibility-v0.1-prune clean
+.PHONY: setup test examples distribution-preflight visual-acceptance visual-acceptance-prune compatibility-v0.1 compatibility-v0.1-verify compatibility-v0.1-concurrency compatibility-v0.1-prune clean
 
 setup:
 	python3 -m venv .venv
@@ -24,6 +25,12 @@ test:
 
 examples:
 	$(PY) tools/render-examples.py
+
+distribution-preflight:
+	$(PY) tools/distribution_entitlement.py \
+		--operation "$${MD2PDF_OPERATION:-}" \
+		--environment "$${MD2PDF_ENVIRONMENT:-}" \
+		--recipient "$${MD2PDF_RECIPIENT:-}"
 
 visual-acceptance:
 	$(PY) tools/visual_acceptance.py generate

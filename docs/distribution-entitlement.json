@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "decision": "not_verified",
+  "reviewed_on": "2026-08-03",
+  "proprietary_inventory": {
+    "file_count": 94,
+    "digest_algorithm": "sha256-lines-v1",
+    "digest": "6575f3fd2e10ca5675c8854e3a00b5c6f3f2642b01f6abab0d5ca6f6c7bf9896"
+  },
+  "evidence_policy": {
+    "storage": "references_only",
+    "forbidden_content": [
+      "license_documents",
+      "font_attachments",
+      "account_data"
+    ]
+  },
+  "evidence_gaps": [
+    "No governing EULA or acquisition-channel record is referenced.",
+    "No build-environment entitlement is referenced.",
+    "No recipient-specific matching licence is referenced.",
+    "No distribution approval is referenced."
+  ],
+  "guidance": [
+    {
+      "title": "Adobe font licensing",
+      "url": "https://helpx.adobe.com/fonts/using/font-licensing.html"
+    },
+    {
+      "title": "Adobe packaging font files",
+      "url": "https://helpx.adobe.com/fonts/using/package-font-files.html"
+    },
+    {
+      "title": "Adobe Fonts service product specific terms",
+      "url": "https://wwwimages2.adobe.com/content/dam/cc/en/legal/servicetou/Adobe-Fonts-Product-Specific-Terms-en_US-20240618.pdf"
+    }
+  ],
+  "authorizations": [
+    {
+      "operation": "package_artifact",
+      "environment": "owner_workstation",
+      "recipient": "owner",
+      "status": "not_verified",
+      "reason": "A package artifact contains the Adobe font files; the governing licence is not evidenced.",
+      "approver_ref": null,
+      "reviewed_on": null,
+      "expires_on": null,
+      "governing_license_ref": null,
+      "environment_evidence_refs": [],
+      "recipient_evidence_refs": []
+    },
+    {
+      "operation": "consumer_canary",
+      "environment": "consumer_owned",
+      "recipient": "named_consumer",
+      "status": "not_verified",
+      "reason": "Neither the consumer environment nor its matching font licence is evidenced.",
+      "approver_ref": null,
+      "reviewed_on": null,
+      "expires_on": null,
+      "governing_license_ref": null,
+      "environment_evidence_refs": [],
+      "recipient_evidence_refs": []
+    },
+    {
+      "operation": "ci_build",
+      "environment": "shared_ci",
+      "recipient": "ci_operators",
+      "status": "not_verified",
+      "reason": "No server or shared-runner entitlement is evidenced.",
+      "approver_ref": null,
+      "reviewed_on": null,
+      "expires_on": null,
+      "governing_license_ref": null,
+      "environment_evidence_refs": [],
+      "recipient_evidence_refs": []
+    },
+    {
+      "operation": "private_release",
+      "environment": "release_runner",
+      "recipient": "private_registry_users",
+      "status": "not_verified",
+      "reason": "A private registry still transfers font files to recipients whose licences are not evidenced.",
+      "approver_ref": null,
+      "reviewed_on": null,
+      "expires_on": null,
+      "governing_license_ref": null,
+      "environment_evidence_refs": [],
+      "recipient_evidence_refs": []
+    },
+    {
+      "operation": "public_release",
+      "environment": "release_runner",
+      "recipient": "public",
+      "status": "prohibited",
+      "reason": "The documented personal-use licence does not authorize public redistribution.",
+      "approver_ref": null,
+      "reviewed_on": null,
+      "expires_on": null,
+      "governing_license_ref": null,
+      "environment_evidence_refs": [],
+      "recipient_evidence_refs": []
+    },
+    {
+      "operation": "source_transfer",
+      "environment": "external_workstation",
+      "recipient": "external_recipient",
+      "status": "not_verified",
+      "reason": "The source tree contains Adobe font software and recipient entitlement is not evidenced.",
+      "approver_ref": null,
+      "reviewed_on": null,
+      "expires_on": null,
+      "governing_license_ref": null,
+      "environment_evidence_refs": [],
+      "recipient_evidence_refs": []
+    }
+  ]
+}
