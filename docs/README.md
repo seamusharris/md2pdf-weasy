@@ -19,6 +19,7 @@ landing page; this directory is for depth.
 | [fonts.md](fonts.md) | Bundled font families, licences, adding more |
 | [distribution-entitlement.md](distribution-entitlement.md) | Fail-closed Adobe-font distribution decision, evidence, and preflight |
 | [downstream-canary.md](downstream-canary.md) | Authorized consumer-owned canary coverage and sanitized result contract |
+| [integration-audit.md](integration-audit.md) | Immutable integration-candidate evidence, validation outcome, and local go/no-go decision |
 
 ## Conventions
 
