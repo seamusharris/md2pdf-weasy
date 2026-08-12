@@ -306,12 +306,25 @@ def _highlight_direction_rows(table_html):
             else:
                 css_class = f'highlight-{direction}'
 
-            # Replace or add class on <tr>
-            if 'class="' in row:
-                new_row = re.sub(r'class="[^"]*"', f'class="{css_class}"',
-                                 row, count=1)
-            else:
-                new_row = row.replace("<tr>", f'<tr class="{css_class}">', 1)
+            # Replace or add the class on the row itself. Cells commonly
+            # already carry alignment classes; searching the whole row for
+            # the first class attribute would colour that cell instead.
+            def set_row_class(opening_match):
+                attributes = opening_match.group(1)
+                if re.search(r'\bclass="[^"]*"', attributes):
+                    attributes = re.sub(
+                        r'\bclass="[^"]*"',
+                        f'class="{css_class}"',
+                        attributes,
+                        count=1,
+                    )
+                else:
+                    attributes += f' class="{css_class}"'
+                return f'<tr{attributes}>'
+
+            new_row = re.sub(
+                r'^<tr([^>]*)>', set_row_class, row, count=1,
+            )
 
             # Replace bold content with cleaned version
             new_row = new_row.replace(f"<strong>{inner}</strong>", clean, 1)
@@ -597,7 +610,12 @@ def apply_table_layouts(html, metadata):
 
         return table_html
 
-    return re.sub(r'<table>.*?</table>', process_table, html, flags=re.DOTALL)
+    return re.sub(
+        r'<table(?:\s[^>]*)?>.*?</table>',
+        process_table,
+        html,
+        flags=re.DOTALL,
+    )
 
 
 # =============================================================================
