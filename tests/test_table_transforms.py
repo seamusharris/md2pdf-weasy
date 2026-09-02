@@ -19,6 +19,7 @@ from pdf.table_transforms import (
     colour_results,
     colour_risk_cells,
     detect_table_section_rows,
+    generate_toc,
 )
 
 
@@ -41,6 +42,16 @@ def _contract_cols(html):
     colgroup = re.search(r"<colgroup>(.*?)</colgroup>", html, re.DOTALL)
     assert colgroup, "expected automatic width markup"
     return re.findall(r"<col(?:\s[^>]*)?>", colgroup.group(1))
+
+
+def test_toc_slug_unescapes_numeric_entities_before_normalising():
+    toc, html = generate_toc(
+        "<h2>Foundation, 1968&#45;1973</h2>", max_depth=2
+    )
+
+    assert 'id="foundation-1968-1973"' in html
+    assert 'href="#foundation-1968-1973"' in toc
+    assert "1968451973" not in html
 
 
 class TestColumnWidth:

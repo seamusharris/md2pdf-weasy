@@ -34,6 +34,8 @@ import re
 import sys
 import argparse
 from dataclasses import dataclass
+from pathlib import Path
+from urllib.parse import unquote, urlparse
 
 import yaml
 import markdown
@@ -256,6 +258,9 @@ def resolve_tables_include(metadata: dict, md_path: str | None = None) -> dict:
 
 _FENCE_RE = re.compile(r'(?ms)^([ \t]*)(`{3,}|~{3,})[^\n]*\n.*?^\1?\2[ \t]*$')
 _INLINE_CODE_RE = re.compile(r'(`+)[^\n]*?\1')
+_MARKDOWN_IMAGE_RE = re.compile(
+    r'!\[[^\]\n]*\]\([^\)\n]*\)(?:\{[^}\n]*\})?'
+)
 _LIST_MARKER_RE = re.compile(r'^[ \t]*(?:[-*+] |\d+\. )')
 # A "bold label" line: **Label:** value  or  **Label**: value. Generated
 # markdown emits runs of these on consecutive lines with no blank between
@@ -279,6 +284,10 @@ def _protect_code(md_content: str) -> tuple[str, list[str]]:
 
     md_content = _FENCE_RE.sub(_stash, md_content)
     md_content = _INLINE_CODE_RE.sub(_stash, md_content)
+    # Optional image titles use straight quotes as Markdown delimiters.
+    # Protect the complete token so typography cannot curl those delimiters
+    # before Python-Markdown parses the image and caption.
+    md_content = _MARKDOWN_IMAGE_RE.sub(_stash, md_content)
     return md_content, stash
 
 
@@ -488,9 +497,56 @@ def _prepare_render(md_path: str, style_path: str | None = None,
     return _PreparedRender(
         html=md_to_html(body, metadata),
         css="\n\n".join(css_parts),
-        html_base_url=base_url,
+        html_base_url=(
+            base_url
+            if base_url is not None
+            else str(Path(md_path).resolve().parent)
+        ),
         css_base_url=_STYLES_DIR + "/",
     )
+
+
+def _local_image_path(src: str, base_url: str | None) -> Path | None:
+    """Resolve a local image source, returning None for non-file URLs."""
+    source = urlparse(src)
+    if source.scheme in {"http", "https", "data"}:
+        return None
+    if source.scheme == "file":
+        return Path(unquote(source.path))
+    if source.scheme:
+        return None
+
+    source_path = Path(unquote(source.path))
+    if source_path.is_absolute():
+        return source_path
+    if base_url is None:
+        return None
+
+    base = urlparse(base_url)
+    if base.scheme == "file":
+        base_path = Path(unquote(base.path))
+    elif base.scheme:
+        return None
+    else:
+        base_path = Path(base_url)
+    return (base_path / source_path).resolve()
+
+
+def _validate_local_images(prepared: _PreparedRender) -> None:
+    """Fail before rendering when generated HTML references a missing file."""
+    missing = []
+    for match in re.finditer(
+        r'<img\b[^>]*\bsrc\s*=\s*(["\'])(.*?)\1',
+        prepared.html,
+        flags=re.DOTALL | re.IGNORECASE,
+    ):
+        src = _html.unescape(match.group(2))
+        local_path = _local_image_path(src, prepared.html_base_url)
+        if local_path is not None and not local_path.is_file():
+            missing.append(str(local_path))
+    if missing:
+        details = "\n".join(f"- {path}" for path in sorted(set(missing)))
+        raise FileNotFoundError(f"Markdown image file(s) not found:\n{details}")
 
 
 def _render_document(prepared: _PreparedRender):
@@ -524,6 +580,7 @@ def build_pdf(md_path: str, output_path: str | None = None, style_path: str | No
         base_style_path=base_style_path,
         base_url=base_url,
     )
+    _validate_local_images(prepared)
     _render_document(prepared).write_pdf(output_path, pdf_variant="pdf/ua-1")
 
     print(f"Created: {output_path}")

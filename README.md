@@ -70,6 +70,7 @@ Topic-based reference docs in [`docs/`](docs/):
 - **[v0.1.0 rendering migration](docs/v0.1.0-migration.md)** — compatibility evidence, table-width controls, and rollback warnings
 - **[Callouts](docs/callouts.md)** — blockquote callouts, keyword detection, custom keywords
 - **[Typography](docs/typography.md)** — ASCII → Unicode conversions, embedded page-break markers
+- **[Images and figures](docs/images.md)** — captions, full-width and full-page figures, two- and three-across layouts
 - **[Domain features](docs/domain-features.md)** — `tracked_rows`, `direction_markers`, `risk_tables`, verdict CSS classes
 - **[Fonts](docs/fonts.md)** — bundled families, licences, adding more
 - **[Distribution entitlement](docs/distribution-entitlement.md)** — Adobe-font environment/recipient matrix and fail-closed preflight
@@ -111,6 +112,11 @@ build_pdf("input.md", "output.pdf")
 # Resolve relative Markdown images/links from an explicit source directory
 build_pdf("input.md", "output.pdf", base_url="/absolute/source/directory/")
 ```
+
+Relative Markdown image paths resolve from the Markdown file's directory by
+default. Standalone images become captioned figures; see
+[Images and figures](docs/images.md) for full-width, full-page, and grid
+layouts.
 
 See [docs/getting-started.md](docs/getting-started.md) for the lower-level
 pipeline, and [docs/public-api.md](docs/public-api.md) for the ratified API and

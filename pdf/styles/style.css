@@ -818,6 +818,95 @@ img {
     height: auto;
 }
 
+figure.markdown-figure,
+figure.figure-wide,
+figure.figure-narrow,
+figure.figure-page {
+    margin: var(--space-lg) auto;
+    text-align: center;
+    break-inside: avoid;
+}
+
+figure.markdown-figure img,
+figure.figure-wide img,
+figure.figure-narrow img,
+figure.figure-page img {
+    display: block;
+    max-width: 100%;
+    max-height: 215mm;
+    margin: 0 auto;
+    object-fit: contain;
+}
+
+figure.figure-wide {
+    width: 100%;
+}
+
+figure.figure-narrow {
+    width: 66%;
+}
+
+figure.figure-page {
+    width: 100%;
+    min-height: 230mm;
+    break-before: page;
+    break-after: page;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+figure.figure-page img {
+    max-height: 215mm;
+}
+
+.figure-grid {
+    display: flex;
+    gap: 5mm;
+    align-items: flex-start;
+    margin: var(--space-lg) 0;
+    break-inside: avoid;
+}
+
+.figure-grid > figure {
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0;
+}
+
+.figure-grid-2 > figure {
+    width: calc(50% - 2.5mm);
+}
+
+.figure-grid-3 {
+    gap: 3mm;
+}
+
+.figure-grid-3 > figure {
+    width: calc(33.333% - 2mm);
+}
+
+.figure-grid img {
+    width: 100%;
+    max-height: 105mm;
+    object-fit: contain;
+}
+
+figcaption {
+    max-width: 145mm;
+    margin: var(--space-xs) auto 0;
+    font-family: "Minion Caption", "Minion Pro", "AntSerif", "Georgia", serif;
+    color: var(--color-muted);
+    font-size: 8pt;
+    line-height: 1.35;
+    font-style: italic;
+}
+
+.figure-grid figcaption {
+    max-width: none;
+    font-size: 7.5pt;
+}
+
 
 /* ── Inline / misc ────────────────────────────────────────────────────── */
 

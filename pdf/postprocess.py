@@ -20,6 +20,7 @@ Blockquote callout tiers (cool-to-warm):
     warning     — #d94040 red border, light pink background
 """
 
+import html as _html
 import re
 
 from pdf.blockquotes import (  # noqa: F401
@@ -103,7 +104,7 @@ def bind_headings(html):
     html = re.sub(
         r'(<h[2-4][^>]*>.*?</h[2-4]>)'    # heading
         r'(\s*)'                             # whitespace/newlines
-        r'(<(?:table|svg|div|p)\b)'          # opening tag name
+        r'(<(?:table|svg|figure|div|p)\b)'   # opening tag name
         r'([^>]*>)',                          # rest of opening tag
         add_break_avoid,
         html,
@@ -156,6 +157,61 @@ def convert_page_breaks(html):
         html,
     )
     return html
+
+
+# =============================================================================
+# IMAGE / FIGURE TRANSFORMS
+# =============================================================================
+
+_FIGURE_LAYOUT_CLASSES = {
+    "figure-wide",
+    "figure-narrow",
+    "figure-page",
+}
+
+
+def _html_attribute(tag: str, name: str) -> str | None:
+    """Return one quoted HTML attribute value, decoded for safe reuse."""
+    match = re.search(
+        rf"\b{re.escape(name)}\s*=\s*(?P<quote>[\"'])(?P<value>.*?)(?P=quote)",
+        tag,
+        flags=re.DOTALL | re.IGNORECASE,
+    )
+    if match is None:
+        return None
+    return _html.unescape(match.group("value"))
+
+
+def wrap_standalone_images(html: str) -> str:
+    """Turn standalone Markdown images into semantic captioned figures.
+
+    Python-Markdown emits a standalone image as ``<p><img ...></p>``. The
+    image's optional title becomes its visible caption, falling back to alt
+    text. Supported layout classes on the image are copied to the figure.
+    Inline images and author-supplied ``<figure>`` markup are left unchanged.
+    """
+
+    def figure(match: re.Match) -> str:
+        image = match.group("image")
+        alt = _html_attribute(image, "alt") or ""
+        title = _html_attribute(image, "title")
+        caption = title if title is not None else alt
+        classes = set((_html_attribute(image, "class") or "").split())
+        layout_classes = sorted(classes & _FIGURE_LAYOUT_CLASSES)
+        figure_classes = " ".join(["markdown-figure", *layout_classes])
+        caption_html = ""
+        if caption:
+            caption_html = (
+                f"<figcaption>{_html.escape(caption, quote=False)}</figcaption>"
+            )
+        return f'<figure class="{figure_classes}">{image}{caption_html}</figure>'
+
+    return re.sub(
+        r"<p>\s*(?P<image><img\b[^>]*>)\s*</p>",
+        figure,
+        html,
+        flags=re.DOTALL | re.IGNORECASE,
+    )
 
 
 # =============================================================================
@@ -216,6 +272,7 @@ def postprocess(html, metadata=None):
     risk_tables = metadata.get('risk_tables') if metadata else None
     html = colour_risk_cells(html, risk_tables=risk_tables)
     html = convert_page_breaks(html)
+    html = wrap_standalone_images(html)
     html = bind_headings(html)
 
     return html

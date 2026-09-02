@@ -2,7 +2,11 @@
 
 import re
 
-from pdf.postprocess import convert_page_breaks, postprocess
+from pdf.postprocess import (
+    convert_page_breaks,
+    postprocess,
+    wrap_standalone_images,
+)
 
 
 def test_postprocess_falsey_non_mapping_metadata_warns_and_continues(caplog):
@@ -79,6 +83,40 @@ def test_classification_matrix_postprocessing_is_repeat_safe():
     assert once.count('<colgroup>') == 1
     assert once.count('class="num"') == 2
     assert '<span> Team </span>' in once
+
+
+class TestStandaloneImages:
+    def test_title_becomes_caption_and_layout_moves_to_figure(self):
+        html = (
+            '<p><img alt="Team photograph" class="figure-wide" '
+            'src="images/team.jpg" title="Premiers &amp; officials"></p>'
+        )
+        result = wrap_standalone_images(html)
+
+        assert '<figure class="markdown-figure figure-wide">' in result
+        assert '<figcaption>Premiers &amp; officials</figcaption>' in result
+        assert 'alt="Team photograph"' in result
+
+    def test_alt_text_is_caption_fallback(self):
+        result = wrap_standalone_images(
+            '<p><img alt="1978 team" src="images/team.jpg"></p>'
+        )
+        assert '<figcaption>1978 team</figcaption>' in result
+
+    def test_inline_image_and_authored_figure_are_unchanged(self):
+        inline = '<p>Before <img alt="crest" src="crest.svg"> after</p>'
+        authored = (
+            '<figure class="figure-page"><img alt="Page" src="page.jpg">'
+            '<figcaption>Custom caption</figcaption></figure>'
+        )
+
+        assert wrap_standalone_images(inline) == inline
+        assert wrap_standalone_images(authored) == authored
+
+    def test_postprocessing_is_repeat_safe(self):
+        html = '<p><img alt="Team" src="team.jpg"></p>'
+        once = postprocess(html)
+        assert postprocess(once) == once
 
 
 class TestConvertPageBreaks:

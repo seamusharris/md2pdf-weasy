@@ -20,6 +20,11 @@ from pdf.render import (
 def test_build_pdf_forwards_html_base_url(tmp_path, monkeypatch):
     markdown = tmp_path / "source.md"
     output = tmp_path / "output.pdf"
+    (tmp_path / "diagrams").mkdir()
+    (tmp_path / "diagrams/example.svg").write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        encoding="utf-8",
+    )
     markdown.write_text("![diagram](diagrams/example.svg)\n", encoding="utf-8")
     captured = {}
 
@@ -59,6 +64,63 @@ def test_build_pdf_forwards_html_base_url(tmp_path, monkeypatch):
     assert captured["output_path"] == str(output)
     assert len(captured["stylesheets"]) == 1
     assert captured["pdf_variant"] == "pdf/ua-1"
+
+
+def test_build_pdf_defaults_image_base_to_markdown_directory(
+    tmp_path, monkeypatch,
+):
+    markdown = tmp_path / "source.md"
+    image = tmp_path / "team.jpg"
+    output = tmp_path / "output.pdf"
+    markdown.write_text("![Team](team.jpg)\n", encoding="utf-8")
+    image.write_bytes(b"fixture")
+    captured = {}
+
+    class FakeDocument:
+        def write_pdf(self, output_path, *, pdf_variant=None):
+            captured["output_path"] = output_path
+
+    def render(prepared):
+        captured["base_url"] = prepared.html_base_url
+        return FakeDocument()
+
+    monkeypatch.setattr("pdf.render._render_document", render)
+
+    from pdf.render import build_pdf
+
+    build_pdf(str(markdown), str(output))
+    assert captured["base_url"] == str(tmp_path.resolve())
+
+
+def test_build_pdf_rejects_missing_local_image(tmp_path, monkeypatch):
+    markdown = tmp_path / "source.md"
+    markdown.write_text("![Missing](missing.jpg)\n", encoding="utf-8")
+    monkeypatch.setattr(
+        "pdf.render._render_document",
+        lambda prepared: (_ for _ in ()).throw(AssertionError("rendered")),
+    )
+
+    from pdf.render import build_pdf
+
+    with pytest.raises(FileNotFoundError, match="missing.jpg"):
+        build_pdf(str(markdown), str(tmp_path / "output.pdf"))
+
+
+def test_markdown_enabled_two_up_grid_contains_two_captioned_figures():
+    source = '''<div class="figure-grid figure-grid-2" markdown="1">
+
+![First](one.jpg "First caption")
+
+![Second](two.jpg "Second caption")
+
+</div>'''
+
+    html = md_to_html(source, {})
+
+    assert '<div class="figure-grid figure-grid-2">' in html
+    assert html.count('<figure class="markdown-figure">') == 2
+    assert '<figcaption>First caption</figcaption>' in html
+    assert '<figcaption>Second caption</figcaption>' in html
 
 
 def test_build_pdf_public_signature_and_default_output_are_compatible(

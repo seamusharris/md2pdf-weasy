@@ -4,6 +4,7 @@ Alignment, highlighting, layout, coloring, section-row detection, and TOC
 generation. All transforms operate on HTML strings using regex.
 """
 
+import html as _html
 import math
 import os
 import re
@@ -1358,7 +1359,9 @@ def generate_toc(html, max_depth=3):
         level = int(match.group(2))
         if level > max_depth:
             continue
-        text = re.sub(r'<[^>]+>', '', match.group(4)).strip()
+        text = _html.unescape(
+            re.sub(r'<[^>]+>', '', match.group(4))
+        ).strip()
         headings.append((level, text, match))
 
     if not headings:

@@ -23,7 +23,9 @@ ratified surface.
 
 `base_url` is a trailing optional parameter, so calls written before it was
 added keep the meaning of every positional and keyword argument. When set, it
-is passed to WeasyPrint's HTML resolver for relative images and links:
+is passed to WeasyPrint's HTML resolver for relative images and links. When
+omitted, it defaults to the directory containing the Markdown source, so
+ordinary relative image paths work in both the API and CLI:
 
 ```python
 from pdf.render import build_pdf
@@ -38,8 +40,11 @@ build_pdf(
 This parameter is intentionally PDF-only. `build_html` saves markup instead of
 asking WeasyPrint to resolve it; corresponding behavior would require a new
 contract for `<base>` and copied assets. The CLI intentionally has no
-`--base-url` option. Use the Python API when explicit PDF resource resolution
-is required.
+`--base-url` option. Use the Python API when an explicit override is required.
+
+Before rendering, `build_pdf` validates every local `<img src>` resolved
+against that base and raises `FileNotFoundError` if any file is absent. Remote
+and data URLs are not treated as local files by this preflight.
 
 ## Failure and warning behavior
 
