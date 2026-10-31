@@ -980,17 +980,8 @@ def _lease(path: Path, *, blocking: bool = True, create_parent: bool = True):
 def _declared_layouts() -> dict[str, Any]:
     return {
         "ladder": {
+            "preset": "netball-ladder-v1",
             "css_class": "declared-ladder",
-            "columns": [
-                {"name": "Team", "width": 28, "align": "left"},
-                {"name": "P", "width": 6},
-                {"name": "W", "width": 6},
-                {"name": "L", "width": 6},
-                {"name": "D", "width": 6},
-                {"name": "GF", "width": 10},
-                {"name": "GA", "width": 10},
-                {"name": "%", "width": 12},
-            ],
         },
         "schedule": {
             "css_class": "declared-schedule",
@@ -1029,6 +1020,31 @@ def _case_source(case: AcceptanceCase, *, fixture: Path = SOURCE) -> str:
         metadata.pop("tables", None)
     front = yaml.safe_dump(metadata, default_flow_style=False, sort_keys=False)
     return f"---\n{front}---\n\n{body.rstrip()}\n"
+
+
+def _width_activation(html: str) -> dict[str, bool]:
+    """Record whether each stable fixture table received a colgroup.
+
+    Geometry alone cannot prove that the width engine ran: browser auto-layout
+    can coincidentally make paired columns equal.  Keep this source-level
+    witness beside the rendered measurements so the existing geometry checks
+    fail closed when a declared or automatic layout silently skips a table.
+    """
+    activation = {}
+    for table_id in (
+        "ladder-primary", "ladder-secondary", "schedule-morning",
+        "schedule-evening",
+    ):
+        table = re.search(
+            rf'<table\b(?=[^>]*\bid\s*=\s*(["\']){re.escape(table_id)}\1)'
+            r'[^>]*>.*?</table\s*>',
+            html,
+            flags=re.DOTALL | re.IGNORECASE,
+        )
+        activation[table_id] = bool(
+            table and re.search(r'<colgroup\b', table.group(0), re.IGNORECASE)
+        )
+    return activation
 
 
 def _walk_boxes(box) -> Iterable[Any]:
@@ -1118,6 +1134,7 @@ def check_measurements(measurements: dict[str, Any], case: AcceptanceCase
                        ) -> list[CheckResult]:
     pages = measurements["pages"]
     tables = measurements["tables"]
+    width_activation = measurements.get("width_activation", {})
     expected_ids = {
         "ladder-primary", "ladder-secondary", "schedule-morning",
         "schedule-evening", "summary-risk", "prose-table",
@@ -1239,27 +1256,47 @@ def check_measurements(measurements: dict[str, Any], case: AcceptanceCase
                 for value in selected[1:]
             )
         width_sharing_applicable = case.table_widths and case.page_width_em is None
+        activation_ok = (
+            not case.table_widths
+            or all(width_activation.get(table_id) for table_id in (left, right))
+        )
         if not width_sharing_applicable:
             # Legacy mode deliberately delegates content-based widths to
             # WeasyPrint. A custom narrow budget can also scale each table by
             # its own fixed-width total. Both remain visually covered but have
             # no cross-table shared-width invariant to assert.
-            equal = True
+            equal = activation_ok
+        else:
+            equal = equal and activation_ok
         results.append(_check(
             equal,
             f"shared-{prefix}-widths",
             (
-                f"{left} and {right} share rendered column widths"
+                f"{left} and {right} activated the width engine and share "
+                "rendered column widths"
                 if width_sharing_applicable
-                else "shared-width invariant is not applicable to this case"
+                else (
+                    "shared-width invariant is not applicable; expected width "
+                    "engine activation was still verified"
+                    if case.table_widths else
+                    "shared-width invariant and activation are disabled"
+                )
             ),
-            {left: a, right: b},
+            {
+                left: a,
+                right: b,
+                "activation": {
+                    left: bool(width_activation.get(left)),
+                    right: bool(width_activation.get(right)),
+                },
+            },
         ))
 
     declared_widths = first_widths("ladder-primary")
-    declared_expected = [
-        column["width"] for column in _declared_layouts()["ladder"]["columns"]
-    ]
+    # Frozen v1 contract. Keeping the requested weights independent of the
+    # rendered measurements makes catalog drift visible to this acceptance
+    # check rather than teaching the assertion to accept its own input.
+    declared_expected = [24, 6, 6, 6, 6, 8, 8, 10]
     declared_ok = True
     if case.declared:
         if len(declared_widths) != len(declared_expected):
@@ -1508,6 +1545,7 @@ def _worker(request_path: Path, result_path: Path) -> int:
     prepared = _prepare_render(source, base_url=source.parent.as_uri() + "/")
     document = _render_document(prepared)
     measurements = measure_document(document)
+    measurements["width_activation"] = _width_activation(prepared.html)
     checks = check_measurements(measurements, case)
     if any(check.status != "passed" for check in checks):
         failed = [check.check_id for check in checks if check.status != "passed"]
@@ -1708,6 +1746,7 @@ def _input_files() -> list[Path]:
         Path(__file__).resolve(),
         ROOT / "pyproject.toml",
         ROOT / "pdf" / "default_widths.yml",
+        ROOT / "pdf" / "table_presets.yml",
     ]
     paths.extend(sorted((ROOT / "pdf").glob("*.py")))
     paths.extend(sorted((ROOT / "pdf" / "styles").glob("*.css")))

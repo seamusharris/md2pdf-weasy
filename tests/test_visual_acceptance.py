@@ -63,7 +63,16 @@ def _passing_measurements(*, landscape=False):
             ],
         )],
     }
-    return {"pages": [page], "tables": ids}
+    return {
+        "pages": [page],
+        "tables": ids,
+        "width_activation": {
+            "ladder-primary": True,
+            "ladder-secondary": True,
+            "schedule-morning": True,
+            "schedule-evening": True,
+        },
+    }
 
 
 def _environment():
@@ -205,6 +214,7 @@ def test_declared_and_legacy_sources_apply_only_the_case_overlay():
     declared_source = visual._case_source(declared)
     legacy_source = visual._case_source(legacy)
     assert "declared-ladder" in declared_source
+    assert "preset: netball-ladder-v1" in declared_source
     assert "table_widths: false" in legacy_source
     assert "declared-ladder" not in legacy_source
 
@@ -281,6 +291,7 @@ def test_geometry_contract_accepts_independent_passing_measurements():
     ("boundaries", "column-boundaries"),
     ("shared-ladder", "shared-ladder-widths"),
     ("shared-schedule", "shared-schedule-widths"),
+    ("inactive-ladder", "shared-ladder-widths"),
     ("single", "single-line-sentinel"),
     ("wrap", "wrap-sentinels"),
 ])
@@ -305,6 +316,8 @@ def test_each_geometry_detector_has_an_independent_negative_witness(
     elif defect == "shared-schedule":
         for row in data["tables"]["schedule-evening"][0]["rows"]:
             row[2]["width"] += 3
+    elif defect == "inactive-ladder":
+        data["width_activation"]["ladder-secondary"] = False
     elif defect == "single":
         data["tables"]["prose-table"][0]["cells"][0]["lines"] = 2
     else:
@@ -316,6 +329,21 @@ def test_each_geometry_detector_has_an_independent_negative_witness(
     } == {failed_check}
 
 
+def test_width_activation_requires_colgroups_on_stable_fixture_tables():
+    html = """
+    <table id="ladder-primary"><colgroup></colgroup></table>
+    <table id='ladder-secondary'><tbody></tbody></table>
+    <table class="x" id="schedule-morning"><COLGROUP></COLGROUP></table>
+    <table id="schedule-evening"><colgroup></colgroup></table>
+    """
+    assert visual._width_activation(html) == {
+        "ladder-primary": True,
+        "ladder-secondary": False,
+        "schedule-morning": True,
+        "schedule-evening": True,
+    }
+
+
 def test_landscape_measurement_passes_landscape_case():
     case = visual.AcceptanceCase("landscape", "neutral", orientation="landscape")
     results = visual.check_measurements(_passing_measurements(landscape=True), case)
@@ -324,7 +352,7 @@ def test_landscape_measurement_passes_landscape_case():
 
 def test_declared_proportion_detector_accepts_and_rejects_independently():
     data = _passing_measurements()
-    widths = [28, 6, 6, 6, 6, 10, 10, 12]
+    widths = [24, 6, 6, 6, 6, 8, 8, 10]
     data["tables"]["ladder-primary"] = [_fragment(widths)]
     case = visual.AcceptanceCase("declared", "neutral", declared=True)
     passing = {r.check_id: r for r in visual.check_measurements(data, case)}
@@ -764,6 +792,8 @@ def test_source_identity_allowlist_contains_every_pdf_module():
     inputs = set(visual._input_files())
     assert set((visual.ROOT / "pdf").glob("*.py")) <= inputs
     assert visual.ROOT / "pyproject.toml" in inputs
+    assert visual.ROOT / "pdf" / "default_widths.yml" in inputs
+    assert visual.ROOT / "pdf" / "table_presets.yml" in inputs
 
 
 def test_render_input_snapshot_is_hash_verified_and_immutable(tmp_path, monkeypatch):

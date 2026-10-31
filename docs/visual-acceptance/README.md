@@ -6,9 +6,10 @@ under the ignored `output/pdf/visual-acceptance/candidates/` tree. Only an
 explicitly reviewed candidate's manifest and contact sheets are promoted here.
 
 The fixture is wholly synthetic. It covers ladders, schedules, summaries,
-prose and long-token wrapping, declared layouts, the legacy opt-out, portrait
-and landscape stress cases, and every bundled theme (`alpine`, `wnc`,
-`regrading`, `neutral`, and `compact`).
+prose and long-token wrapping, the versioned netball-ladder preset alongside a
+declared schedule layout, the legacy opt-out, portrait and landscape stress
+cases, and every bundled theme (`alpine`, `wnc`, `regrading`, `neutral`, and
+`compact`).
 
 ## Canonical environment
 
