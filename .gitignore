@@ -15,11 +15,6 @@ dist/
 output/pdf/visual-acceptance/
 output/pdf/compatibility-v0.1/
 
-# Storybloq runtime artefacts (project ledger remains tracked)
-.story/snapshots/
-.story/sessions/
-.story/status.json
-
 # Visual-review example PDFs (regenerated via `make examples`)
 examples/**/*.pdf
 
