@@ -201,6 +201,24 @@ class TestApplyTableLayouts:
         result = apply_table_layouts(html, metadata)
         assert '<colgroup>' not in result
 
+    def test_direction_markers_are_processed_on_preclassified_tables(self):
+        html = (
+            '<table class="ladder-table">'
+            '<tbody><tr><td class="num">1</td>'
+            '<td><strong>{up}{mod}▲ Possums</strong></td></tr>'
+            '</tbody></table>'
+        )
+
+        result = apply_table_layouts(
+            html,
+            {'direction_markers': True, 'tables': {}},
+        )
+
+        assert '<table class="ladder-table">' in result
+        assert '<tr class="highlight-mod-up">' in result
+        assert '{up}' not in result
+        assert '{mod}' not in result
+
 
 class TestAlignTableColumns:
     """Numeric-only columns get auto-right-aligned."""
