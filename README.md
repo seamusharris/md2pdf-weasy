@@ -12,6 +12,14 @@ commercial font software: use the repository only on machines covered by an
 appropriate Adobe licence, and do not publish or share the font files. The OFL
 fonts (AntSerif, Montserrat, and Open Sans) can be redistributed freely.
 
+## Current release
+
+Version 0.3.0 adds versioned exact-header table presets, strengthens automatic
+table-width validation and fallback behavior, and preserves the existing Python
+and command-line interfaces. This remains a private package; it is not intended
+for publication to a public package registry while it contains the Adobe font
+files.
+
 ## Install
 
 Clone the private repository onto an owner-controlled, appropriately licensed
