@@ -1122,3 +1122,146 @@ class TestDocLevelWidths:
         # The team width appears at least 3× (Home, Away, summary Team).
         team_w = home[4]  # Home column
         assert result.count(f'width:{team_w}') >= 3
+
+
+class TestTableWidthCorrectness:
+    @staticmethod
+    def _row_header_table():
+        return (
+            '<table><caption>Results</caption><thead><tr>'
+            '<th id="team" scope="col">Team</th><th scope="col">W</th>'
+            '<th scope="col">GD</th></tr></thead><tbody data-group="ladder">'
+            '<tr><th id="row-one" scope="row">River Kites</th>'
+            '<td headers="row-one">12</td><td>−293</td></tr></tbody></table>'
+        )
+
+    @pytest.mark.parametrize('explicit_tbody', [True, False])
+    def test_row_headers_participate_without_losing_semantics(self, explicit_tbody):
+        html = self._row_header_table()
+        if not explicit_tbody:
+            html = html.replace('<tbody data-group="ladder">', '').replace('</tbody>', '')
+        equivalent = html.replace(
+            '<th id="row-one" scope="row">River Kites</th>',
+            '<td id="row-one">River Kites</td>',
+        )
+
+        result = apply_default_table_widths(html)
+
+        assert _contract_cols(result) == _contract_cols(apply_default_table_widths(equivalent))
+        assert '<th id="row-one" scope="row">River Kites</th>' in result
+        assert 'headers="row-one"' in result
+        assert result.index('<caption>') < result.index('<colgroup>')
+        assert apply_default_table_widths(result) == result
+
+    def test_declared_layout_accepts_row_headers_and_wins(self):
+        result = apply_table_layouts(self._row_header_table(), {'tables': {'ladder': {
+            'columns': [{'name': 'Team', 'width': 60},
+                        {'name': 'W', 'width': 20}, {'name': 'GD', 'width': 20}],
+        }}})
+        assert 'width:60.0%' in result
+        assert '<th id="row-one" scope="row">River Kites</th>' in result
+        assert apply_default_table_widths(result) == result
+
+    def test_row_headers_do_not_shift_numeric_alignment(self):
+        result = align_table_columns(self._row_header_table())
+        assert '<td headers="row-one" class="num">12</td>' in result
+        assert '<td class="num">−293</td>' in result
+        assert '<th id="row-one" scope="row">River Kites</th>' in result
+
+    @pytest.mark.parametrize('header', ['For &amp; Against', 'For &#38; Against'])
+    def test_decoded_headers_match_exact_width_overrides(self, header):
+        html = _contract_table([header], [['20']])
+        result = apply_default_table_widths(html, {'columns': {'For & Against': '12em'}})
+        assert _contract_cols(result) == ['<col style="width:12em">']
+        assert header in result
+
+    def test_declared_matching_uses_decoded_collapsed_headers(self):
+        html = _contract_table(['<em>For &amp; Against</em>'], [['20']])
+        result = apply_table_layouts(html, {'tables': {'goals': {
+            'columns': [{'name': '  For & Against  ', 'width': 1}],
+        }}})
+        assert 'width:100.0%' in result
+        assert '<em>For &amp; Against</em>' in result
+
+    def test_encoded_names_have_the_same_natural_measurement(self):
+        encoded = _contract_table(['Team'], [['River &amp; District Kites']])
+        literal = _contract_table(['Team'], [['River & District Kites']])
+        assert _contract_cols(apply_default_table_widths(encoded)) == \
+            _contract_cols(apply_default_table_widths(literal))
+
+    def test_html_line_breaks_do_not_join_numeric_tokens(self):
+        assert _classify_column('Value', ['1<br>2']) != 'stat'
+
+    @pytest.mark.parametrize('cell', [
+        '&lt;Northern District United&gt;',
+        '&amp;#49;',
+    ])
+    def test_visible_escaped_text_is_decoded_exactly_once(self, cell):
+        assert _classify_column('Team', [cell]) not in {'stat', 'num'}
+
+    def test_visible_angle_bracket_header_survives_matching_and_overrides(self):
+        html = _contract_table(['&lt;Club&gt;'], [['River Kites']])
+        automatic = apply_default_table_widths(
+            html, {'columns': {'<Club>': '12em'}})
+        declared = apply_table_layouts(html, {'tables': {'club': {
+            'columns': [{'name': '<Club>', 'width': 1}],
+        }}})
+        assert _contract_cols(automatic) == ['<col style="width:12em">']
+        assert 'width:100.0%' in declared
+        assert '&lt;Club&gt;' in declared
+
+    @pytest.mark.parametrize('minus', ['−', '&#8722;', '&minus;'])
+    def test_unicode_minus_keeps_numeric_types_and_grouping(self, minus):
+        assert _classify_column('GD', ['+176', f'{minus}293']) == 'stat'
+        assert _classify_column('Change', [f'{minus}12.5%']) == 'pct'
+        html = _contract_table(['W', 'GD'], [['12', f'{minus}293']])
+        columns = _contract_cols(apply_default_table_widths(html))
+        assert columns[0] == columns[1]
+
+    def test_impossible_budget_preserves_usable_wide_minimum(self, caplog):
+        from pdf.table_transforms import _MIN_WIDE_EM, _analyze_table_for_widths, _fit_table_widths
+
+        html = _contract_table(['Pinned', 'Team'], [['x', 'Warrandyte Wallabies']])
+        analysis = _analyze_table_for_widths(html, {'pinned': 54})
+        fit = _fit_table_widths(analysis, {}, 54.8)
+        assert fit.outcome == 'unresolved_overflow'
+        assert fit.wide_em[1] == pytest.approx(_MIN_WIDE_EM)
+        assert fit.emitted_total_em > 54.8
+        with caplog.at_level('INFO', logger='pdf.table_transforms'):
+            result = apply_default_table_widths(html, {'columns': {'Pinned': 54}})
+        assert 'class="fit"' not in result
+        assert 'unresolved overflow' in caplog.text
+        assert 'minimum usable automatic widths' in caplog.text
+        assert 'automatic wide columns were scaled to fit' not in caplog.text
+
+    def test_mixed_short_and_long_columns_respect_minima(self):
+        from pdf.table_transforms import _MIN_WIDE_EM, _fit_table_widths
+
+        analysis = {'headers': ['Notes', 'Venue', 'Day'], 'types': ['text'] * 3,
+                    'explicit': {}, 'group_rung': {}, 'nat': {0: 20, 1: 10, 2: 2}}
+        fit = _fit_table_widths(analysis, {}, 9)
+        assert fit.outcome == 'scaled'
+        assert fit.wide_em[0] >= _MIN_WIDE_EM
+        assert fit.wide_em[1] >= _MIN_WIDE_EM
+        assert fit.wide_em[2] == 2
+        assert fit.emitted_total_em <= 9
+
+    @pytest.mark.parametrize('invalid', [None, [], {'columns': None}, {'columns': [None]},
+        {'columns': [{'width': 10}]}, {'columns': [{'name': 12}]},
+        *[{'columns': [{'name': 'Team', 'width': value}]}
+          for value in [-1, 0, '12em', True, float('inf'), float('nan')]],
+        {'columns': [{'name': 'Team', 'align': 'sideways'}]},
+    ])
+    def test_invalid_declared_layout_does_not_discard_valid_sibling(self, invalid, caplog):
+        html = _contract_table(['Team'], [['River Kites']])
+        valid = {'columns': [{'name': 'Team', 'width': 1}]}
+        result = apply_table_layouts(html, {'tables': {'invalid': invalid, 'valid': valid}})
+        assert 'width:100.0%' in result
+        assert 'invalid columns or relative widths' in caplog.text
+
+    def test_large_declared_relative_weights_do_not_overflow(self):
+        html = _contract_table(['Team', 'W'], [['River Kites', '12']])
+        result = apply_table_layouts(html, {'tables': {'ladder': {'columns': [
+            {'name': 'Team', 'width': 1e308}, {'name': 'W', 'width': 1e308},
+        ]}}})
+        assert result.count('width:50.0%') == 2

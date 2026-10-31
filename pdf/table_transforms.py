@@ -8,6 +8,7 @@ import html as _html
 import math
 import os
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal, ROUND_DOWN
 
@@ -31,15 +32,25 @@ _DEFAULT_WIDTHS_PATH = os.path.join(
 )
 
 
-def _normalise_header(text):
-    """Normalise a header for registry lookup: strip tags, collapse whitespace,
-    lowercase. Keeps ``Team``, ``team``, and ``Team `` interchangeable.
+def _semantic_text(text):
+    """Decode visible HTML text without changing the original output markup.
 
-    Self-contained (no _strip_tags) so it is safe to call at module load from
-    _load_default_widths, before the helpers section is defined.
+    Explicit line breaks are whitespace, not a way to join adjacent tokens.
+    Decode entities after removing tags so escaped angle brackets stay text.
     """
-    text = re.sub(r'<[^>]+>', '', str(text))
-    return re.sub(r'\s+', ' ', text).strip().lower()
+    text = re.sub(r'<br\b[^>]*>', '\n', str(text), flags=re.IGNORECASE)
+    return _html.unescape(re.sub(r'<[^>]+>', '', text)).strip()
+
+
+def _normalise_header(text):
+    """Normalise already-visible header text for registry lookup.
+
+    HTML extraction and entity decoding happen exactly once in
+    ``_extract_headers``. Keeping normalization text-only is important for
+    visible values such as ``<Club>`` and ``&#49;``: treating those values as
+    markup or decoding them a second time changes their meaning.
+    """
+    return re.sub(r'\s+', ' ', str(text)).strip().lower()
 
 
 def _load_default_widths():
@@ -73,8 +84,8 @@ def _column_width(col):
 # =============================================================================
 
 def _strip_tags(text):
-    """Remove HTML tags to get plain text content."""
-    return re.sub(r"<[^>]+>", "", text).strip()
+    """Return the decoded visible text (compatibility name for callers)."""
+    return _semantic_text(text)
 
 
 def _add_class_token(tag, token):
@@ -100,11 +111,11 @@ def _has_class_token(tag, token):
 
 def _is_numeric(text):
     """Check if text content is numeric (possibly with signs, decimals, %, en-dashes, fractions, W-L-D)."""
-    clean = _strip_tags(text).strip()
+    clean = str(text).strip()
     if not clean or clean == "-" or clean == "\u2014":
         return True  # empty, dash, or em-dash counts as numeric-compatible
     # Standard numbers: 42, +5, -3, 1.5, 100%, 1,234
-    if re.match(r"^[+-]?\d[\d,.]*%?$", clean):
+    if re.match(r"^[+\-−]?\d[\d,.]*%?$", clean):
         return True
     # En-dash ranges: 5\u20133, used for digit ranges
     if re.match(r"^\d+\u2013\d+$", clean):
@@ -120,7 +131,7 @@ def _is_numeric(text):
 
 def _is_short_text(text):
     """Check if text is a short centred value (1-3 chars, like H/A, W/L)."""
-    clean = _strip_tags(text).strip()
+    clean = str(text).strip()
     return len(clean) <= 3 and clean != ""
 
 
@@ -129,7 +140,7 @@ def _is_short_text(text):
 # cells qualify. Kept narrow so a column only lands on a specialised type when
 # the whole column really is that type.
 
-_PCT_RE = re.compile(r"^[+-]?\d+(?:\.\d+)?\s*%$")
+_PCT_RE = re.compile(r"^[+\-−]?\d+(?:\.\d+)?\s*%$")
 _TIME_RE = re.compile(r"^\d{1,2}:\d{2}(?:\s*[ap]\.?m\.?)?$", re.IGNORECASE)
 _SCORE_RE = re.compile(
     r"^[WLD]?\s*[+\-−]?\d+\s*[-–—]\s*[+\-−]?\d+$"  # 45-38, 45–38
@@ -151,19 +162,19 @@ _DATE_RE = re.compile(
 
 
 def _is_percentage(text):
-    return bool(_PCT_RE.match(_strip_tags(text).strip()))
+    return bool(_PCT_RE.match(str(text).strip()))
 
 
 def _is_time_like(text):
-    return bool(_TIME_RE.match(_strip_tags(text).strip()))
+    return bool(_TIME_RE.match(str(text).strip()))
 
 
 def _is_score_like(text):
-    return bool(_SCORE_RE.match(_strip_tags(text).strip()))
+    return bool(_SCORE_RE.match(str(text).strip()))
 
 
 def _is_date_like(text):
-    return bool(_DATE_RE.match(_strip_tags(text).strip()))
+    return bool(_DATE_RE.match(str(text).strip()))
 
 
 # =============================================================================
@@ -225,8 +236,10 @@ def align_table_columns(html):
         # Analyse columns from data rows
         col_cells = {}
         for row_html in rows:
-            cells = re.findall(r"<td[^>]*>(.*?)</td>", row_html, re.DOTALL)
-            for i, cell in enumerate(cells):
+            if not re.search(r'<td\b', row_html):
+                continue
+            cells = re.findall(r"<(t[dh])\b[^>]*>(.*?)</\1>", row_html, re.DOTALL)
+            for i, (_tag, cell) in enumerate(cells):
                 col_cells.setdefault(i, []).append(cell)
 
         if not col_cells:
@@ -241,11 +254,12 @@ def align_table_columns(html):
             if not cells:
                 continue
 
-            non_empty = [c for c in cells if _strip_tags(c).strip() and _strip_tags(c).strip() != "-"]
+            visible_cells = [_strip_tags(c).strip() for c in cells]
+            non_empty = [c for c in visible_cells if c and c != "-"]
             if not non_empty:
                 continue
 
-            if all(_is_numeric(c) for c in cells):
+            if all(_is_numeric(c) for c in visible_cells):
                 if i == 0 and all(_is_short_text(c) for c in non_empty):
                     col_class[i] = "ctr"
                 else:
@@ -264,12 +278,14 @@ def align_table_columns(html):
             def replace_td(td_match):
                 idx = cell_index[0]
                 cell_index[0] += 1
+                if td_match.group(1) == 'th':
+                    return td_match.group(0)
                 cls = col_class.get(idx)
                 if cls:
                     return _add_class_token(td_match.group(0), cls)
                 return td_match.group(0)
 
-            return re.sub(r"<td[^>]*>", replace_td, row_html)
+            return re.sub(r"<(t[dh])\b[^>]*>", replace_td, row_html)
 
         result = re.sub(r"<tr[^>]*>(?=.*?<td).*?</tr>", add_cell_classes, table_html, flags=re.DOTALL)
         return result
@@ -583,6 +599,31 @@ def _insert_colgroup(table_html, colgroup):
     return table_html[:insertion] + '\n' + colgroup + table_html[insertion:]
 
 
+def _valid_layout_columns(layout):
+    """Whether one declared layout can safely emit relative-width CSS."""
+    if not isinstance(layout, Mapping):
+        return False
+    columns = layout.get('columns')
+    if not isinstance(columns, (list, tuple)) or not columns:
+        return False
+    for column in columns:
+        if not isinstance(column, Mapping):
+            return False
+        if not isinstance(column.get('name'), str) or not _normalise_header(column['name']):
+            return False
+        width = _column_width(column)
+        if isinstance(width, bool) or not isinstance(width, (int, float)):
+            return False
+        try:
+            if not math.isfinite(width) or width <= 0:
+                return False
+        except OverflowError:
+            return False
+        if column.get('align', '') not in ('', 'left', 'right', 'center'):
+            return False
+    return True
+
+
 def _match_layout(header_texts, table_layouts):
     """Find a matching layout definition for a table's headers.
 
@@ -591,13 +632,19 @@ def _match_layout(header_texts, table_layouts):
     """
     if not table_layouts or not header_texts:
         return None, None
+    if not isinstance(table_layouts, Mapping):
+        _log.warning("table layouts: expected a mapping; skipping declared layouts")
+        return None, None
 
-    normalised = [h.lower() for h in header_texts]
+    normalised = [_normalise_header(h) for h in header_texts]
     for layout_name, layout in table_layouts.items():
+        if not _valid_layout_columns(layout):
+            _log.warning("table layout: invalid columns or relative widths; skipping layout")
+            continue
         columns = layout.get('columns', [])
         if len(columns) != len(normalised):
             continue
-        if all(c.get('name', '').lower() == h for c, h in zip(columns, normalised)):
+        if all(_normalise_header(c['name']) == h for c, h in zip(columns, normalised)):
             return layout_name, layout
 
     return None, None
@@ -613,11 +660,15 @@ def _build_colgroup(columns):
     Includes CSS class names on <col> elements for per-column CSS targeting.
     """
     widths = [_column_width(c) for c in columns]
-    total = sum(widths) or 1
+    # Scale before summing so individually finite relative weights cannot
+    # overflow their denominator and silently turn every percentage into zero.
+    largest = max(widths)
+    scaled = [width / largest for width in widths]
+    total = math.fsum(scaled)
     parts = ['<colgroup>']
-    for c, w in zip(columns, widths):
+    for c, w in zip(columns, scaled):
         pct = round(w / total * 100, 1)
-        cls = f'col-{c["name"].lower().replace(" ", "-")}'
+        cls = _html.escape(f'col-{_normalise_header(c["name"]).replace(" ", "-")}', quote=True)
         style = f'width:{pct}%'
         align = c.get('align', '')
         if align:
@@ -771,15 +822,25 @@ def _table_body_rows(table_html):
     """
     bodies = re.findall(r'<tbody\b[^>]*>(.*?)</tbody\s*>', table_html,
                         flags=re.DOTALL | re.IGNORECASE)
-    areas = bodies or [table_html]
+    # A row header is a body cell, not a column-header row. Exclude the actual
+    # thead/tfoot sections when markup has no explicit tbody.
+    areas = bodies or [re.sub(
+        r'<(?:thead|tfoot)\b[^>]*>.*?</(?:thead|tfoot)\s*>', '', table_html,
+        flags=re.DOTALL | re.IGNORECASE,
+    )]
     rows = []
     for area in areas:
         for row in re.findall(r'<tr\b[^>]*>(.*?)</tr\s*>', area,
                               flags=re.DOTALL | re.IGNORECASE):
-            if re.search(r'<th\b', row, flags=re.IGNORECASE):
+            if not re.search(r'<td\b', row, flags=re.IGNORECASE) and not re.search(
+                r'<th\b[^>]*\bscope\s*=\s*[\"\']row(?:group)?[\"\']', row,
+                flags=re.IGNORECASE,
+            ):
                 continue
-            rows.append(re.findall(r'<td\b[^>]*>(.*?)</td\s*>', row,
-                                   flags=re.DOTALL | re.IGNORECASE))
+            rows.append([cell[1] for cell in re.findall(
+                r'<(t[dh])\b[^>]*>(.*?)</\1\s*>', row,
+                flags=re.DOTALL | re.IGNORECASE,
+            )])
     return rows
 
 
@@ -823,7 +884,7 @@ def _analyze_table_structure(table_html):
 # Every column is classified from its CONTENT into a semantic type; token types
 # get an absolute width from a shared em ladder (so the same kind of column is
 # the same width in every table and document), while flex types (names, prose)
-# are left width-less to absorb the remainder. Widths resolve PER TYPE-GROUP, so
+# receive document-wide natural widths. Widths resolve PER TYPE-GROUP, so
 # e.g. GF/GA/Pts in a ladder all share one width. All the em numbers were
 # measured against the bundled Minion Caption 9pt / Myriad 8.5pt fonts — see the
 # `project_table_width_redesign` memory.
@@ -832,6 +893,10 @@ _CELL_OVERHEAD_EM = 1.16          # 2×0.55em padding + 0.06em border (border-bo
 _SAFETY_EM = 0.3                  # comfort margin so content near a rung edge
                                   # (e.g. "9:00 AM" breaking at its space) gets
                                   # the next rung instead of wrapping
+# Keep at least two em of usable text when shrinking an automatic wide column.
+# Short natural columns retain their smaller, already sufficient width. Exact
+# author widths remain authoritative and are not silently enlarged.
+_MIN_WIDE_EM = _CELL_OVERHEAD_EM + _SAFETY_EM + 2.0
 _HEADER_EM_SCALE = 8.5 / 9.0      # headers render at 8.5pt inside a 9pt table
 _LADDER_EM = [2.5, 3.0, 3.5, 4.5, 5.5, 7.0, 9.0]   # → CSS classes w1..w7
 
@@ -907,7 +972,7 @@ def _classify_column(header, cells):
     tie-break hint). All non-empty cells must qualify for a specialised type."""
     vals = [_strip_tags(c).strip() for c in cells]
     vals = [v for v in vals if v]
-    hdr = _strip_tags(header).strip()
+    hdr = str(header).strip()
 
     if not vals:                       # empty column — guess from the header
         return 'label' if len(hdr) <= 12 else 'text'
@@ -1145,23 +1210,38 @@ def _width_sum(values):
 
 
 def _scale_wide_em(wide_em, fixed_em, natural_total, page_em):
-    """Reduce automatic wide columns and quantize to their emitted precision."""
-    wide_total = _width_sum(wide_em.values())
+    """Reduce wide columns without sacrificing their minimum usable width.
+
+    If even the minima cannot fit, preserve those minima and let the caller
+    report unresolved overflow instead of claiming a successful zero-width fit.
+    """
+    minimum = {i: min(width, _MIN_WIDE_EM) for i, width in wide_em.items()}
+    available = page_em - fixed_em
+    minimum_total = _width_sum(minimum.values())
+    if available <= minimum_total:
+        return {i: _wide_em_for_css(width) for i, width in minimum.items()}
+
     deficit = natural_total - page_em
     w_min = min(wide_em.values())
-    excess = _width_sum(width - w_min for width in wide_em.values())
+    reducible = {
+        i: width - max(w_min, minimum[i]) for i, width in wide_em.items()
+    }
+    excess = _width_sum(reducible.values())
     if excess > deficit:
         for i in wide_em:
-            wide_em[i] -= deficit * (wide_em[i] - w_min) / excess
+            wide_em[i] -= deficit * reducible[i] / excess
     else:
-        factor = (
-            max((page_em - fixed_em) / wide_total, 0.0)
-            if fixed_em <= page_em else 0.1
-        )
-        for i in wide_em:
-            wide_em[i] *= factor
+        # Once the widest columns have given up their excess, distribute the
+        # remaining space above the per-column floors proportionally.
+        capacity = _width_sum(wide_em[i] - minimum[i] for i in wide_em)
+        factor = (available - minimum_total) / capacity
+        wide_em = {
+            i: minimum[i] + (width - minimum[i]) * factor
+            for i, width in wide_em.items()
+        }
     return {
-        i: _wide_em_for_css(width, round_down=True)
+        i: max(_wide_em_for_css(minimum[i]),
+               _wide_em_for_css(width, round_down=True))
         for i, width in wide_em.items()
     }
 
@@ -1306,14 +1386,22 @@ def apply_default_table_widths(html, metadata=None):
     # portrait budget; it is not actionable for landscape or custom budgets.
     is_landscape = str(metadata.get('orientation', '')).lower() == 'landscape'
     if overwide:
-        unresolved = sum(
-            fit.emitted_total_em > page_em for fit in overwide
+        unresolved = sum(fit.outcome == 'unresolved_overflow' for fit in overwide)
+        fixed_overflow = sum(
+            fit.emitted_total_em - _width_sum(fit.wide_em.values()) > page_em
+            for fit in overwide
         )
-        outcome_note = (
-            f"; fixed columns remain wider than the budget in {unresolved} "
-            "table(s)" if unresolved else
-            "; automatic wide columns were scaled to fit"
-        )
+        outcome_note = "; automatic wide columns were scaled to fit"
+        if unresolved:
+            outcome_note = (
+                f"; unresolved overflow in {unresolved} table(s): fixed columns "
+                "plus minimum usable automatic widths exceed the budget"
+            )
+            if fixed_overflow:
+                outcome_note += (
+                    f"; fixed columns remain wider than the budget in "
+                    f"{fixed_overflow} table(s)"
+                )
         advice = ""
         if not is_landscape and 'page_width_em' not in metadata:
             advice = (
