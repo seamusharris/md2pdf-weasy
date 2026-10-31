@@ -637,7 +637,7 @@ class TestTypedColumnWidths:
 
 
 class TestClassificationAndOverrideContract:
-    """Observable regression matrix for T-007's accepted width behavior."""
+    """Observable regression matrix for supported width behavior."""
 
     def test_all_semantic_types_emit_their_documented_width_families(self):
         headers = ["S", "N", "P", "T", "D", "R", "L", "Name", "Notes"]

@@ -17,7 +17,7 @@ The existing top-level `pdf` package also exports utilities such as
 `resolve_tables_include`, `get_style_path`, `check_font`, `DEFAULT_STYLE`, and
 `classify_marker_rows`. They remain available for compatibility, but are
 advanced implementation utilities rather than part of the five-callable
-ratified surface.
+supported surface.
 
 ### `build_pdf` and `base_url`
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reproducible visual PDF acceptance evidence for T-009.
+"""Reproducible visual PDF acceptance evidence.
 
 The ordinary test suite exercises the small, deterministic helpers in this
 module.  ``generate`` is the explicit, slower acceptance command: it renders a

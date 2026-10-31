@@ -1,4 +1,4 @@
-"""Compatibility contracts for the ratified Python and CLI surface."""
+"""Compatibility contracts for the supported Python and CLI surface."""
 
 from __future__ import annotations
 

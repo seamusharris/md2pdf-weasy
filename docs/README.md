@@ -18,10 +18,6 @@ landing page; this directory is for depth.
 | [images.md](images.md) | Captioned figures, full-width and full-page images, two- and three-across layouts |
 | [domain-features.md](domain-features.md) | `tracked_rows`, `direction_markers`, `risk_tables`, verdict CSS classes |
 | [fonts.md](fonts.md) | Bundled font families, licences, adding more |
-| [distribution-entitlement.md](distribution-entitlement.md) | Fail-closed Adobe-font distribution decision, evidence, and preflight |
-| [downstream-canary.md](downstream-canary.md) | Authorized consumer-owned canary coverage and sanitized result contract |
-| [integration-audit.md](integration-audit.md) | Immutable integration-candidate evidence, validation outcome, and local go/no-go decision |
-| [local-packaging-gates.md](local-packaging-gates.md) | Artifact-free clean-install and packaging-gate decision and rerun conditions |
 
 ## Conventions
 

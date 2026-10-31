@@ -32,27 +32,22 @@ team columns (`Team`/`Home`/`Away`) share one width. Every column is fixed, so a
 table **sizes to its content** instead of stretching one column to fill the
 page. The result: the same kind of column is the same width in every table.
 
-## Acceptance contract
+## Behavior contract
 
-This section is the normative contract for the automatic-width pass. Later
-correctness work is accepted against these rules; where an implementation gap
-exists, the rule here is the intended behaviour.
+This section describes the supported behavior of the automatic-width pass.
 
 ### Implementation status
 
-The core classification, grouping, declared-layout/colgroup precedence, basic
-em fitting, portrait/landscape budgets, and document-wide identities are
-implemented. The remaining gaps are intentionally visible rather than blurred
-into the current behaviour:
+The following behavior is implemented and covered by regression tests:
 
-| Area | Current revision | Contract work |
-|---|---|---|
-| Invalid controls | Type and semantic validation share one non-mutating normalizer. Invalid parsed or direct-call values warn and use the documented fallback. | Implemented by T-004 |
-| Exact widths | Numeric and em-string values are normalized, emitted, and fitted from one exact em value. Boundary totals, mixed columns, orientation budgets, and fixed-only overflow are covered. | Implemented by T-005 / ISS-003 |
-| Structural preservation | One shared guard leaves empty, spanning, ragged, and existing-colgroup tables alone across declared and automatic layouts. Captions stay first, all body groups participate in analysis, semantic attributes are preserved, and repeat passes are idempotent. | Implemented by T-006 |
-| Classification and overrides | All semantic types, mixed/empty/long content, normalized headers and identities, precedence, opt-outs, and repeat processing are covered at the emitted-HTML contract. | Implemented by T-007 |
-| Font metrics | Directly required fontTools reads the packaged body/header fonts with closed resources and cached results. Missing or unreadable resources warn before using deterministic estimates; distribution tests cover every shipped style and referenced font. | Implemented by T-008 |
-| Visual PDF evidence | A wholly synthetic nine-case matrix covers every bundled theme plus declared, legacy, portrait-stress, and landscape variants. Deterministic geometry, wrapping, orientation, tagged-PDF, content-order, raster, manifest, promotion, and retention checks accompany full-page human review. | Implemented by T-009; see [visual acceptance evidence](visual-acceptance/README.md) |
+| Area | Supported behavior |
+|---|---|
+| Invalid controls | Type and semantic validation share one non-mutating normalizer. Invalid parsed or direct-call values warn and use the documented fallback. |
+| Exact widths | Numeric and em-string values are normalized, emitted, and fitted from one exact em value. Boundary totals, mixed columns, orientation budgets, and fixed-only overflow are covered. |
+| Structural preservation | One shared guard leaves empty, spanning, ragged, and existing-colgroup tables alone across declared and automatic layouts. Captions stay first, all body groups participate in analysis, semantic attributes are preserved, and repeat passes are idempotent. |
+| Classification and overrides | All semantic types, mixed/empty/long content, normalized headers and identities, precedence, opt-outs, and repeat processing are covered at the emitted-HTML contract. |
+| Font metrics | Directly required fontTools reads the packaged body/header fonts with closed resources and cached results. Missing or unreadable resources warn before using deterministic estimates; package tests cover every shipped style and referenced font. |
+| Visual PDF evidence | A wholly synthetic nine-case matrix covers every bundled theme plus declared, opt-out, portrait-stress, and landscape variants. Deterministic geometry, wrapping, orientation, tagged-PDF, content-order, raster, manifest, promotion, and retention checks accompany full-page human review. See [visual acceptance evidence](visual-acceptance/README.md). |
 
 ### Activation and precedence
 
@@ -293,7 +288,7 @@ physical PDF page size.
 ## Quick configuration recipes
 
 Nothing is required for good defaults. These recipes use the valid forms from
-the [acceptance contract](#acceptance-contract):
+the [behavior contract](#behavior-contract):
 
 - **Disable for a document** — front matter `table_widths: false`, or the
   case-insensitive string alias `off`, `none`, or `legacy`.
@@ -325,10 +320,9 @@ the [acceptance contract](#acceptance-contract):
 
 Overrides are keyed on the header name (case- and whitespace-insensitive).
 
-For documents upgrading from the tagged renderer, see the
-[v0.1.0 rendering migration guide](v0.1.0-migration.md). It distinguishes the
-narrow automatic-width opt-out from a full rollback and records the synthetic
-legacy/current comparison evidence.
+For an existing document that should retain content-based table sizing, use the
+narrow `table_widths: false` opt-out rather than reverting unrelated renderer
+improvements.
 
 ## Notes and guards
 

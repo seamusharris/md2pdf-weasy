@@ -48,8 +48,8 @@ Slashes, backslashes, and `..` are rejected for safety; only bare names.
 
 ## Tables
 
-The table-width rows below state the ratified contract and current accepted
-inputs. Parsed front matter and direct rendering calls use the same
+The table-width rows below state the supported behavior and accepted inputs.
+Parsed front matter and direct rendering calls use the same
 non-mutating normalizer; invalid controls warn and use the documented fallback.
 
 | Field | Type | Default | Description |

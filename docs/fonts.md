@@ -1,15 +1,15 @@
 # Bundled fonts
 
-The package ships with five font families: two commercial Adobe fonts
-(personal-use licensed), one Anthropic OFL font as fallback, and two
+The package ships with five font families: two commercial Adobe fonts,
+one Anthropic OFL font as fallback, and two
 Google OFL fonts used by the `wnc` theme.
 
 ## What's bundled
 
 | Family | Files | Licence | Used by |
 |---|---|---|---|
-| **Minion Pro** | 64 OTF | Adobe, personal-use only | Bundled body default + alpine theme |
-| **Myriad Pro** | 30 OTF | Adobe, personal-use only | Bundled heading/UI default + alpine theme |
+| **Minion Pro** | 64 OTF | Adobe commercial licence required | Bundled body default + alpine theme |
+| **Myriad Pro** | 30 OTF | Adobe commercial licence required | Bundled heading/UI default + alpine theme |
 | **AntSerif** | 4 TTF | OFL | Fallback serif, available to any theme |
 | **Montserrat** | 2 variable TTF | OFL | `wnc` theme headings |
 | **Open Sans** | 2 variable TTF | OFL | `wnc` theme body |
@@ -22,27 +22,18 @@ fallbacks.
 
 ## Licensing — read this
 
-The Adobe Minion Pro and Myriad Pro fonts are licensed for personal use
-by the package owner. They **must not be redistributed**. Practical
-implications:
+The Adobe Minion Pro and Myriad Pro files are commercial font software used in
+this private, owner-controlled project. They **must not be published or shared**.
+Practical implications:
 
 - The `md2pdf-weasy` GitHub repo is private and must stay private.
 - Don't ship the package to PyPI without removing Minion/Myriad first.
-- If a third party needs to use the renderer, point them at the OFL
-  fonts only.
-
-The repository does not contain the governing Adobe EULA, acquisition record,
-or per-environment/per-recipient evidence. Distribution entitlement is therefore
-**not verified**, including for package artifacts, consumer canaries, CI/shared
-runners, private registries, and source transfers. Do not treat a private repo,
-a recipient's Adobe subscription, or Adobe's generic PDF-embedding guidance as
-authorization to transfer these font files.
-
-See [Proprietary distribution entitlement](distribution-entitlement.md) for the
-decision matrix, required evidence, consumer-owned procedure, current official
-Adobe guidance, and the fail-closed preflight. Changing the matrix to authorize
-any operation requires separate explicit approval; do not attach licence
-documents or font files to the repository.
+- Install or clone the repository only on owner-controlled machines covered by
+  an appropriate Adobe licence.
+- If another person needs the renderer, provide a build that uses only the OFL
+  fonts unless their licence separately permits receiving the Adobe font files.
+- Review the applicable Adobe terms before changing how the repository or font
+  files are stored, transferred, or deployed.
 
 The OFL fonts (AntSerif, Montserrat, Open Sans) can be freely
 redistributed.

@@ -1,4 +1,4 @@
-"""Deterministic contracts for the T-009 visual-acceptance workflow."""
+"""Deterministic contracts for the visual-acceptance workflow."""
 
 from __future__ import annotations
 
