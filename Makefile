@@ -14,7 +14,7 @@
 PY := .venv/bin/python
 PIP := .venv/bin/pip
 
-.PHONY: setup test examples distribution-preflight visual-acceptance visual-acceptance-prune compatibility-v0.1 compatibility-v0.1-verify compatibility-v0.1-concurrency compatibility-v0.1-prune clean
+.PHONY: setup test examples distribution-preflight local-packaging-gates visual-acceptance visual-acceptance-prune compatibility-v0.1 compatibility-v0.1-verify compatibility-v0.1-concurrency compatibility-v0.1-prune clean
 
 setup:
 	python3 -m venv .venv
@@ -31,6 +31,9 @@ distribution-preflight:
 		--operation "$${MD2PDF_OPERATION:-}" \
 		--environment "$${MD2PDF_ENVIRONMENT:-}" \
 		--recipient "$${MD2PDF_RECIPIENT:-}"
+
+local-packaging-gates:
+	@$(PY) -m tools.local_packaging_gate --root .
 
 visual-acceptance:
 	$(PY) tools/visual_acceptance.py generate

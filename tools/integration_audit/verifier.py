@@ -29,6 +29,20 @@ def verify_downstream(root: Path, *, record_path: str = DEFAULT_RECORD_PATH) -> 
         return _verify_downstream_under_lease(git, record_path=record_path)
 
 
+def verify_downstream_with_lease(
+    root: Path,
+    lease: RepositoryLease,
+    *,
+    record_path: str = DEFAULT_RECORD_PATH,
+) -> str:
+    """Verify evidence while a caller owns the shared integration lease."""
+
+    git = GitRunner(root)
+    if not lease.held or lease.path != lease_path(git):
+        raise AuditError("lease unavailable", "integration lease ownership is invalid")
+    return _verify_downstream_under_lease(git, record_path=record_path)
+
+
 def _verify_downstream_under_lease(git: GitRunner, *, record_path: str) -> str:
     initial = capture_snapshot(git)
     head = initial.head

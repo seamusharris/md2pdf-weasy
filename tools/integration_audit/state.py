@@ -62,8 +62,17 @@ class RepositoryLease:
             raise AuditError("lease unavailable", "lease path must be absolute")
         self.path = path
         self._fd: int | None = None
+        self._held = False
+
+    @property
+    def held(self) -> bool:
+        """Return whether this instance currently owns the lease descriptor."""
+
+        return self._held and self._fd is not None
 
     def __enter__(self) -> "RepositoryLease":
+        if self._fd is not None or self._held:
+            raise AuditError("lease unavailable", "lease instance is already active")
         flags = os.O_CREAT | os.O_RDWR | getattr(os, "O_NOFOLLOW", 0)
         parent_fd: int | None = None
         primary: BaseException | None = None
@@ -85,6 +94,7 @@ class RepositoryLease:
             ):
                 raise AuditError("lease unavailable", "lease target is unsafe")
             fcntl.flock(self._fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self._held = True
         except AuditError as exc:
             primary = exc
         except BlockingIOError as exc:
@@ -95,35 +105,73 @@ class RepositoryLease:
                 "lease unavailable", "shared repository lease could not be acquired",
             )
             primary.__cause__ = exc
+        except BaseException as exc:
+            # Cancellation and other non-Exception failures must still close
+            # any descriptors opened before flock completed. Re-raise the
+            # original failure after bounded cleanup.
+            primary = exc
 
         parent_close_error = _close_descriptor(parent_fd)
         if primary is not None or parent_close_error is not None:
             lease_close_error = _close_descriptor(self._fd)
             self._fd = None
+            self._held = False
             cleanup_error = parent_close_error or lease_close_error
             if cleanup_error is not None:
-                raise AuditError(
+                failure = AuditError(
                     "cleanup failed", "repository lease descriptors may remain open",
                     residue=True,
-                ) from (primary or cleanup_error)
+                )
+                failure.__cause__ = cleanup_error
+                if primary is not None:
+                    primary.add_note(str(failure))
+                    raise primary
+                raise failure
             if primary is not None:
                 raise primary
         return self
 
-    def __exit__(self, _kind, _value, _traceback) -> None:
+    def __exit__(self, _kind, value, _traceback) -> None:
         if self._fd is not None:
             cleanup_error: OSError | None = None
+            release_primary: BaseException | None = None
             try:
                 fcntl.flock(self._fd, fcntl.LOCK_UN)
             except OSError as exc:
                 cleanup_error = exc
+            except BaseException as exc:
+                # Always close the descriptor below: closing it is also the
+                # final lock-release backstop when cancellation interrupts the
+                # explicit unlock call.
+                release_primary = exc
             close_error = _close_descriptor(self._fd)
             self._fd = None
+            self._held = False
             cleanup_error = cleanup_error or close_error
+            if release_primary is not None:
+                if cleanup_error is not None:
+                    release_primary.add_note(str(AuditError(
+                        "cleanup failed",
+                        "repository lease descriptor may remain open",
+                        residue=True,
+                    )))
+                if value is not None:
+                    value.add_note("repository lease release was interrupted")
+                    return None
+                raise release_primary
             if cleanup_error is not None:
-                raise AuditError(
+                failure = AuditError(
                     "cleanup failed", "repository lease could not be released", residue=True,
-                ) from cleanup_error
+                )
+                failure.__cause__ = cleanup_error
+                if value is not None:
+                    # Preserve the operation's primary failure. Python would
+                    # otherwise replace it with this cleanup exception, hiding
+                    # the actual gate/output error. The note still records the
+                    # uncertain lease cleanup for diagnostics and tests.
+                    value.add_note(str(failure))
+                    return None
+                raise failure
 
 
 def _close_descriptor(descriptor: int | None) -> OSError | None:

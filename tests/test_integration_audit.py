@@ -534,21 +534,97 @@ def test_repository_lease_is_nonblocking(tmp_path: Path) -> None:
     assert worker.exitcode == 0
 
 
+def test_repository_lease_rejects_reentering_one_instance(tmp_path: Path) -> None:
+    lease = state.RepositoryLease(tmp_path / "audit.lock")
+    with lease:
+        assert lease.held
+        with pytest.raises(model.AuditError, match="already active"):
+            lease.__enter__()
+    assert not lease.held
+
+
+def test_repository_lease_cleans_up_interrupted_acquisition(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lease = state.RepositoryLease(tmp_path / "audit.lock")
+    real_close = state._close_descriptor
+    closed: list[int] = []
+
+    def tracked_close(descriptor: int | None) -> OSError | None:
+        if descriptor is not None:
+            closed.append(descriptor)
+        return real_close(descriptor)
+
+    monkeypatch.setattr(state, "_close_descriptor", tracked_close)
+    monkeypatch.setattr(
+        state.fcntl,
+        "flock",
+        lambda *_args: (_ for _ in ()).throw(KeyboardInterrupt()),
+    )
+    with pytest.raises(KeyboardInterrupt):
+        lease.__enter__()
+    assert not lease.held
+    assert len(closed) == 2
+
+
 def test_repository_lease_release_failure_is_bounded(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     lease = state.RepositoryLease(tmp_path / "audit.lock")
     lease.__enter__()
-    real_close = state.os.close
+    real_close = state._close_descriptor
 
-    def close_then_fail(descriptor: int) -> None:
-        real_close(descriptor)
-        raise OSError("injected close failure")
+    def close_then_fail(descriptor: int | None) -> OSError:
+        assert real_close(descriptor) is None
+        return OSError("injected close failure")
 
-    monkeypatch.setattr(state.os, "close", close_then_fail)
+    monkeypatch.setattr(state, "_close_descriptor", close_then_fail)
     with pytest.raises(model.AuditError, match="could not be released") as caught:
         lease.__exit__(None, None, None)
     assert caught.value.residue
+
+
+def test_repository_lease_cleanup_does_not_mask_primary_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    real_close = state._close_descriptor
+
+    def close_then_fail(descriptor: int | None) -> OSError:
+        assert real_close(descriptor) is None
+        return OSError("injected close failure")
+
+    primary = model.AuditError("output failed", "primary gate failure")
+    with pytest.raises(model.AuditError, match="primary gate failure") as caught:
+        with state.RepositoryLease(tmp_path / "audit.lock"):
+            monkeypatch.setattr(state, "_close_descriptor", close_then_fail)
+            raise primary
+    assert caught.value is primary
+    assert any("cleanup residue may remain" in note for note in primary.__notes__)
+
+
+def test_repository_lease_closes_descriptor_when_release_is_interrupted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lease = state.RepositoryLease(tmp_path / "audit.lock")
+    lease.__enter__()
+    real_close = state._close_descriptor
+    closed: list[int] = []
+
+    def tracked_close(descriptor: int | None) -> OSError | None:
+        if descriptor is not None:
+            closed.append(descriptor)
+        return real_close(descriptor)
+
+    monkeypatch.setattr(state, "_close_descriptor", tracked_close)
+    monkeypatch.setattr(
+        state.fcntl,
+        "flock",
+        lambda *_args: (_ for _ in ()).throw(KeyboardInterrupt()),
+    )
+    with pytest.raises(KeyboardInterrupt):
+        lease.__exit__(None, None, None)
+    assert not lease.held
+    assert len(closed) == 1
 
 
 def test_linked_worktrees_share_one_repository_lease(tmp_path: Path) -> None:
@@ -1062,6 +1138,30 @@ def test_downstream_verification_holds_repository_lease(tmp_path: Path) -> None:
     with state.RepositoryLease(state.lease_path(runner)):
         with pytest.raises(model.AuditError, match="another integration gate"):
             verifier.verify_downstream(repo)
+
+
+def test_downstream_lease_aware_verifier_requires_owned_matching_lease(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "repo"
+    _repo(repo)
+    runner = git_commands.GitRunner(repo)
+    lease = state.RepositoryLease(state.lease_path(runner))
+    with pytest.raises(model.AuditError, match="lease ownership is invalid"):
+        verifier.verify_downstream_with_lease(repo, lease)
+
+    with lease:
+        with pytest.raises(model.AuditError, match="branch and activation refs"):
+            verifier.verify_downstream_with_lease(repo, lease)
+
+
+def test_downstream_lease_aware_verifier_rejects_foreign_lease(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    _repo(repo)
+    foreign = state.RepositoryLease(tmp_path / "foreign.lock")
+    with foreign:
+        with pytest.raises(model.AuditError, match="lease ownership is invalid"):
+            verifier.verify_downstream_with_lease(repo, foreign)
 
 
 def test_cli_contracts_candidate_commands_decisions_and_residue(
