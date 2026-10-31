@@ -317,6 +317,12 @@ the [acceptance contract](#acceptance-contract):
   [tables.md](tables.md)) still take precedence over the automatic pass, for
   cases needing explicit per-column widths, alignment, or a CSS class.
 
+- **Reuse a versioned ladder layout** — `tables: {ladder: {preset:
+  netball-ladder-v1}}` selects the bundled exact `Team | P | W | L | D | GF |
+  GA | %` shape. This expands into a declared percentage layout; its widths
+  are relative weights, not the automatic pass's em values. See
+  [named table presets](tables.md#named-table-presets).
+
 Overrides are keyed on the header name (case- and whitespace-insensitive).
 
 For documents upgrading from the tagged renderer, see the

@@ -1,0 +1,14 @@
+# Versioned, exact-header table layouts. Existing preset IDs are immutable.
+schema_version: 1
+presets:
+  netball-ladder-v1:
+    css_class: netball-ladder
+    columns:
+      - {name: Team, width: 24, align: left}
+      - {name: P, width: 6, align: right}
+      - {name: W, width: 6, align: right}
+      - {name: L, width: 6, align: right}
+      - {name: D, width: 6, align: right}
+      - {name: GF, width: 8, align: right}
+      - {name: GA, width: 8, align: right}
+      - {name: "%", width: 10, align: right}

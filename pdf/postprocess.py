@@ -21,8 +21,10 @@ Blockquote callout tiers (cool-to-warm):
 """
 
 import html as _html
+import logging
 import re
 
+from pdf.table_presets import expand_table_presets
 from pdf.blockquotes import (  # noqa: F401
     split_merged_blockquotes,
     classify_blockquotes,
@@ -229,6 +231,9 @@ def postprocess(html, metadata=None):
                   highlighting).
     """
     metadata = _validated_width_metadata(metadata)
+    metadata, preset_warnings = expand_table_presets(metadata)
+    for warning in preset_warnings:
+        logging.getLogger(__name__).warning("%s", warning)
 
     # General-purpose transforms (always run)
     html = split_merged_blockquotes(html)

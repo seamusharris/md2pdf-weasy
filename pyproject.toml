@@ -43,7 +43,7 @@ include = ["pdf*"]
 exclude = ["tests*", "docs*"]
 
 [tool.setuptools.package-data]
-pdf = ["fonts/*.ttf", "fonts/*.otf", "styles/*.css", "default_widths.yml"]
+pdf = ["fonts/*.ttf", "fonts/*.otf", "styles/*.css", "default_widths.yml", "table_presets.yml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
