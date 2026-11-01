@@ -14,11 +14,12 @@ fonts (AntSerif, Montserrat, and Open Sans) can be redistributed freely.
 
 ## Current release
 
-Version 0.3.0 adds versioned exact-header table presets, strengthens automatic
-table-width validation and fallback behavior, and preserves the existing Python
-and command-line interfaces. This remains a private package; it is not intended
-for publication to a public package registry while it contains the Adobe font
-files.
+Version 0.3.1 supports Python 3.14 by requiring WeasyPrint 70 or newer, which
+contains the upstream fix for a Fontconfig lifetime bug that strongly matches
+the earlier intermittent teardown crashes. It includes all table-width and
+preset work from 0.3.0 and preserves the existing Python and command-line
+interfaces. This remains a private package; it is not intended for publication
+to a public package registry while it contains the Adobe font files.
 
 ## Install
 
@@ -26,10 +27,11 @@ Clone the private repository onto an owner-controlled, appropriately licensed
 machine, then use the development setup below. Do not publish this package to
 PyPI or another public registry while it contains the Adobe font files.
 
-Requires Python 3.11–3.13 and WeasyPrint's system libraries (Cairo +
-Pango). Python 3.14 is currently excluded because the validated macOS
-native stack can crash intermittently during Pango/Fontconfig teardown.
-On macOS: `brew install pango`.
+Requires Python 3.11–3.14, WeasyPrint 70+, and WeasyPrint's system libraries
+(Cairo + Pango). Pango 1.54 or newer is supported for repeated rendering; older
+Pango versions can leak Fontconfig state with WeasyPrint 70. On macOS:
+`brew install pango`. See [Python and native compatibility](docs/python-compatibility.md)
+for the tested stack, historical failure evidence, and support boundary.
 
 ## Development
 

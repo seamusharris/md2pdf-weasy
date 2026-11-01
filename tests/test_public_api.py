@@ -20,6 +20,14 @@ def _parameters(function):
     return list(inspect.signature(function).parameters)
 
 
+def test_declared_python_and_weasyprint_support_boundary():
+    project = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))[
+        "project"
+    ]
+    assert project["requires-python"] == ">=3.11,<3.15"
+    assert "weasyprint>=70" in project["dependencies"]
+
+
 def test_public_callable_signatures_and_reexports_are_stable():
     assert _parameters(render.build_pdf) == [
         "md_path", "output_path", "style_path", "base_style_path", "base_url",

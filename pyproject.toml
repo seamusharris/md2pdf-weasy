@@ -4,22 +4,27 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "md2pdf-weasy"
-version = "0.3.0"
+version = "0.3.1"
 description = "Markdown to PDF via WeasyPrint with YAML front-matter control"
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.11,<3.15"
 license = { text = "Proprietary" }
 authors = [{ name = "Jimmy Harris" }]
 classifiers = [
     "Private :: Do Not Upload",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Text Processing :: Markup :: Markdown",
     "Topic :: Printing",
 ]
 dependencies = [
-    # style.css uses table:has(colgroup) and leader()/target-counter, which
-    # need a reasonably modern WeasyPrint.
-    "weasyprint>=60",
+    # WeasyPrint 63.1-69 can double-release Fontconfig state with Pango 1.54+,
+    # causing intermittent native crashes during garbage collection or exit.
+    # Version 70 contains the upstream lifetime fix.
+    "weasyprint>=70",
     "markdown>=3.4",
     "pymdown-extensions>=10.0",
     "pyyaml>=6.0",

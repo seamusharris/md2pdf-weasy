@@ -6,10 +6,11 @@ The package bundles commercial Adobe font software. Keep the repository private,
 use it only on owner-controlled machines covered by an appropriate Adobe
 licence, and do not publish or share the bundled Adobe font files.
 
-Python 3.11–3.13 is supported. Python 3.14 is currently excluded because
-the validated macOS native stack can crash intermittently during
-Pango/Fontconfig teardown. WeasyPrint also needs Pango + Cairo on the
-system. On macOS: `brew install pango`.
+Python 3.11–3.14 is supported with WeasyPrint 70 or newer. WeasyPrint also
+needs Pango + Cairo on the system; Pango 1.54 or newer is supported for repeated
+rendering. On macOS: `brew install pango`. See
+[Python and native compatibility](python-compatibility.md) for the distinction
+between supported ranges and the exact stack recorded during release testing.
 
 ## First render
 
