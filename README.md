@@ -14,12 +14,14 @@ fonts (AntSerif, Montserrat, and Open Sans) can be redistributed freely.
 
 ## Current release
 
-Version 0.3.1 supports Python 3.14 by requiring WeasyPrint 70 or newer, which
-contains the upstream fix for a Fontconfig lifetime bug that strongly matches
-the earlier intermittent teardown crashes. It includes all table-width and
-preset work from 0.3.0 and preserves the existing Python and command-line
-interfaces. This remains a private package; it is not intended for publication
-to a public package registry while it contains the Adobe font files.
+Version 0.4.0 adds privacy-conscious per-table diagnostics, opt-in strict
+layout validation, and an explicit resource context for consistent include,
+image, theme, stylesheet and nested-resource resolution. Existing defaults and
+the legacy Python and command-line interfaces remain unchanged. It supports
+Python 3.11–3.14 with WeasyPrint 70 or newer, including the upstream Fontconfig
+lifetime fix introduced for Python 3.14 compatibility. This remains a private
+package; it is not intended for publication to a public package registry while
+it contains the Adobe font files.
 
 ## Install
 

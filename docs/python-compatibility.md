@@ -2,7 +2,7 @@
 
 ## Supported range
 
-md2pdf-weasy 0.3.1 supports:
+md2pdf-weasy 0.4.0 supports:
 
 - Python `>=3.11,<3.15`;
 - WeasyPrint `>=70`;
@@ -52,6 +52,55 @@ No process-wide `FontConfiguration` cache, render lock, forced native cleanup,
 retry, or abnormal-exit suppression is used. Those approaches can hide the
 failure or introduce cross-document font contamination and unbounded native
 state. The dependency floor selects the upstream lifetime fix instead.
+
+## 0.4.0 verification stack
+
+Release validation on 1 November 2026 used normal, non-editable installs and
+the latest compatible dependency resolution available that day. No run used
+`--ignore-requires-python`.
+
+| Component | Recorded version |
+|---|---:|
+| macOS | 27.2 (arm64), Darwin 27.2.0 |
+| Homebrew Python | 3.14.8 (`python@3.14` 3.14.8_2) |
+| WeasyPrint | 70.0 |
+| cffi | 2.1.1 |
+| pydyf | 0.13.0 |
+| tinycss2 | 1.5.1 |
+| cssselect2 | 0.10.1 |
+| fontTools | 4.68.0 |
+| Pillow | 13.0.0 |
+| pypdf | 6.21.4 |
+| Python-Markdown | 3.11.2 |
+| PyMdown Extensions | 12.3 |
+| PyYAML | 6.0.3 |
+
+The native packages remained Pango/Pangocairo 1.58.2, Cairo 1.18.6,
+Fontconfig 2.18.3, HarfBuzz 14.6.0, GLib/GObject 2.90.1 and libffi 3.8.0
+(pkg-config API 3.4-rc1). The render process loaded Pango, Fontconfig,
+HarfBuzz, GLib and GObject from their matching Homebrew Cellar versions and
+libffi from `/usr/lib/libffi.dylib`; Cairo and Pangocairo were installed but
+not loaded by this WeasyPrint 70 path.
+
+Every supported Python passed the same complete release suite:
+
+| Python | Interpreter source | Full suite |
+|---|---|---:|
+| 3.11.17 | temporary uv-managed CPython | 608 passed |
+| 3.12.15 | temporary uv-managed CPython | 608 passed |
+| 3.13.13 | temporary uv-managed CPython | 608 passed |
+| 3.14.8 | Homebrew `python@3.14` | 608 passed |
+
+Homebrew Python 3.14 also completed 20/20 fresh lifecycle processes, each
+performing twelve real renders, forced collection and process teardown. Ten of
+ten further fresh processes each passed ten theme, image, packaged-font and
+explicit-context render tests. A clean wheel install reported version 0.4.0;
+both `md2pdf` and `python -m pdf` created tagged PDF/UA-1 output, and their
+144-DPI rasterizations were identical. The promoted nine-PDF, 36-page visual
+matrix has source digest
+`671fd868f01ba7a5b3dbb6b1fe35ff2bd2fca01a9fe66ebcbc7a473fbba0bb70`;
+all 36 full-size page hashes matched the previously inspected implementation
+candidate exactly.
 
 ## 0.3.1 verification stack
 
