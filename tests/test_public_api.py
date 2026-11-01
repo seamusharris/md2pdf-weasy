@@ -42,6 +42,16 @@ def test_public_callable_signatures_and_reexports_are_stable():
     assert pdf.build_html is render.build_html
     assert pdf.md_to_html is render.md_to_html
     assert pdf.parse_front_matter is render.parse_front_matter
+    assert _parameters(render.build_pdf_with_result) == [
+        "md_path", "output_path", "style_path", "base_style_path", "base_url",
+        "resource_context", "strict_codes",
+    ]
+    assert _parameters(render.build_pdf_from_markdown) == [
+        "md_content", "output_path", "resource_context", "style_path",
+        "base_style_path", "strict_codes",
+    ]
+    assert pdf.build_pdf_with_result is render.build_pdf_with_result
+    assert pdf.build_pdf_from_markdown is render.build_pdf_from_markdown
 
 
 def test_builders_keep_default_outputs_and_pdf_only_base_url(tmp_path, monkeypatch):
@@ -70,6 +80,9 @@ def test_cli_entry_points_share_main_and_exclude_base_url(capsys, monkeypatch):
     help_text = capsys.readouterr().out
     assert "--html" in help_text
     assert "--base-url" not in help_text
+    assert "--resource-root" in help_text
+    assert "--diagnostics-json" in help_text
+    assert "--strict-code" in help_text
 
 
 def test_deprecated_tracked_teams_alias_warns_and_new_key_wins(caplog):

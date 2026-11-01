@@ -209,6 +209,11 @@ def detect_table_section_rows(html):
 # =============================================================================
 
 def align_table_columns(html):
+    """Add alignment classes based on each table column's visible content."""
+    return _align_table_columns(html)
+
+
+def _align_table_columns(html, *, _collector=None):
     """Add alignment classes to table cells based on column content.
 
     Scans each table's body cells to determine column types:
@@ -219,8 +224,13 @@ def align_table_columns(html):
 
     On by default. Disable with ``auto_align_columns: false`` in front matter.
     """
+    table_index = 0
+
     def process_table(match):
+        nonlocal table_index
+        table_index += 1
         table_html = match.group(0)
+        record = _collector.table(table_index, table_html) if _collector is not None else None
 
         # Extract body rows (skip header rows in thead)
         tbody_match = re.search(r"<tbody>(.*?)</tbody>", table_html, re.DOTALL)
@@ -269,6 +279,15 @@ def align_table_columns(html):
 
         if not col_class:
             return table_html
+
+        if record is not None:
+            existing = {item['column_index']: item for item in record['alignment']}
+            for i, cls in sorted(col_class.items()):
+                if i + 1 not in existing or existing[i + 1]['source'] == 'unchanged':
+                    existing[i + 1] = {'column_index': i + 1,
+                                       'value': 'right' if cls == 'num' else 'center',
+                                       'source': 'automatic'}
+            record['alignment'] = [existing[key] for key in sorted(existing)]
 
         # Apply classes to td elements
         def add_cell_classes(row_match):
@@ -603,6 +622,8 @@ def _valid_layout_columns(layout):
     """Whether one declared layout can safely emit relative-width CSS."""
     if not isinstance(layout, Mapping):
         return False
+    if 'required' in layout and type(layout['required']) is not bool:
+        return False
     columns = layout.get('columns')
     if not isinstance(columns, (list, tuple)) or not columns:
         return False
@@ -721,6 +742,11 @@ def _apply_column_alignment(table_html, columns):
 
 
 def apply_table_layouts(html, metadata):
+    """Apply declared matching table layouts without changing unmatched tables."""
+    return _apply_table_layouts(html, metadata)
+
+
+def _apply_table_layouts(html, metadata, *, _collector=None):
     """Apply front-matter-driven layouts to all tables in the HTML.
 
     For each table:
@@ -739,13 +765,33 @@ def apply_table_layouts(html, metadata):
     from .render import _tracked_rows
     table_layouts = metadata.get('tables', {})
     tracked_rows = _tracked_rows(metadata)
+    if _collector is not None and isinstance(table_layouts, Mapping):
+        for key, layout in table_layouts.items():
+            if not _valid_layout_columns(layout):
+                _collector.add('tables.layout_invalid', layout_key=key)
+    table_index = 0
 
     def process_table(match):
+        nonlocal table_index
+        table_index += 1
         table_html = match.group(0)
+        record = _collector.table(table_index, table_html) if _collector is not None else None
 
         structure = _analyze_table_structure(table_html)
         headers = list(structure.headers)
         _name, layout = _match_layout(headers, table_layouts)
+        if record is not None:
+            matching = [key for key, candidate in table_layouts.items()
+                        if _valid_layout_columns(candidate)
+                        and [_normalise_header(c['name']) for c in candidate['columns']]
+                        == [_normalise_header(header) for header in headers]] if isinstance(table_layouts, Mapping) else []
+            record['matching_layout_keys'] = [key for key in matching if isinstance(key, str)]
+            if len(matching) > 1:
+                _collector.add('tables.match_ambiguous', table_index=table_index)
+            if not structure.eligible:
+                record['skip_reason'] = structure.ineligible_reason
+                if structure.ineligible_reason != 'existing-colgroup':
+                    _collector.add('tables.structure_unsupported', table_index=table_index)
 
         highlight_mode = None
         if layout and structure.eligible:
@@ -754,6 +800,18 @@ def apply_table_layouts(html, metadata):
             # Preserve a semantic first-child caption when inserting widths.
             colgroup = _build_colgroup(columns)
             table_html = _insert_colgroup(table_html, colgroup)
+            if record is not None:
+                _collector.layout_applied(record, _name)
+                percentages = re.findall(r'width:([0-9.]+)%', colgroup)
+                record['widths'] = [
+                    {'column_index': i + 1, 'value': float(value), 'unit': '%',
+                     'source': 'declared' if 'width' in columns[i] else 'default_registry'}
+                    for i, value in enumerate(percentages)]
+                original_alignment = {item['column_index']: item for item in record['alignment']}
+                for i, column in enumerate(columns, 1):
+                    if column.get('align'):
+                        original_alignment[i] = {'column_index': i, 'value': column['align'], 'source': record['origin']}
+                record['alignment'] = [original_alignment[key] for key in sorted(original_alignment)]
 
             # Apply alignment
             table_html = _apply_column_alignment(table_html, columns)
@@ -761,6 +819,8 @@ def apply_table_layouts(html, metadata):
             # Add CSS class to table if declared, merging with any existing one.
             css_class = layout.get('css_class')
             if css_class and not isinstance(css_class, str):
+                if _collector is not None:
+                    _collector.add('tables.layout_invalid', table_index=table_index, layout_key=_name)
                 _log.warning(
                     "table layout %s: css_class must be a string; skipping",
                     _name,
@@ -1316,6 +1376,11 @@ def _emit_table_widths(table_html, a, identity_width, page_em):
 
 
 def apply_default_table_widths(html, metadata=None):
+    """Give eligible colgroup-less tables document-consistent typed widths."""
+    return _apply_default_table_widths(html, metadata)
+
+
+def _apply_default_table_widths(html, metadata=None, *, _collector=None):
     """Give every colgroup-less table typed, document-consistent column widths.
 
     Runs after ``apply_table_layouts``: any table that already carries a
@@ -1340,6 +1405,11 @@ def apply_default_table_widths(html, metadata=None):
     """
     metadata = _validated_width_metadata(metadata)
     if metadata.get('table_widths') in (False, 'off', 'none', 'legacy'):
+        if _collector is not None:
+            for index, match in enumerate(re.finditer(r'<table\b[^>]*>.*?</table>', html, re.DOTALL), 1):
+                record = _collector.table(index, match.group(0))
+                if record['origin'] == 'unchanged':
+                    record['skip_reason'] = 'widths-disabled'
         return html
 
     raw_overrides = metadata.get('columns')
@@ -1368,15 +1438,41 @@ def apply_default_table_widths(html, metadata=None):
     out = []
     last = 0
     overwide = []
-    for start, end, a in spans:
+    for index, (start, end, a) in enumerate(spans, 1):
         out.append(html[last:start])
         table_html = html[start:end]
+        record = _collector.table(index, table_html) if _collector is not None else None
         if a is None:
             out.append(table_html)
+            if record is not None and record['origin'] not in ('declared', 'preset'):
+                reason = _analyze_table_structure(table_html).ineligible_reason
+                record['skip_reason'] = reason
+                if reason != 'existing-colgroup':
+                    _collector.add('tables.structure_unsupported', table_index=index)
         else:
             emitted, fit = _emit_table_widths(
                 table_html, a, identity_width, page_em)
             out.append(emitted)
+            if record is not None:
+                record.update(origin='automatic', skip_reason=None)
+                record['widths'] = []
+                for i, kind in enumerate(a['types']):
+                    width = {'column_index': i + 1, 'unit': 'em', 'type': kind,
+                             'source': 'override' if _normalise_header(a['headers'][i]) in overrides else 'automatic'}
+                    if kind == '_explicit':
+                        width['value'] = fit.explicit_em[i]
+                    elif kind in _WIDE_TYPES:
+                        width['value'] = fit.wide_em[i]
+                    else:
+                        rung = a['group_rung'][kind]
+                        width.update(value=_LADDER_EM[rung], token_class=f'w{rung + 1}', rung=rung + 1)
+                    record['widths'].append(width)
+                record['fit'] = {'outcome': fit.outcome, 'budget_em': page_em,
+                                 'natural_total_em': fit.natural_total_em,
+                                 'emitted_total_em': fit.emitted_total_em}
+                if fit.outcome != 'fit':
+                    _collector.add('tables.width_scaled' if fit.outcome == 'scaled' else 'tables.overflow_unresolved',
+                                   severity='info' if fit.outcome == 'scaled' else 'warning', table_index=index)
             if fit.natural_total_em > page_em:
                 overwide.append(fit)
         last = end

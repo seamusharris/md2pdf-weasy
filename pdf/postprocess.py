@@ -24,7 +24,7 @@ import html as _html
 import logging
 import re
 
-from pdf.table_presets import expand_table_presets
+from pdf.table_presets import expand_table_presets, _expand_table_presets
 from pdf.blockquotes import (  # noqa: F401
     split_merged_blockquotes,
     classify_blockquotes,
@@ -46,6 +46,9 @@ from pdf.table_transforms import (  # noqa: F401
     _apply_column_alignment,
     apply_table_layouts,
     apply_default_table_widths,
+    _apply_table_layouts,
+    _apply_default_table_widths,
+    _align_table_columns,
     _validated_width_metadata,
     generate_toc,
 )
@@ -221,6 +224,11 @@ def wrap_standalone_images(html: str) -> str:
 # =============================================================================
 
 def postprocess(html, metadata=None):
+    """Run all HTML post-processing passes using optional front matter."""
+    return _postprocess(html, metadata)
+
+
+def _postprocess(html, metadata=None, *, _collector=None):
     """Run all HTML post-processing passes.
 
     Args:
@@ -231,7 +239,11 @@ def postprocess(html, metadata=None):
                   highlighting).
     """
     metadata = _validated_width_metadata(metadata)
-    metadata, preset_warnings = expand_table_presets(metadata)
+    if _collector is not None:
+        _collector.configure_layouts(metadata)
+        for index, match in enumerate(re.finditer(r'<table\b[^>]*>.*?</table>', html, re.DOTALL), 1):
+            _collector.table(index, match.group(0))
+    metadata, preset_warnings = _expand_table_presets(metadata, _collector=_collector)
     for warning in preset_warnings:
         logging.getLogger(__name__).warning("%s", warning)
 
@@ -245,11 +257,11 @@ def postprocess(html, metadata=None):
 
     # Table layout from front matter
     if metadata and metadata.get('tables'):
-        html = apply_table_layouts(html, metadata)
+        html = _apply_table_layouts(html, metadata, _collector=_collector)
 
     # Typed column widths for every other table (declared layouts already have
     # a colgroup and are skipped). Gives consistent, content-typed widths.
-    html = apply_default_table_widths(html, metadata)
+    html = _apply_default_table_widths(html, metadata, _collector=_collector)
 
     # Tracked-row highlighting (when tables: is absent, e.g. schedule
     # passing only tracked_rows without table layout declarations).
@@ -267,7 +279,7 @@ def postprocess(html, metadata=None):
 
     # Auto-align: on by default, disable with auto_align_columns: false
     if not metadata or metadata.get('auto_align_columns', True) is not False:
-        html = align_table_columns(html)
+        html = _align_table_columns(html, _collector=_collector)
     # Auto bold-row highlight: opt-in via metadata
     if metadata and metadata.get('auto_highlight_bold_rows'):
         html = highlight_table_rows(html)

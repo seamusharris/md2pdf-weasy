@@ -16,7 +16,7 @@ import yaml
 
 _PRESET_ID = re.compile(r"[a-z][a-z0-9-]*-v[1-9][0-9]*")
 _CSS_CLASSES = re.compile(r"[A-Za-z_][A-Za-z0-9_-]*(?:\s+[A-Za-z_][A-Za-z0-9_-]*)*")
-_LAYOUT_FIELDS = frozenset({"columns", "css_class", "highlight"})
+_LAYOUT_FIELDS = frozenset({"columns", "css_class", "highlight", "required"})
 _COLUMN_FIELDS = frozenset({"name", "width", "align"})
 
 
@@ -34,6 +34,8 @@ def _positive_weight(value):
 def _valid_layout(layout, *, require_widths=False):
     """Validate only new preset-derived layouts, not the legacy schema."""
     if not isinstance(layout, Mapping) or set(layout) - _LAYOUT_FIELDS:
+        return False
+    if "required" in layout and type(layout["required"]) is not bool:
         return False
     columns = layout.get("columns")
     if not isinstance(columns, list) or not columns:
@@ -84,6 +86,11 @@ def _load_catalog():
 
 
 def expand_table_presets(metadata):
+    """Return ``(metadata_copy, warnings)`` without modifying caller inputs."""
+    return _expand_table_presets(metadata)
+
+
+def _expand_table_presets(metadata, *, _collector=None):
     """Return ``(metadata_copy, warnings)`` without modifying caller inputs.
 
     Explicit layout fields override preset defaults; ``columns`` replaces the
@@ -106,14 +113,20 @@ def expand_table_presets(metadata):
         identifier = layout["preset"]
         if not isinstance(identifier, str) or not _PRESET_ID.fullmatch(identifier):
             warnings.append("front matter 'tables.preset': invalid preset identifier; skipping layout")
+            if _collector is not None:
+                _collector.add("tables.layout_invalid", layout_key=name)
             continue
         preset = _load_catalog().get(identifier)
         if preset is None:
             warnings.append("front matter 'tables.preset': unknown preset; skipping layout")
+            if _collector is not None:
+                _collector.add("tables.layout_invalid", layout_key=name)
             continue
         resolved = {**deepcopy(preset), **deepcopy({k: v for k, v in layout.items() if k != "preset"})}
         if not _valid_layout(resolved):
             warnings.append("front matter 'tables.preset': invalid layout override; skipping layout")
+            if _collector is not None:
+                _collector.add("tables.layout_invalid", layout_key=name)
             continue
         expanded[name] = resolved
     result["tables"] = expanded

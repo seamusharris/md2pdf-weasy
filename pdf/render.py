@@ -28,6 +28,7 @@ Requires: weasyprint, markdown, pyyaml
 from __future__ import annotations
 
 import html as _html
+import json
 import logging
 import os
 import re
@@ -41,7 +42,22 @@ import yaml
 import markdown
 
 from .typography import typographic_convert
-from .postprocess import postprocess, generate_toc
+from .diagnostics import (
+    DEFAULT_STRICT_CODES,
+    DIAGNOSTIC_CODES,
+    BuildResult,
+    DiagnosticsCollector,
+    StrictDiagnosticsError,
+    StrictPolicy,
+    evaluate_strict,
+)
+from .postprocess import postprocess, _postprocess, generate_toc
+from .resources import (
+    ResourceAccessError,
+    ResourceContext,
+    ResourceEvent,
+    make_url_fetcher,
+)
 from .width_metadata import normalise_width_metadata
 
 log = logging.getLogger(__name__)
@@ -224,32 +240,78 @@ def resolve_tables_include(metadata: dict, md_path: str | None = None) -> dict:
     Returns:
         The metadata dict with ``tables`` populated from the merge.
     """
-    include = metadata.get('tables_include')
-    if not include:
-        return metadata
+    result, _ = _resolve_tables_include(metadata, md_path)
+    return result
 
-    resolved = include if os.path.exists(include) else None
-    if resolved is None and md_path:
-        candidate = os.path.join(os.path.dirname(os.path.abspath(md_path)), include)
-        if os.path.exists(candidate):
-            resolved = candidate
+
+def _resolve_tables_include(
+    metadata: dict,
+    md_path: str | None = None,
+    *,
+    resource_context: ResourceContext | None = None,
+    collector: DiagnosticsCollector | None = None,
+) -> tuple[dict, dict[str, str]]:
+    """Resolve one include and retain per-layout provenance for diagnostics."""
+    include = metadata.get('tables_include')
+    document_tables = metadata.get('tables', {})
+    if not include:
+        return metadata, {
+            key: "document" for key in document_tables
+        } if isinstance(document_tables, dict) else {}
+
+    if resource_context is not None:
+        resolved_path = resource_context.resolve_path(
+            include,
+            kind="tables_include",
+            on_resource=collector.add_resource if collector is not None else None,
+        )
+        resolved = str(resolved_path) if resolved_path is not None and resolved_path.is_file() else None
+    else:
+        resolved = include if os.path.exists(include) else None
+        if resolved is None and md_path:
+            candidate = os.path.join(os.path.dirname(os.path.abspath(md_path)), include)
+            if os.path.exists(candidate):
+                resolved = candidate
+        if collector is not None:
+            path = Path(resolved).resolve() if resolved is not None else None
+            collector.add_resource(ResourceEvent(
+                "tables_include",
+                "resolved" if path is not None else "missing",
+                str(include),
+                str(path) if path is not None else None,
+            ))
 
     if resolved is None:
         log.warning("tables_include file not found: %r", include)
-        return metadata
+        if collector is not None:
+            collector.add("tables.include_missing")
+        return metadata, {
+            key: "document" for key in document_tables
+        } if isinstance(document_tables, dict) else {}
 
-    with open(resolved, "r", encoding="utf-8") as f:
-        shared = yaml.safe_load(f) or {}
+    try:
+        with open(resolved, "r", encoding="utf-8") as f:
+            shared = yaml.safe_load(f) or {}
+    except yaml.YAMLError:
+        if collector is not None:
+            collector.add("tables.include_invalid")
+        raise
 
     if not isinstance(shared, dict):
         log.warning("tables_include %r did not parse to a dict (got %s); skipping",
                     resolved, type(shared).__name__)
-        return metadata
+        if collector is not None:
+            collector.add("tables.include_invalid")
+        return metadata, {
+            key: "document" for key in document_tables
+        } if isinstance(document_tables, dict) else {}
 
     # Per-doc tables override shared by key
-    merged = {**shared, **metadata.get('tables', {})}
+    merged = {**shared, **document_tables}
     metadata['tables'] = merged
-    return metadata
+    sources = {key: "tables_include" for key in shared}
+    sources.update({key: "document" for key in document_tables})
+    return metadata, sources
 
 
 # =============================================================================
@@ -329,6 +391,16 @@ def _separate_generated_blocks(md_content: str) -> str:
 
 
 def md_to_html(md_content: str, metadata: dict) -> str:
+    """Convert Markdown text to a complete HTML document."""
+    return _md_to_html(md_content, metadata)
+
+
+def _md_to_html(
+    md_content: str,
+    metadata: dict,
+    *,
+    collector: DiagnosticsCollector | None = None,
+) -> str:
     """Convert markdown string to a complete HTML document.
 
     Table layouts declared in metadata['tables'] are applied during
@@ -369,7 +441,7 @@ def md_to_html(md_content: str, metadata: dict) -> str:
         output_format="html5",
     )
 
-    html_body = postprocess(html_body, metadata=metadata)
+    html_body = _postprocess(html_body, metadata=metadata, _collector=collector)
 
     # Table of contents (opt-in via front matter)
     toc_html = ""
@@ -443,6 +515,14 @@ def _front_matter_css(metadata):
 
 
 @dataclass(frozen=True)
+class _PreparedStyle:
+    """One stylesheet layer with its own URL-resolution base."""
+
+    css: str
+    base_url: str
+
+
+@dataclass(frozen=True)
 class _PreparedRender:
     """Private, complete input to one WeasyPrint render.
 
@@ -455,27 +535,117 @@ class _PreparedRender:
     css: str
     html_base_url: str | None
     css_base_url: str
+    style_layers: tuple[_PreparedStyle, ...] = ()
+    url_fetcher: object | None = None
+    collector: DiagnosticsCollector | None = None
 
 
 def _prepare_render(md_path: str, style_path: str | None = None,
                     base_style_path: str | None = None,
                     base_url: str | None = None) -> _PreparedRender:
     """Prepare HTML and CSS for one render without invoking WeasyPrint."""
+    return _prepare_render_input(
+        md_path=md_path,
+        md_content=None,
+        style_path=style_path,
+        base_style_path=base_style_path,
+        base_url=base_url,
+        resource_context=None,
+        collector=None,
+    )
+
+
+def _read_style(path: Path, *, base_url: str | None = None) -> _PreparedStyle:
+    """Read one CSS layer and retain the base used by its nested URLs."""
+    return _PreparedStyle(
+        css=path.read_text(encoding="utf-8"),
+        base_url=base_url or path.resolve().parent.as_uri() + "/",
+    )
+
+
+def _resolve_explicit_style(
+    reference: str | Path,
+    *,
+    role: str,
+    resource_context: ResourceContext,
+    collector: DiagnosticsCollector,
+) -> Path:
+    path = resource_context.resolve_path(
+        reference, kind=role, on_resource=collector.add_resource,
+    )
+    if path is None or not path.is_file():
+        missing = str(reference) if path is None else str(path)
+        raise FileNotFoundError(f"Stylesheet file not found: {missing}")
+    return path
+
+
+def _prepare_render_input(
+    *,
+    md_path: str | None,
+    md_content: str | None,
+    style_path: str | None,
+    base_style_path: str | None,
+    base_url: str | None,
+    resource_context: ResourceContext | None,
+    collector: DiagnosticsCollector | None,
+) -> _PreparedRender:
+    """Shared preparation for legacy and explicit-context PDF entry points."""
+    if resource_context is not None and base_url is not None:
+        raise ValueError("base_url and resource_context cannot be used together")
+    if (md_path is None) == (md_content is None):
+        raise ValueError("provide exactly one of md_path or md_content")
+
     if base_style_path is None:
         base_style_path = DEFAULT_STYLE
 
-    with open(md_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    if md_content is None:
+        with open(md_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    else:
+        content = md_content
 
     metadata, body = parse_front_matter(content)
-    metadata = resolve_tables_include(metadata, md_path)
+    metadata, layout_sources = _resolve_tables_include(
+        metadata,
+        md_path,
+        resource_context=resource_context,
+        collector=collector,
+    )
+    if collector is not None:
+        collector.layout_sources.update(layout_sources)
 
     css_parts = []
-    with open(base_style_path, "r", encoding="utf-8") as f:
-        css_parts.append(f.read())
-    if style_path:
-        with open(style_path, "r", encoding="utf-8") as f:
+    style_layers = []
+    if resource_context is None:
+        with open(base_style_path, "r", encoding="utf-8") as f:
             css_parts.append(f.read())
+        if style_path:
+            with open(style_path, "r", encoding="utf-8") as f:
+                css_parts.append(f.read())
+    else:
+        if base_style_path == DEFAULT_STYLE:
+            base_path = Path(DEFAULT_STYLE).resolve()
+            collector.add_resource(ResourceEvent(
+                "base_style", "resolved", "packaged:style.css", str(base_path),
+            ))
+        else:
+            base_path = _resolve_explicit_style(
+                base_style_path,
+                role="base_style",
+                resource_context=resource_context,
+                collector=collector,
+            )
+        style_layers.append(_read_style(base_path))
+        css_parts.append(style_layers[-1].css)
+        if style_path:
+            overlay_path = _resolve_explicit_style(
+                style_path,
+                role="style",
+                resource_context=resource_context,
+                collector=collector,
+            )
+            style_layers.append(_read_style(overlay_path))
+            css_parts.append(style_layers[-1].css)
 
     theme = metadata.get('theme')
     if theme:
@@ -483,26 +653,63 @@ def _prepare_render(md_path: str, style_path: str | None = None,
             log.warning("invalid theme name: %r", theme)
             theme = None
     if theme:
-        theme_path = get_style_path(f'{theme}.css')
+        if resource_context is None:
+            theme_path = get_style_path(f'{theme}.css')
+        else:
+            context_theme = resource_context.resolve_path(f'{theme}.css', kind="theme")
+            packaged_theme = Path(_STYLES_DIR, f'{theme}.css').resolve()
+            theme_path = str(
+                context_theme if context_theme is not None and context_theme.is_file()
+                else packaged_theme
+            )
         if os.path.exists(theme_path):
-            with open(theme_path, "r", encoding="utf-8") as f:
-                css_parts.append(f.read())
+            if resource_context is None:
+                with open(theme_path, "r", encoding="utf-8") as f:
+                    css_parts.append(f.read())
+            else:
+                theme_file = Path(theme_path)
+                collector.add_resource(ResourceEvent(
+                    "theme",
+                    "resolved",
+                    f"{theme}.css",
+                    str(theme_file),
+                ))
+                style_layers.append(_read_style(theme_file))
+                css_parts.append(style_layers[-1].css)
         else:
             log.warning("theme '%s' not found (%s)", theme, theme_path)
+            if collector is not None:
+                collector.add_resource(ResourceEvent(
+                    "theme", "missing", f"{theme}.css", str(theme_path),
+                ))
 
     fm_css = _front_matter_css(metadata)
     if fm_css:
         css_parts.append(fm_css)
+        if resource_context is not None:
+            style_layers.append(_PreparedStyle(fm_css, resource_context.base_url))
 
-    return _PreparedRender(
-        html=md_to_html(body, metadata),
-        css="\n\n".join(css_parts),
-        html_base_url=(
+    if resource_context is not None:
+        html_base_url = resource_context.base_url
+        url_fetcher = make_url_fetcher(
+            resource_context, on_resource=collector.add_resource,
+        )
+    else:
+        html_base_url = (
             base_url
             if base_url is not None
             else str(Path(md_path).resolve().parent)
-        ),
+        )
+        url_fetcher = None
+
+    return _PreparedRender(
+        html=_md_to_html(body, metadata, collector=collector),
+        css="\n\n".join(css_parts),
+        html_base_url=html_base_url,
         css_base_url=_STYLES_DIR + "/",
+        style_layers=tuple(style_layers),
+        url_fetcher=url_fetcher,
+        collector=collector,
     )
 
 
@@ -532,7 +739,11 @@ def _local_image_path(src: str, base_url: str | None) -> Path | None:
     return (base_path / source_path).resolve()
 
 
-def _validate_local_images(prepared: _PreparedRender) -> None:
+def _validate_local_images(
+    prepared: _PreparedRender,
+    *,
+    resource_context: ResourceContext | None = None,
+) -> None:
     """Fail before rendering when generated HTML references a missing file."""
     missing = []
     for match in re.finditer(
@@ -541,7 +752,29 @@ def _validate_local_images(prepared: _PreparedRender) -> None:
         flags=re.DOTALL | re.IGNORECASE,
     ):
         src = _html.unescape(match.group(2))
-        local_path = _local_image_path(src, prepared.html_base_url)
+        if resource_context is not None:
+            local_path = resource_context.resolve_path(
+                src,
+                kind="image",
+                on_resource=(
+                    prepared.collector.add_resource
+                    if prepared.collector is not None else None
+                ),
+            )
+        else:
+            local_path = _local_image_path(src, prepared.html_base_url)
+            if prepared.collector is not None:
+                status = (
+                    "remote" if local_path is None
+                    else "resolved" if local_path.is_file()
+                    else "missing"
+                )
+                prepared.collector.add_resource(ResourceEvent(
+                    "image",
+                    status,
+                    src,
+                    str(local_path) if local_path is not None else None,
+                ))
         if local_path is not None and not local_path.is_file():
             missing.append(str(local_path))
     if missing:
@@ -553,10 +786,168 @@ def _render_document(prepared: _PreparedRender):
     """Render a prepared input once and return the private Weasy Document."""
     from weasyprint import HTML, CSS
 
+    if not prepared.style_layers:
+        return HTML(
+            string=prepared.html,
+            base_url=prepared.html_base_url,
+        ).render(stylesheets=[CSS(string=prepared.css, base_url=prepared.css_base_url)])
+
+    from weasyprint.text.fonts import FontConfiguration
+
+    font_config = FontConfiguration()
+    stylesheets = [
+        CSS(
+            string=style.css,
+            base_url=style.base_url,
+            url_fetcher=prepared.url_fetcher,
+            font_config=font_config,
+        )
+        for style in prepared.style_layers
+    ]
     return HTML(
         string=prepared.html,
         base_url=prepared.html_base_url,
-    ).render(stylesheets=[CSS(string=prepared.css, base_url=prepared.css_base_url)])
+        url_fetcher=prepared.url_fetcher,
+    ).render(stylesheets=stylesheets, font_config=font_config)
+
+
+def _strict_policy(strict_codes) -> StrictPolicy | None:
+    if strict_codes is None or strict_codes is False:
+        return None
+    if isinstance(strict_codes, str):
+        raise ValueError("strict_codes must be a collection of diagnostic codes")
+    codes = frozenset(strict_codes)
+    return StrictPolicy(codes) if codes else None
+
+
+def _attach_diagnostics(exc: BaseException, collector: DiagnosticsCollector) -> None:
+    """Make failure diagnostics available without changing exception classes."""
+    try:
+        exc.diagnostics = collector.build_report()
+    except (AttributeError, TypeError):
+        pass
+
+
+def _raise_fetch_violations(collector: DiagnosticsCollector) -> None:
+    """Reject local fetch violations that WeasyPrint may have logged and ignored."""
+    report = collector.build_report()
+    for resource in report["resources"]:
+        if resource.get("kind") != "fetch":
+            continue
+        status = resource.get("status")
+        if status in {"blocked", "missing"} or (
+            status == "failed" and resource.get("path") is not None
+        ):
+            raise ResourceAccessError(
+                f"Local render resource was {status}",
+                reference=resource.get("reference", "[unknown resource]"),
+                kind="fetch",
+            )
+
+
+def _build_pdf_result(
+    *,
+    md_path: str | None,
+    md_content: str | None,
+    output_path: str,
+    style_path: str | None,
+    base_style_path: str | None,
+    base_url: str | None,
+    resource_context: ResourceContext | None,
+    strict_codes,
+) -> BuildResult:
+    collector = DiagnosticsCollector()
+    policy = _strict_policy(strict_codes)
+    try:
+        prepared = _prepare_render_input(
+            md_path=md_path,
+            md_content=md_content,
+            style_path=style_path,
+            base_style_path=base_style_path,
+            base_url=base_url,
+            resource_context=resource_context,
+            collector=collector,
+        )
+        _validate_local_images(prepared, resource_context=resource_context)
+        evaluate_strict(collector.build_report(), policy)
+
+        document = _render_document(prepared)
+        if resource_context is None:
+            document.write_pdf(output_path, pdf_variant="pdf/ua-1")
+        else:
+            pdf_bytes = document.write_pdf(pdf_variant="pdf/ua-1")
+            _raise_fetch_violations(collector)
+            Path(output_path).write_bytes(pdf_bytes)
+    except yaml.YAMLError as exc:
+        try:
+            evaluate_strict(collector.build_report(), policy)
+        except StrictDiagnosticsError as strict_exc:
+            raise strict_exc from exc
+        _attach_diagnostics(exc, collector)
+        raise
+    except Exception as exc:
+        _attach_diagnostics(exc, collector)
+        raise
+
+    report = collector.build_report()
+    print(f"Created: {output_path}")
+    return BuildResult(output_path=output_path, diagnostics=report)
+
+
+def build_pdf_with_result(
+    md_path: str,
+    output_path: str | None = None,
+    style_path: str | None = None,
+    base_style_path: str | None = None,
+    base_url: str | None = None,
+    *,
+    resource_context: ResourceContext | None = None,
+    strict_codes=(),
+) -> BuildResult:
+    """Build a PDF and return deterministic layout/resource diagnostics.
+
+    The existing ``build_pdf`` API remains unchanged. ``resource_context`` opts
+    into deterministic local dependency resolution; it cannot be combined with
+    the legacy image-only ``base_url`` override.
+    """
+    if output_path is None:
+        output_path = os.path.splitext(md_path)[0] + ".pdf"
+    if resource_context is not None and not isinstance(resource_context, ResourceContext):
+        raise TypeError("resource_context must be a ResourceContext")
+    return _build_pdf_result(
+        md_path=md_path,
+        md_content=None,
+        output_path=output_path,
+        style_path=style_path,
+        base_style_path=base_style_path,
+        base_url=base_url,
+        resource_context=resource_context,
+        strict_codes=strict_codes,
+    )
+
+
+def build_pdf_from_markdown(
+    md_content: str,
+    output_path: str,
+    *,
+    resource_context: ResourceContext,
+    style_path: str | None = None,
+    base_style_path: str | None = None,
+    strict_codes=(),
+) -> BuildResult:
+    """Build a PDF from source text using one explicit resource context."""
+    if not isinstance(resource_context, ResourceContext):
+        raise TypeError("resource_context must be a ResourceContext")
+    return _build_pdf_result(
+        md_path=None,
+        md_content=md_content,
+        output_path=output_path,
+        style_path=style_path,
+        base_style_path=base_style_path,
+        base_url=None,
+        resource_context=resource_context,
+        strict_codes=strict_codes,
+    )
 
 
 def build_pdf(md_path: str, output_path: str | None = None, style_path: str | None = None, base_style_path: str | None = None, base_url: str | None = None) -> str:
@@ -569,7 +960,7 @@ def build_pdf(md_path: str, output_path: str | None = None, style_path: str | No
             (DEFAULT_STYLE) so consumers don't need to know the install path.
         style_path: Optional CSS overlay loaded after the base style.
         base_url: Optional base URL used to resolve relative URLs in generated
-            HTML. Defaults to WeasyPrint's no-base behavior.
+            HTML. Defaults to the input Markdown file's directory.
     """
     if output_path is None:
         output_path = os.path.splitext(md_path)[0] + ".pdf"
@@ -622,6 +1013,93 @@ def build_html(md_path: str, output_path: str | None = None,
 # CLI
 # =============================================================================
 
+class _DiagnosticsPathError(ValueError):
+    """A JSON sidecar aliases an output it must not overwrite."""
+
+
+def _diagnostics_json_path(path: str, *, input_path: str, output_path: str) -> Path:
+    target = Path(path).resolve()
+    protected = {Path(input_path).resolve(), Path(output_path).resolve()}
+    for protected_path in protected:
+        same_file = target == protected_path
+        if not same_file and target.exists() and protected_path.exists():
+            try:
+                same_file = target.samefile(protected_path)
+            except OSError:
+                same_file = False
+        if same_file:
+            raise _DiagnosticsPathError(
+                "diagnostics JSON cannot overwrite the input or PDF output"
+            )
+    return target
+
+
+def _write_diagnostics_json(
+    path: str,
+    report,
+    *,
+    input_path: str,
+    output_path: str,
+) -> None:
+    target = _diagnostics_json_path(
+        path, input_path=input_path, output_path=output_path,
+    )
+    target.write_text(
+        json.dumps(report.to_dict(), indent=2, sort_keys=True, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _cli_strict_codes(use_defaults, values) -> tuple[str, ...]:
+    if not use_defaults and not values:
+        return ()
+    codes = set(DEFAULT_STRICT_CODES if use_defaults else ())
+    codes.update(values or ())
+    StrictPolicy(frozenset(codes))
+    return tuple(sorted(codes))
+
+
+def _build_pdf_from_cli(
+    input_path: str,
+    output_path: str,
+    *,
+    style_path: str | None,
+    base_style_path: str | None,
+    resource_context: ResourceContext | None,
+    strict_codes: tuple[str, ...],
+    diagnostics_json: str | None,
+) -> None:
+    """Run one result build and keep strict/sidecar behavior in one place."""
+    if diagnostics_json:
+        _diagnostics_json_path(
+            diagnostics_json, input_path=input_path, output_path=output_path,
+        )
+    try:
+        result = build_pdf_with_result(
+            input_path, output_path,
+            style_path=style_path,
+            base_style_path=base_style_path,
+            resource_context=resource_context,
+            strict_codes=strict_codes,
+        )
+    except StrictDiagnosticsError as exc:
+        if diagnostics_json:
+            _write_diagnostics_json(
+                diagnostics_json,
+                exc.report,
+                input_path=input_path,
+                output_path=output_path,
+            )
+        raise
+    if diagnostics_json:
+        _write_diagnostics_json(
+            diagnostics_json,
+            result.diagnostics,
+            input_path=input_path,
+            output_path=output_path,
+        )
+
+
 def main():
     """CLI entry point with batch mode, --output-dir, --style, --base-style, --html."""
     parser = argparse.ArgumentParser(
@@ -647,25 +1125,86 @@ def main():
         "--base-style", "-b", default=None,
         help=f"Base CSS stylesheet (default: bundled {os.path.basename(DEFAULT_STYLE)})"
     )
+    parser.add_argument(
+        "--resource-root", default=None,
+        help="Explicit local base for includes, images, styles, and theme overrides",
+    )
+    parser.add_argument(
+        "--allowed-resource-root", default=None,
+        help="Optional symlink-aware local containment root (requires --resource-root)",
+    )
+    parser.add_argument(
+        "--diagnostics-json", default=None,
+        help="Write one document's structured diagnostics to this JSON sidecar",
+    )
+    parser.add_argument(
+        "--strict", action="store_true",
+        help="Fail for the documented default strict diagnostic set",
+    )
+    parser.add_argument(
+        "--strict-code", action="append", default=None, metavar="CODE",
+        help=(
+            "Fail for one selected diagnostic code; repeat as needed. Known codes: "
+            + ", ".join(sorted(DIAGNOSTIC_CODES))
+        ),
+    )
 
     args = parser.parse_args()
 
-    style_path = get_style_path(args.style) if args.style else None
-    base_style_path = get_style_path(args.base_style) if args.base_style else None
+    using_new_pdf_options = bool(
+        args.resource_root or args.allowed_resource_root
+        or args.diagnostics_json or args.strict or args.strict_code
+    )
+    if args.html and using_new_pdf_options:
+        parser.error("resource contexts and diagnostics are currently PDF-only")
+    if args.allowed_resource_root and not args.resource_root:
+        parser.error("--allowed-resource-root requires --resource-root")
+
+    try:
+        strict_codes = _cli_strict_codes(args.strict, args.strict_code)
+        resource_context = (
+            ResourceContext(args.resource_root, args.allowed_resource_root)
+            if args.resource_root else None
+        )
+    except (TypeError, ValueError) as exc:
+        parser.error(str(exc))
+
+    if resource_context is None:
+        style_path = get_style_path(args.style) if args.style else None
+        base_style_path = get_style_path(args.base_style) if args.base_style else None
+    else:
+        style_path = args.style
+        base_style_path = args.base_style
 
     build_fn = build_html if args.html else build_pdf
     ext = ".html" if args.html else ".pdf"
 
     # Handle explicit output: pdf input.md output.pdf
-    if len(args.files) == 2 and args.files[1].endswith(ext):
-        build_fn(args.files[0], args.files[1],
-                 style_path=style_path, base_style_path=base_style_path)
+    explicit_output = len(args.files) == 2 and args.files[1].endswith(ext)
+    if explicit_output:
+        if using_new_pdf_options:
+            try:
+                _build_pdf_from_cli(
+                    args.files[0], args.files[1],
+                    style_path=style_path,
+                    base_style_path=base_style_path,
+                    resource_context=resource_context,
+                    strict_codes=strict_codes,
+                    diagnostics_json=args.diagnostics_json,
+                )
+            except _DiagnosticsPathError as exc:
+                parser.error(str(exc))
+        else:
+            build_fn(args.files[0], args.files[1],
+                     style_path=style_path, base_style_path=base_style_path)
         return
 
     # Batch: convert all .md files
     md_files = [f for f in args.files if f.endswith(".md")]
     if not md_files:
         md_files = [args.files[0]]
+    if args.diagnostics_json and len(md_files) != 1:
+        parser.error("--diagnostics-json supports exactly one input document")
 
     for md_file in md_files:
         if args.output_dir:
@@ -675,8 +1214,22 @@ def main():
         else:
             out_path = None  # defaults to same dir as input
 
-        build_fn(md_file, out_path,
-                 style_path=style_path, base_style_path=base_style_path)
+        if using_new_pdf_options:
+            final_output = out_path or os.path.splitext(md_file)[0] + ".pdf"
+            try:
+                _build_pdf_from_cli(
+                    md_file, final_output,
+                    style_path=style_path,
+                    base_style_path=base_style_path,
+                    resource_context=resource_context,
+                    strict_codes=strict_codes,
+                    diagnostics_json=args.diagnostics_json,
+                )
+            except _DiagnosticsPathError as exc:
+                parser.error(str(exc))
+        else:
+            build_fn(md_file, out_path,
+                     style_path=style_path, base_style_path=base_style_path)
 
 
 if __name__ == "__main__":
