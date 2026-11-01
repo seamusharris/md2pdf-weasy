@@ -25,13 +25,20 @@ theme: alpine
 
 ## How discovery works
 
-The pipeline calls `get_style_path("<name>.css")` which:
+Legacy rendering calls `get_style_path("<name>.css")` which:
 
 1. Returns the path as-is if it's absolute or exists relative to cwd
 2. Otherwise looks in `pdf/styles/<name>.css` inside the installed package
 
 `theme:` values containing `/`, `\`, or `..` are rejected with a warning
 (no path traversal).
+
+The additive explicit-resource APIs instead look for `<name>.css` in the
+`ResourceContext` and then fall back to the packaged theme. They never consult
+cwd. Every user stylesheet retains its own directory as the base for nested
+`@import` and `url()` references, while packaged styles retain the package base
+needed by bundled fonts. See
+[Diagnostics and explicit resources](diagnostics-and-resources.md).
 
 ## CSS layering
 

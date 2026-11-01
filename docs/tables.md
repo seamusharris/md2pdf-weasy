@@ -124,6 +124,31 @@ errors rather than silently ignored document controls.
 No global default or theme automatically enables a preset. Existing documents
 need no migration; add the reference only when you want this exact contract.
 
+### Required declarations and diagnostics
+
+The result-building APIs can explain the decision for every table without
+changing its HTML or PDF. Reports identify declaration/preset/author/automatic
+origin, the selected and competing layout keys, real emitted width units,
+alignment provenance, fit outcome, and structural skip reason. They never
+include headers, captions or body cells. See
+[Diagnostics and explicit resources](diagnostics-and-resources.md).
+
+Add `required: true` to a layout when that exact declaration must apply:
+
+```yaml
+tables:
+  season-ladder:
+    required: true
+    preset: netball-ladder-v1
+```
+
+An ordinary unused layout is informational. A required layout produces
+`tables.required_unapplied` when it is unmatched, shadowed by an earlier
+identical-header declaration, or blocked by an author colgroup or unsupported
+structure. It becomes a build error only when that code is selected by strict
+validation. This does not select a table explicitly; header matching and
+first-match ordering are unchanged.
+
 ## Default widths registry
 
 `pdf/default_widths.yml` ships with ~90 header-name → width mappings so
@@ -176,7 +201,9 @@ tables_include: themes/tables.yml
 ---
 ```
 
-The path is cwd-relative first, then relative to the markdown file.
+In legacy mode the path is cwd-relative first, then relative to the Markdown
+file. With an explicit `ResourceContext`, it resolves only from the context and
+never consults cwd.
 
 ## Highlight modes
 

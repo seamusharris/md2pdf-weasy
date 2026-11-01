@@ -72,6 +72,7 @@ Topic-based reference docs in [`docs/`](docs/):
 
 - **[Getting started](docs/getting-started.md)** — install, first render, what the pipeline does
 - **[Public API and CLI](docs/public-api.md)** — supported callables, signatures, entry points, and failure behavior
+- **[Diagnostics and resources](docs/diagnostics-and-resources.md)** — per-table decisions, strict validation, and deterministic dependency resolution
 - **[Front matter](docs/front-matter.md)** — every supported field, with types and examples
 - **[Themes](docs/themes.md)** — the four named themes + how to add your own (per-theme style guides in `examples/styleguides/`)
 - **[Tables](docs/tables.md)** — layouts, default widths registry, alignment, highlight modes, section dividers
@@ -92,6 +93,11 @@ python -m pdf input.md [output.pdf]        # or: md2pdf input.md [output.pdf]
     -s, --style PATH        optional CSS overlay loaded after the base style
     -b, --base-style PATH   replace the bundled base style.css (default: bundled)
         --html              emit styled HTML instead of PDF
+        --resource-root DIR explicit dependency base (PDF only)
+        --allowed-resource-root DIR  optional local containment root
+        --diagnostics-json FILE      write a structured sidecar
+        --strict                     fail on the default strict diagnostic set
+        --strict-code CODE           fail on one selected code; repeatable
 ```
 
 Batch mode: pass multiple markdown files (or a glob) to convert each one
@@ -126,3 +132,9 @@ layouts.
 See [docs/getting-started.md](docs/getting-started.md) for the lower-level
 pipeline, and [docs/public-api.md](docs/public-api.md) for the supported API and
 CLI compatibility contract.
+
+For audited builds, `build_pdf_with_result(...)` returns structured table and
+resource diagnostics without changing the PDF. `build_pdf_from_markdown(...)`
+provides the same behavior for source text. Both can use an explicit
+`ResourceContext` so includes, images and user styles share one deterministic
+base while packaged fonts keep their installed base.

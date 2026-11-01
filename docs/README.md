@@ -9,6 +9,7 @@ landing page; this directory is for depth.
 |---|---|
 | [getting-started.md](getting-started.md) | Install, first render, the minimum viable document |
 | [python-compatibility.md](python-compatibility.md) | Supported Python, WeasyPrint, and native-library ranges; tested release stack and stability evidence |
+| [diagnostics-and-resources.md](diagnostics-and-resources.md) | Structured table diagnostics, strict validation, and deterministic resource contexts |
 | [public-api.md](public-api.md) | Supported Python callables and CLI entry points, including failure behavior |
 | [front-matter.md](front-matter.md) | Every supported front-matter field, with types and examples |
 | [themes.md](themes.md) | The four named themes (alpine, wnc, regrading, neutral) + compact; how to add your own |

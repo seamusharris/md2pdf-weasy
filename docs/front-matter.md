@@ -54,8 +54,8 @@ non-mutating normalizer; invalid controls warn and use the documented fallback.
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `tables` | dict | `{}` | Per-document table layouts. An entry may select a bundled exact-shape layout with `preset: netball-ladder-v1`. See [tables.md](tables.md). |
-| `tables_include` | str | — | Path to a shared YAML file of layouts. Resolved cwd-relative first, then relative to the markdown file. Per-doc `tables` overrides shared layouts by key. |
+| `tables` | dict | `{}` | Per-document table layouts. An entry may select a bundled exact-shape layout with `preset: netball-ladder-v1` and may set `required: true` for strict application validation. See [tables.md](tables.md). |
+| `tables_include` | str | — | Path to a shared YAML file of layouts. Legacy mode resolves cwd-relative first, then relative to the Markdown file; explicit resource mode uses only its context. Per-doc `tables` overrides shared layouts by key. |
 | `auto_align_columns` | bool | true | When true (default), auto-align columns by content: all-numeric columns get `class="num"` (right-aligned) and all-short (≤3-char) columns get `class="ctr"` (centred). Set false to disable. See [tables.md](tables.md). |
 | `auto_highlight_bold_rows` | bool | false | When true, any table row containing a cell that is wholly wrapped in `**bold**` (inner text longer than 3 characters) gets `<tr class="highlight">`, and the bold markup on that cell is removed (the row CSS re-bolds it). Opt-in for retrospective reports. |
 | `table_widths` | bool \| str | true | Automatic typed, document-consistent widths for tables without a declared or author colgroup. The boolean `false`, or `off`/`none`/`legacy` ignoring case and surrounding whitespace, disables the pass. Other invalid values warn and leave it enabled. See [table-widths.md](table-widths.md). |

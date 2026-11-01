@@ -81,6 +81,12 @@ contract, while a CLI flag would be a new command-line API. See the
 [public API and CLI contract](public-api.md) for exact signatures and failure
 behavior.
 
+For deterministic multi-resource builds or machine-readable table decisions,
+use the additive `build_pdf_with_result` / `build_pdf_from_markdown` APIs and a
+`ResourceContext`; see
+[Diagnostics and explicit resources](diagnostics-and-resources.md). The legacy
+builders keep their exact signatures and resolution defaults.
+
 If `output_path` is omitted it defaults to the input path with the
 extension swapped.
 

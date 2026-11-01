@@ -4,6 +4,12 @@ Local PNG, JPEG, GIF and SVG images are embedded in PDF output by WeasyPrint.
 Relative paths resolve from the directory containing the Markdown file. A
 missing local image fails the build before PDF rendering.
 
+The additive result APIs can instead use one explicit `ResourceContext` for
+images, table includes and user styles. Relative image paths then resolve only
+from that context, independently of cwd and the Markdown file's location. An
+optional allowed root follows symlinks before rejecting escapes. See
+[Diagnostics and explicit resources](diagnostics-and-resources.md).
+
 ## Captioned figures
 
 A standalone Markdown image becomes a semantic figure. Use the image alt text
